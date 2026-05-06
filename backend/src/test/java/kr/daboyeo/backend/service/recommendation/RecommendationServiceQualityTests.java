@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.Set;
 import kr.daboyeo.backend.config.RecommendationProperties;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiPick;
-import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiProvider;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiResult;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.PosterChoices;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.RecommendationMode;
@@ -36,7 +35,7 @@ class RecommendationServiceQualityTests {
     private final PosterSeedService posterSeedService = mock(PosterSeedService.class);
     private final PreferenceProfileBuilder profileBuilder = mock(PreferenceProfileBuilder.class);
     private final RecommendationScorer scorer = mock(RecommendationScorer.class);
-    private final LocalModelRecommendationClient localModelClient = mock(LocalModelRecommendationClient.class);
+    private final CodexRecommendationClient codexClient = mock(CodexRecommendationClient.class);
     private final RecommendationProfileRepository profileRepository = mock(RecommendationProfileRepository.class);
     private final ShowtimeRecommendationRepository showtimeRepository = mock(ShowtimeRecommendationRepository.class);
 
@@ -57,10 +56,10 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(4);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"recommendations\":[]}",
-                "gemma-test",
+                "codex-test",
                 List.of(
                     new AiPick(1L, "first", "ok", "time"),
                     new AiPick(2L, "second", "ok", "time"),
@@ -91,7 +90,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(4);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(any(), any(), anyList())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), anyList())).thenReturn(Optional.empty());
 
         RecommendationResponse response = service.recommend(request());
 
@@ -116,7 +115,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(any(), any(), anyList())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), anyList())).thenReturn(Optional.empty());
 
         RecommendationResponse response = service.recommend(request());
 
@@ -144,10 +143,10 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(4);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"recommendations\":[]}",
-                "gemma-test",
+                "codex-test",
                 List.of(
                     new AiPick(1L, "first", "ok", "time"),
                     new AiPick(2L, "second", "ok", "time"),
@@ -170,10 +169,10 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"recommendations\":[]}",
-                "gemma-test",
+                "codex-test",
                 List.of(new AiPick(
                     1L,
                     "score 60 mood:exciting matchedTags content:loud",
@@ -186,11 +185,11 @@ class RecommendationServiceQualityTests {
 
         assertThat(response.recommendations()).hasSize(1);
         assertThat(response.recommendations().get(0).reason()).doesNotContain("score 60", "mood:exciting", "matchedTags", "content:loud");
-        assertThat(response.recommendations().get(0).reason()).startsWith("#");
-        assertThat(response.recommendations().get(0).analysisPoint()).isBlank();
+        assertThat(response.recommendations().get(0).reason()).contains("First A");
+        assertThat(response.recommendations().get(0).analysisPoint()).isNotBlank();
         assertThat(response.recommendations().get(0).caution()).isBlank();
         assertThat(response.recommendations().get(0).valuePoint()).doesNotContain("score 60", "matchedTags", "content:loud");
-        assertThat(response.recommendations().get(0).valuePoint()).startsWith("#");
+        assertThat(response.recommendations().get(0).valuePoint()).contains("상영", "12000원");
     }
 
     @Test
@@ -202,10 +201,10 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
-                "gemma-test",
+                "codex-test",
                 List.of(new AiPick(
                     1L,
                     "선택한 분위기와 겹치는 신호가 있어서 우선 추천했어.",
@@ -218,10 +217,10 @@ class RecommendationServiceQualityTests {
 
         assertThat(response.recommendations()).hasSize(1);
         assertThat(response.recommendations().get(0).reason()).doesNotContain("겹치는 신호", "우선 추천");
-        assertThat(response.recommendations().get(0).reason()).contains("#가볍게", "#애니메이션");
-        assertThat(response.recommendations().get(0).analysisPoint()).isBlank();
+        assertThat(response.recommendations().get(0).reason()).contains("First A", "취향");
+        assertThat(response.recommendations().get(0).analysisPoint()).isNotBlank();
         assertThat(response.recommendations().get(0).valuePoint()).isNotEqualTo("Test Theater");
-        assertThat(response.recommendations().get(0).valuePoint()).contains("#", "상영", "#12000원", "#좌석여유");
+        assertThat(response.recommendations().get(0).valuePoint()).contains("상영", "12000원", "Test Theater");
     }
 
     @Test
@@ -233,10 +232,10 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
-                "gemma-test",
+                "codex-test",
                 List.of(new AiPick(
                     1L,
                     "친구랑 가볍게 보기 좋아.",
@@ -249,7 +248,7 @@ class RecommendationServiceQualityTests {
 
         assertThat(response.recommendations()).hasSize(1);
         assertThat(response.recommendations().get(0).valuePoint()).isNotEqualTo("15:40 상영");
-        assertThat(response.recommendations().get(0).valuePoint()).contains("#", "상영", "#12000원");
+        assertThat(response.recommendations().get(0).valuePoint()).contains("상영", "12000원");
     }
 
     @Test
@@ -261,10 +260,10 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
-                "gemma-test",
+                "codex-test",
                 List.of(new AiPick(
                     1L,
                     "#가볍게 #17:00상영 #좌석여유",
@@ -276,9 +275,9 @@ class RecommendationServiceQualityTests {
         RecommendationResponse response = service.recommend(request());
 
         assertThat(response.recommendations()).hasSize(1);
-        assertThat(response.recommendations().get(0).reason()).isEqualTo("#가볍게");
-        assertThat(response.recommendations().get(0).analysisPoint()).isBlank();
-        assertThat(response.recommendations().get(0).valuePoint()).isEqualTo("#17:00상영 #좌석여유");
+        assertThat(response.recommendations().get(0).reason()).contains("First A");
+        assertThat(response.recommendations().get(0).analysisPoint()).isNotBlank();
+        assertThat(response.recommendations().get(0).valuePoint()).contains("상영", "좌석");
     }
 
     @Test
@@ -290,10 +289,10 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[1]}",
-                "gemma-test",
+                "codex-test",
                 List.of(new AiPick(1L, "", "", "", "#몰입취향"))
             )));
 
@@ -312,7 +311,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(eq(AiProvider.GPT), eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
                 "gpt-test",
@@ -341,15 +340,11 @@ class RecommendationServiceQualityTests {
         profile.addLikedGenre("animation");
         when(profileBuilder.build(any(), any(), any())).thenReturn(profile);
         RecommendationProperties properties = new RecommendationProperties(
-            null,
-            null,
-            null,
             20,
             5,
             5,
-            280,
-            320,
-            72,
+            900,
+            1700,
             List.of("http://localhost:5173")
         );
         return new RecommendationService(
@@ -357,7 +352,7 @@ class RecommendationServiceQualityTests {
             posterSeedService,
             profileBuilder,
             scorer,
-            localModelClient,
+            codexClient,
             profileRepository,
             showtimeRepository
         );

@@ -28,32 +28,16 @@ daboyeo:
   demo:
     live-fallback-enabled: ${DABOYEO_DEMO_LIVE_FALLBACK_ENABLED:true}
   recommendation:
-    lm-studio-base-url: ${DABOYEO_LM_STUDIO_BASE_URL:http://127.0.0.1:1234/v1}
-    fast-model: ${DABOYEO_RECOMMEND_FAST_MODEL:gemma-4-e2b-it}
-    precise-model: ${DABOYEO_RECOMMEND_PRECISE_MODEL:gemma-4-e4b-it}
-    gpt-base-url: ${DABOYEO_RECOMMEND_GPT_BASE_URL:http://127.0.0.1:10531/v1}
-    gpt-model: ${DABOYEO_RECOMMEND_GPT_MODEL:gpt-5.5}
-    gpt-fast-reasoning-effort: ${DABOYEO_RECOMMEND_GPT_FAST_REASONING_EFFORT:low}
-    gpt-precise-reasoning-effort: ${DABOYEO_RECOMMEND_GPT_PRECISE_REASONING_EFFORT:high}
-    gpt-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_GPT_FAST_AI_CANDIDATE_LIMIT:8}
-    gpt-precise-ai-candidate-limit: ${DABOYEO_RECOMMEND_GPT_PRECISE_AI_CANDIDATE_LIMIT:12}
-    gpt-fast-max-tokens: ${DABOYEO_RECOMMEND_GPT_FAST_MAX_TOKENS:720}
-    gpt-precise-max-tokens: ${DABOYEO_RECOMMEND_GPT_PRECISE_MAX_TOKENS:1300}
     codex-model: ${DABOYEO_RECOMMEND_CODEX_MODEL:codex}
-    codex-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_FAST_AI_CANDIDATE_LIMIT:12}
+    codex-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_FAST_AI_CANDIDATE_LIMIT:6}
     codex-precise-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_PRECISE_AI_CANDIDATE_LIMIT:20}
-    codex-fast-max-tokens: ${DABOYEO_RECOMMEND_CODEX_FAST_MAX_TOKENS:900}
+    codex-fast-max-tokens: ${DABOYEO_RECOMMEND_CODEX_FAST_MAX_TOKENS:650}
     codex-precise-max-tokens: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MAX_TOKENS:1700}
     bridge-token: ${DABOYEO_AI_BRIDGE_TOKEN:}
     bridge-result-timeout-seconds: ${DABOYEO_AI_BRIDGE_RESULT_TIMEOUT_SECONDS:90}
     bridge-heartbeat-ttl-seconds: ${DABOYEO_AI_BRIDGE_HEARTBEAT_TTL_SECONDS:45}
     bridge-job-ttl-seconds: ${DABOYEO_AI_BRIDGE_JOB_TTL_SECONDS:180}
     min-start-buffer-minutes: ${DABOYEO_RECOMMEND_MIN_START_BUFFER_MINUTES:20}
-    fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_FAST_AI_CANDIDATE_LIMIT:5}
-    precise-ai-candidate-limit: ${DABOYEO_RECOMMEND_PRECISE_AI_CANDIDATE_LIMIT:5}
-    fast-max-tokens: ${DABOYEO_RECOMMEND_FAST_MAX_TOKENS:280}
-    precise-max-tokens: ${DABOYEO_RECOMMEND_PRECISE_MAX_TOKENS:160}
-    response-text-max-length: ${DABOYEO_RECOMMEND_RESPONSE_TEXT_MAX_LENGTH:56}
     frontend-origins: ${DABOYEO_FRONTEND_ORIGINS:http://localhost:4173,http://127.0.0.1:4173,http://*:4173,http://localhost:5173,http://127.0.0.1:5173,http://*:5173,http://localhost:5500,http://127.0.0.1:5500}
   sync:
     enabled: ${DABOYEO_SYNC_ENABLED:true}

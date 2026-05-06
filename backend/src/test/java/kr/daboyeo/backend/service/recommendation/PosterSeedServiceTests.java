@@ -47,14 +47,21 @@ class PosterSeedServiceTests {
     }
 
     @Test
-    void findByIdResolvesAnimeSeedWithoutReplacingGeneralMovieSeed() {
+    void animeDuplicateIsOwnedByNamespacedAnimePoolOnly() {
         var animeSeed = posterSeedService.findById("anime:20197803").orElseThrow();
-        var generalSeed = posterSeedService.findById("20197803").orElseThrow();
 
         assertThat(animeSeed.title()).isEqualTo("겨울왕국 2");
         assertThat(animeSeed.genres()).contains("animation");
         assertThat(animeSeed.posterUrl()).contains("/src/assets/R2/posters/anime/");
-        assertThat(generalSeed.title()).isEqualTo("겨울왕국 2");
+        assertThat(posterSeedService.findById("20197803")).isEmpty();
+    }
+
+    @Test
+    void findByIdStillResolvesGeneralMovieSeed() {
+        var generalSeed = posterSeedService.findById("20129370").orElseThrow();
+
+        assertThat(generalSeed.id()).isEqualTo("20129370");
         assertThat(generalSeed.posterUrl()).contains("/src/assets/R2/posters/movie/");
+        assertThat(generalSeed.posterUrl()).endsWith("/the-admiral-roaring-currents.webp");
     }
 }

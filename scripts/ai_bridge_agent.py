@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Poll DABOYEO AI bridge jobs and run local-model or Codex workers."""
+"""Poll DABOYEO AI bridge jobs and run the Codex worker."""
 
 from __future__ import annotations
 
@@ -23,8 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the DABOYEO AI bridge worker.")
     parser.add_argument("--server", default=os.getenv("DABOYEO_BRIDGE_SERVER", "http://127.0.0.1:5500"))
     parser.add_argument("--token", default=os.getenv("DABOYEO_AI_BRIDGE_TOKEN", ""))
-    parser.add_argument("--providers", default=os.getenv("DABOYEO_BRIDGE_PROVIDERS", "local,codex"))
-    parser.add_argument("--local-base-url", default=os.getenv("DABOYEO_LM_STUDIO_BASE_URL", "http://127.0.0.1:1234/v1"))
+    parser.add_argument("--providers", default=os.getenv("DABOYEO_BRIDGE_PROVIDERS", "codex"))
     parser.add_argument("--codex-command", default=os.getenv("DABOYEO_CODEX_COMMAND", "codex"))
     parser.add_argument("--codex-cwd", default=os.getenv("DABOYEO_CODEX_CWD", str(Path.cwd())))
     parser.add_argument("--codex-model", default=os.getenv("DABOYEO_CODEX_MODEL", ""))
@@ -63,19 +62,9 @@ def heartbeat(args: argparse.Namespace, bridge_id: str, providers: list[str]) ->
 def active_providers(args: argparse.Namespace, providers: list[str]) -> list[str]:
     active: list[str] = []
     for provider in providers:
-        if provider == "local" and local_model_available(args.local_base_url):
-            active.append(provider)
-        elif provider == "codex" and resolve_codex_command(args.codex_command):
+        if provider == "codex" and resolve_codex_command(args.codex_command):
             active.append(provider)
     return active
-
-
-def local_model_available(base_url: str) -> bool:
-    try:
-        status, payload = local_get_json(base_url.rstrip("/") + "/models", timeout=3)
-        return status >= 200 and status < 300 and isinstance((payload or {}).get("data"), list)
-    except Exception:  # noqa: BLE001
-        return False
 
 
 def resolve_codex_command(command: str) -> str:
@@ -113,34 +102,6 @@ def complete_job(args: argparse.Namespace, job_id: str, raw_json: str = "", erro
     })
 
 
-def run_local_model(args: argparse.Namespace, job: dict[str, Any]) -> str:
-    status, payload = local_json(args.local_base_url, job.get("request") or {}, args.timeout)
-    if status < 200 or status >= 300:
-        raise RuntimeError(f"local model returned HTTP {status}")
-    content = (((payload or {}).get("choices") or [{}])[0].get("message") or {}).get("content", "")
-    if not content:
-        raise RuntimeError("local model returned an empty message")
-    return content.strip()
-
-
-def local_json(base_url: str, body: dict[str, Any], timeout: int) -> tuple[int, Any]:
-    data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    req = request.Request(
-        base_url.rstrip("/") + "/chat/completions",
-        data=data,
-        headers={"Accept": "application/json", "Content-Type": "application/json"},
-        method="POST",
-    )
-    with request.urlopen(req, timeout=timeout) as response:
-        return response.status, json.loads(response.read().decode("utf-8"))
-
-
-def local_get_json(url: str, timeout: int) -> tuple[int, Any]:
-    req = request.Request(url, headers={"Accept": "application/json"}, method="GET")
-    with request.urlopen(req, timeout=timeout) as response:
-        return response.status, json.loads(response.read().decode("utf-8"))
-
-
 def run_codex(args: argparse.Namespace, job: dict[str, Any]) -> str:
     request_body = job.get("request") or {}
     schema = extract_output_schema(request_body)
@@ -161,6 +122,9 @@ def run_codex(args: argparse.Namespace, job: dict[str, Any]) -> str:
             "--ask-for-approval",
             "never",
             "exec",
+            "--ignore-user-config",
+            "--disable",
+            "plugins",
             "--ephemeral",
             "--sandbox",
             "read-only",
@@ -236,9 +200,7 @@ def process_job(args: argparse.Namespace, job: dict[str, Any]) -> None:
     job_id = job["jobId"]
     provider = job.get("provider", "")
     try:
-        if provider == "local":
-            raw_json = run_local_model(args, job)
-        elif provider == "codex":
+        if provider == "codex":
             raw_json = run_codex(args, job)
         else:
             raise RuntimeError(f"unsupported provider: {provider}")

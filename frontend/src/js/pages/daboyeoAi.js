@@ -1,24 +1,29 @@
 import {
   createRecommendationSession,
   deleteRecommendationSession,
-  getRecommendationProviderHealth,
   getPosterSeed,
   requestRecommendations,
   sendRecommendationFeedback,
-} from "../api/client.js?v=20260505-anime-posters";
+} from "../api/client.js?v=20260506-codex-only";
 
 const STORAGE_KEY = "daboyeoAnonymousId";
-const AI_PROVIDER_STORAGE_KEY = "daboyeoAiProvider";
 const SEARCH_CONTEXT_KEY = "daboyeoSearchContext";
 const MAIN_PAGE_URL = "../../index.html";
 const SEAT_RECOMMEND_URL = "./seatRecommendMbti.html?flow=ai-result";
-const POSTER_LIMIT = 40;
+const POSTER_LIMIT = 18;
 const POSTER_BATCH_SIZE = 6;
 const MIN_LIKED_POSTERS = 3;
 const LIKE_LIMIT = 5;
-const GENRE_LIMIT = 5;
+const GENRE_LIMIT = 1;
 const AUTO_ADVANCE_MS = 320;
-const DEFAULT_AI_PROVIDER = "local";
+const DEFAULT_AI_PROVIDER = "codex";
+const PROVIDER_BOOKING_URLS = {
+  cgv: "https://m.cgv.co.kr/WebApp/Reservation/seat.aspx",
+  lotte: "https://www.lottecinema.co.kr/NLCHS/Ticketing",
+  lottecinema: "https://www.lottecinema.co.kr/NLCHS/Ticketing",
+  megabox: "https://www.megabox.co.kr/booking",
+  mega: "https://www.megabox.co.kr/booking",
+};
 
 const audienceOptions = [
   { value: "alone", label: "혼자", hint: "혼자서도 몰입할 수 있는 영화로 볼래." },
@@ -68,59 +73,36 @@ const modeOptions = [
   {
     value: "fast",
     label: "빠른 추천",
-    model: "E2B Q4",
+    model: "GPT (Codex) · fast",
     description: "짧은 이유와 함께, 바로 볼 수 있는\n영화를 빠르게 추천해 드립니다.",
-    tags: ["E2B Q4", "빠름", "간단한 이유", "상위 후보"],
+    tags: ["GPT", "빠름", "간단한 이유", "상위 후보"],
   },
   {
     value: "precise",
     label: "정밀 추천",
-    model: "E4B Q4",
+    model: "GPT (Codex) · precise",
     description: "후보를 꼼꼼히 비교하고, 포스터 취향까지\n반영해 더 정확하게 추천해 드립니다.",
-    tags: ["E4B Q4", "정밀 분석", "포스터 취향", "후보 비교"],
+    tags: ["GPT", "정밀 분석", "포스터 취향", "후보 비교"],
     recommended: true,
   },
 ];
 
-const providerOptions = [
-  {
-    value: "local",
-    label: "로컬",
-    title: "로컬 Gemma",
-    description: "학원/작업 컴퓨터의 로컬 OpenAI 호환 서버로 추천을 돌립니다.",
-  },
-  {
-    value: "codex",
-    label: "GPT",
-    title: "GPT-5.5",
-    description: "GPT-5.5 모델은 고정하고 빠른/정밀 카드별 추론 레벨만 다르게 보냅니다.",
-  },
-];
+const providerInfo = {
+  value: "codex",
+  label: "GPT",
+  title: "GPT (Codex)",
+};
 
-const providerModeProfiles = {
-  local: {
-    fast: {
-      model: "Gemma 4 E2B Q4",
-      description: "로컬 Gemma E2B로 짧은 이유와 함께\n바로 볼 수 있는 영화를 빠르게 추천해 드립니다.",
-      tags: ["Gemma E2B Q4", "로컬", "빠름", "상위 후보"],
-    },
-    precise: {
-      model: "Gemma 4 E4B Q4",
-      description: "로컬 Gemma E4B로 후보를 꼼꼼히 비교하고,\n포스터 취향까지 반영해 추천해 드립니다.",
-      tags: ["Gemma E4B Q4", "로컬", "정밀 분석", "후보 비교"],
-    },
+const modeProfiles = {
+  fast: {
+    model: "GPT (Codex) · fast",
+    description: "후보 수를 줄여 가볍게 비교하고\n바로 볼 만한 영화만 먼저 추려드릴게요.",
+    tags: ["GPT", "Codex", "가벼운 분석", "소수 후보"],
   },
-  codex: {
-    fast: {
-      model: "GPT-5.5 · reasoning low",
-      description: "GPT-5.5는 고정하고 낮은 추론 레벨로\n상영 후보를 빠르게 추려 추천해 드립니다.",
-      tags: ["GPT-5.5", "reasoning low", "빠른 판단", "상위 후보"],
-    },
-    precise: {
-      model: "GPT-5.5 · reasoning high",
-      description: "GPT-5.5는 고정하고 높은 추론 레벨로\n후보와 취향 근거를 더 꼼꼼하게 비교합니다.",
-      tags: ["GPT-5.5", "reasoning high", "정밀 분석", "후보 비교"],
-    },
+  precise: {
+    model: "GPT (Codex) · precise",
+    description: "GPT로 후보와 취향 근거를 더 꼼꼼하게 비교해서\n어색한 후보를 줄여볼게요.",
+    tags: ["GPT", "Codex", "정밀 분석", "후보 비교"],
   },
 };
 
@@ -162,7 +144,7 @@ const state = {
   step: "audience",
   sessionStatus: "pending",
   anonymousId: localStorage.getItem(STORAGE_KEY),
-  aiProvider: readStoredAiProvider(),
+  aiProvider: DEFAULT_AI_PROVIDER,
   survey: {
     audience: null,
     mood: null,
@@ -188,11 +170,6 @@ const state = {
     response: null,
     error: null,
   },
-  providerHealth: {
-    status: "idle",
-    items: {},
-    error: null,
-  },
   feedback: new Map(),
   stepTimer: null,
   toastTimer: null,
@@ -200,98 +177,16 @@ const state = {
 
 state.searchContext = readSearchContext();
 
-function readStoredAiProvider() {
-  const stored = localStorage.getItem(AI_PROVIDER_STORAGE_KEY);
-  return providerOptions.some((option) => option.value === stored) ? stored : DEFAULT_AI_PROVIDER;
-}
-
-function activeProvider(value = state.aiProvider) {
-  return providerOptions.find((option) => option.value === value) || providerOptions[0];
-}
-
 function modeOption(value) {
   return modeOptions.find((option) => option.value === value) || modeOptions[0];
 }
 
-function modeProfile(modeValue, providerValue = state.aiProvider) {
+function modeProfile(modeValue) {
   const option = modeOption(modeValue);
-  const providerProfiles = providerModeProfiles[providerValue] || providerModeProfiles[DEFAULT_AI_PROVIDER];
   return {
     ...option,
-    ...(providerProfiles?.[option.value] || {}),
+    ...(modeProfiles[option.value] || {}),
   };
-}
-
-function setAiProvider(value) {
-  if (!providerOptions.some((option) => option.value === value)) {
-    return;
-  }
-
-  state.aiProvider = value;
-  localStorage.setItem(AI_PROVIDER_STORAGE_KEY, value);
-  render();
-}
-
-function normalizeProviderHealth(items) {
-  if (!Array.isArray(items)) {
-    return {};
-  }
-
-  return items.reduce((acc, item) => {
-    const provider = typeof item?.provider === "string" ? item.provider.trim().toLowerCase() : "";
-    if (provider) {
-      acc[provider] = item;
-    }
-    return acc;
-  }, {});
-}
-
-function providerHealthFor(providerValue) {
-  return state.providerHealth.items[providerValue] || null;
-}
-
-function providerHealthMeta(providerValue) {
-  const health = providerHealthFor(providerValue);
-  if (state.providerHealth.status === "loading" || state.providerHealth.status === "idle") {
-    return { key: "checking", label: "확인 중", note: "모델 서버 연결 상태를 확인하고 있어." };
-  }
-  if (state.providerHealth.status === "error") {
-    return { key: "unknown", label: "확인 실패", note: "상태 확인은 실패했지만 추천 요청은 계속 보낼 수 있어." };
-  }
-  if (health?.available) {
-    return { key: "ready", label: "연결됨", note: health.message || "모델 서버가 응답 중이야." };
-  }
-  return { key: "offline", label: "오프라인", note: health?.message || "모델 서버 연결이 없어 fallback 추천으로 이어질 수 있어." };
-}
-
-async function ensureProviderHealthLoaded(force = false) {
-  if (!force && ["loading", "ready"].includes(state.providerHealth.status)) {
-    return;
-  }
-
-  state.providerHealth = { ...state.providerHealth, status: "loading", error: null };
-  if (state.step === "mode") {
-    render();
-  }
-
-  try {
-    const items = await getRecommendationProviderHealth();
-    state.providerHealth = {
-      status: "ready",
-      items: normalizeProviderHealth(items),
-      error: null,
-    };
-  } catch (error) {
-    state.providerHealth = {
-      status: "error",
-      items: {},
-      error,
-    };
-  }
-
-  if (state.step === "mode") {
-    render();
-  }
 }
 
 function goToMainPage() {
@@ -505,9 +400,6 @@ function setStep(nextStep) {
     state.step = nextStep;
     if (nextStep === "posters") {
       ensurePostersLoaded();
-    }
-    if (nextStep === "mode") {
-      ensureProviderHealthLoaded();
     }
     render();
     screen.classList.add("is-entering");
@@ -770,7 +662,10 @@ function toggleAvoid(value) {
 }
 
 function selectedGenres() {
-  return Array.isArray(state.survey.preferredGenres) ? state.survey.preferredGenres : [];
+  return (Array.isArray(state.survey.preferredGenres) ? state.survey.preferredGenres : [])
+    .map(normalizeGenreValue)
+    .filter(Boolean)
+    .slice(0, GENRE_LIMIT);
 }
 
 function normalizeGenreValue(value) {
@@ -821,14 +716,7 @@ function toggleGenre(value) {
 
   const selected = selectedGenres();
   const exists = selected.includes(normalized);
-  if (exists) {
-    state.survey.preferredGenres = selected.filter((item) => item !== normalized);
-  } else if (selected.length >= GENRE_LIMIT) {
-    showToast(`장르는 ${GENRE_LIMIT}개까지만 고를 수 있어.`);
-    return;
-  } else {
-    state.survey.preferredGenres = [...selected, normalized];
-  }
+  state.survey.preferredGenres = exists ? [] : [normalized];
 
   state.posterChoices.likedSeedMovieIds = [];
   state.posters.activeBatchIndex = 0;
@@ -945,21 +833,21 @@ function renderGenreStep() {
   completeBtn.setAttribute("aria-disabled", String(!isSatisfied));
   completeBtn.addEventListener("click", () => {
     if (!isSatisfied) {
-      showToast("먼저 장르를 하나 이상 골라줘.");
+      showToast("먼저 장르를 하나 골라줘.");
       return;
     }
     setStep("posters");
   });
   ctaRow.appendChild(completeBtn);
 
-  const hint = createElement("p", "ai-avoid-cta-hint", `1개 이상, 최대 ${GENRE_LIMIT}개까지 선택할 수 있어. 선택한 장르 기준으로 포스터를 먼저 보여줄게.`);
+  const hint = createElement("p", "ai-avoid-cta-hint", "장르는 하나만 선택할 수 있어. 선택한 장르 기준으로 포스터를 먼저 보여줄게.");
   ctaRow.appendChild(hint);
   panel.appendChild(ctaRow);
 
   return renderSplitLayout({
     kicker: "AI GUIDE 04",
     titleParts: [
-      { text: "먼저 보고 싶은\n장르를 골라주세요." },
+      { text: "먼저 보고 싶은\n장르 하나를 골라주세요." },
     ],
     description: "포스터만 보고 고르기 전에 방향을 먼저 잡을게요. 장르 신호가 추천 점수와 GPT 분석에 같이 반영됩니다.",
     content: panel,
@@ -998,25 +886,12 @@ function renderPosterCount(className, label, value, target) {
   return pill;
 }
 
-function renderPosterRounds() {
-  const roundRow = createElement("div", "ai-poster-rounds");
+function renderPosterPageIndicator() {
   const totalBatches = posterBatchCount();
-  const items = posterDisplayItems();
-
-  for (let index = 0; index < totalBatches; index += 1) {
-    const start = index * POSTER_BATCH_SIZE;
-    const batch = items.slice(start, start + POSTER_BATCH_SIZE);
-    const button = createElement("button", [
-      "ai-round-button",
-      index === state.posters.activeBatchIndex ? "is-active" : null,
-      isPosterBatchComplete(batch) ? "is-complete" : null,
-    ], `${index + 1}라운드`);
-    button.type = "button";
-    button.addEventListener("click", () => showPosterBatch(index));
-    roundRow.appendChild(button);
-  }
-
-  return roundRow;
+  const currentPage = Math.min(state.posters.activeBatchIndex + 1, totalBatches);
+  const indicator = createElement("div", "ai-poster-page-indicator", `${currentPage} / ${totalBatches}`);
+  indicator.setAttribute("aria-label", `포스터 페이지 ${currentPage} / ${totalBatches}`);
+  return indicator;
 }
 
 function renderPosterCard(movie) {
@@ -1134,6 +1009,7 @@ function renderPosterStep() {
   fakeKicker.setAttribute("aria-hidden", "true");
 
   content.appendChild(fakeKicker);
+  content.appendChild(renderPosterPageIndicator());
   content.appendChild(posterStage);
   content.appendChild(ctaRow);
 
@@ -1190,57 +1066,18 @@ function renderModeCard(option) {
   return card;
 }
 
-function renderProviderSwitch() {
-  const panel = createElement("section", "ai-provider-panel");
-  panel.setAttribute("aria-label", "AI 추천 엔진 선택");
-
-  const header = createElement("div", "ai-provider-header");
-  header.appendChild(createElement("span", "ai-provider-kicker", "AI ROUTE"));
-  header.appendChild(createElement("strong", null, "추천 엔진 선택"));
-  panel.appendChild(header);
-
-  const switcher = createElement("div", "ai-provider-switch");
-  providerOptions.forEach((option) => {
-    const button = createElement("button", "ai-provider-option");
-    button.type = "button";
-    button.classList.toggle("is-selected", state.aiProvider === option.value);
-    const healthMeta = providerHealthMeta(option.value);
-    button.classList.add(`is-${healthMeta.key}`);
-    button.setAttribute("aria-pressed", String(state.aiProvider === option.value));
-
-    const label = createElement("span", null, option.label);
-    const title = createElement("strong", null, option.title);
-    const copy = createElement("small", null, option.description);
-    const status = createElement("em", "ai-provider-status", healthMeta.label);
-    button.appendChild(label);
-    button.appendChild(title);
-    button.appendChild(status);
-    button.appendChild(copy);
-    button.addEventListener("click", () => setAiProvider(option.value));
-    switcher.appendChild(button);
-  });
-  panel.appendChild(switcher);
-
-  const active = activeProvider();
-  const activeHealth = providerHealthMeta(active.value);
-  panel.appendChild(createElement("p", "ai-provider-note", `${active.title} 라우팅 · ${activeHealth.note}`));
-
-  return panel;
-}
-
 function renderModeStep() {
   const content = createElement("div", "ai-mode-panel");
   const grid = createElement("div", "ai-mode-grid");
   modeOptions.forEach(opt => {
     grid.appendChild(renderModeCard(opt));
   });
-  content.appendChild(renderProviderSwitch());
   content.appendChild(grid);
 
   return renderSplitLayout({
     kicker: "AI GUIDE 06",
     titleParts: [{ text: "어떤 방식으로\n추천해 드릴까요?" }],
-    description: "로컬과 GPT 중 하나를 고르면, 빠른/정밀 추천 카드의 모델 라우팅도 함께 바뀝니다.",
+    description: "GPT가 포스터 취향과 상영 후보를 비교하고, 응답이 늦으면 코드 점수 기반으로 자연스럽게 보완합니다.",
     content,
   });
 }
@@ -1300,11 +1137,13 @@ function renderLoadingMessage(title, description) {
 }
 
 function renderLoadingStep() {
-  const mode = modeProfile(state.run.mode, state.run.aiProvider || state.aiProvider);
+  const mode = modeProfile(state.run.mode);
   const title = mode ? `${mode.label} 분석 중` : "분석 중";
-  const description = mode
-    ? `${mode.model} 모델에 상위 후보만 보내고 있어. 결과가 없으면 가짜 추천 없이 알려줄게.`
-    : "추천 후보를 계산하고 있어.";
+  const description = state.run.mode === "fast"
+    ? "소수 후보만 빠르게 비교하고 있어. 맞는 후보가 없으면 그대로 알려줄게."
+    : mode
+      ? `${mode.model} 모델에 상위 후보만 보내고 있어. 결과가 없으면 가짜 추천 없이 알려줄게.`
+      : "추천 후보를 계산하고 있어.";
 
   return renderLoadingMessage(title, description);
 }
@@ -1395,6 +1234,36 @@ function formatPrice(amount, currencyCode) {
   }).format(numberAmount);
 }
 
+function providerKey(providerCode) {
+  return String(providerCode || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function providerDisplayName(providerCode) {
+  const key = providerKey(providerCode);
+  if (key.includes("lotte")) return "롯데시네마";
+  if (key.includes("mega")) return "메가박스";
+  if (key.includes("cgv")) return "CGV";
+  return providerCode || "정보 없음";
+}
+
+function providerBookingUrl(providerCode) {
+  const key = providerKey(providerCode);
+  if (key.includes("lotte")) return PROVIDER_BOOKING_URLS.lotte;
+  if (key.includes("mega")) return PROVIDER_BOOKING_URLS.megabox;
+  if (key.includes("cgv")) return PROVIDER_BOOKING_URLS.cgv;
+  return null;
+}
+
+function priceInfo(item) {
+  const hasPrice = item.minPriceAmount !== null && item.minPriceAmount !== undefined && item.minPriceAmount !== "";
+  return {
+    label: hasPrice ? "추천 항목 가격" : "가격 대신 확인",
+    value: hasPrice
+      ? formatPrice(item.minPriceAmount, item.currencyCode)
+      : [item.screenName, formatShowtime(item)].filter(Boolean).join(" · ") || "상영 시간과 지점 먼저 확인",
+  };
+}
+
 function formatShowtime(item) {
   const parts = [item.showDate, item.startsAt].filter(Boolean);
   return parts.length > 0 ? parts.join(" ") : "시간 정보 없음";
@@ -1436,10 +1305,10 @@ async function sendFeedback(item, action, { quiet = false } = {}) {
 }
 
 function openBooking(item) {
-  const bookingUrl = safeUrl(item.bookingUrl);
+  const bookingUrl = safeUrl(item.bookingUrl) || safeUrl(providerBookingUrl(item.providerCode));
 
   if (!bookingUrl) {
-    showToast("예매 링크가 아직 없어.");
+    showToast("이 극장의 예매 페이지를 찾지 못했어.");
     return;
   }
 
@@ -1513,11 +1382,12 @@ function renderResultCard(item, index, context = {}) {
     body.appendChild(createElement("p", ["ai-result-tags", "ai-result-tags-white"], item.valuePoint));
   }
 
+  const price = priceInfo(item);
   const showtimeGrid = createElement("div", "ai-showtime-grid");
-  showtimeGrid.appendChild(renderShowtimeItem("극장", [item.providerCode, item.theaterName].filter(Boolean).join(" ")));
-  showtimeGrid.appendChild(renderShowtimeItem("지역/상영관", [item.regionName, item.screenName].filter(Boolean).join(" ")));
+  showtimeGrid.appendChild(renderShowtimeItem("예매처", providerDisplayName(item.providerCode)));
+  showtimeGrid.appendChild(renderShowtimeItem("극장/상영관", [item.theaterName, item.screenName].filter(Boolean).join(" · ")));
   showtimeGrid.appendChild(renderShowtimeItem("상영 시간", formatShowtime(item)));
-  showtimeGrid.appendChild(renderShowtimeItem("최저가", formatPrice(item.minPriceAmount, item.currencyCode)));
+  showtimeGrid.appendChild(renderShowtimeItem(price.label, price.value));
   body.appendChild(showtimeGrid);
 
   const actions = createElement("div", "ai-result-actions");
@@ -1544,11 +1414,10 @@ function renderResultsStep() {
   const recommendations = Array.isArray(response.recommendations) ? response.recommendations : [];
   const modeLabel = optionLabel(modeOptions, response.mode || state.run.mode);
   const providerValue = state.run.aiProvider || state.aiProvider;
-  const provider = activeProvider(providerValue);
-  const model = response.model || modeProfile(response.mode || state.run.mode, providerValue).model;
+  const model = response.model || modeProfile(response.mode || state.run.mode).model;
   const isAiBacked = response.status === "ok";
   const resultSource = isAiBacked
-    ? `${provider.title} · ${modeLabel}`
+    ? `${providerInfo.title} · ${modeLabel}`
     : "코드 점수 기반 fallback";
   const layout = createElement("section", "ai-result-layout");
   const side = createElement("aside", "ai-result-side");
@@ -1590,12 +1459,10 @@ function renderResultsStep() {
     addSummaryRow("포스터 취향", `${state.posterChoices.likedSeedMovieIds.length} / ${MIN_LIKED_POSTERS}+`);
   }
   addSummaryRow("추천 방식", modeLabel);
-  addSummaryRow("요청 엔진", `${provider.title} · ${model}`);
+  addSummaryRow("요청 엔진", `${providerInfo.title} · ${model}`);
   addSummaryRow("실제 처리", resultSource);
   addSummaryRow("분석 깊이", isAiBacked
-    ? providerValue === "codex"
-      ? (response.mode || state.run.mode) === "precise" ? "GPT 정밀 분석" : "GPT 빠른 분석"
-      : (response.mode || state.run.mode) === "precise" ? "로컬 정밀 추천" : "로컬 빠른 추천"
+    ? (response.mode || state.run.mode) === "precise" ? "GPT 정밀 분석" : "GPT 빠른 분석"
     : "fallback 추천");
 
   side.appendChild(summary);

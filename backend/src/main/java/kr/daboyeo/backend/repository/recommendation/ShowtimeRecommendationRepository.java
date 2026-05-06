@@ -31,7 +31,17 @@ public class ShowtimeRecommendationRepository {
     }
 
     public List<ShowtimeCandidate> findUpcomingCandidates(int limit, LocalDateTime minStartsAt, SearchFilters filters) {
+        return findUpcomingCandidates(limit, minStartsAt, filters, Set.of());
+    }
+
+    public List<ShowtimeCandidate> findUpcomingCandidates(
+        int limit,
+        LocalDateTime minStartsAt,
+        SearchFilters filters,
+        Set<String> requiredGenreValues
+    ) {
         SearchFilters activeFilters = filters != null && filters.active() ? filters : null;
+        Set<String> activeGenreValues = normalizeGenreValues(requiredGenreValues);
         LocalDateTime lowerBound = activeFilters != null && activeFilters.hasDate() && activeFilters.hasTimeRange()
             ? max(minStartsAt, timeRangeLowerBound(activeFilters))
             : minStartsAt;
@@ -64,6 +74,19 @@ public class ShowtimeRecommendationRepository {
             FROM showtimes s
             LEFT JOIN movies m
               ON m.id = s.movie_id
+            """);
+        if (!activeGenreValues.isEmpty()) {
+            sql.append("""
+            JOIN movie_tags mt_filter
+              ON mt_filter.provider_code = s.provider_code
+             AND mt_filter.external_movie_id = COALESCE(s.external_movie_id, m.external_movie_id)
+             AND mt_filter.tag_type = 'genre'
+             AND mt_filter.tag_value IN (
+            """);
+            sql.append(activeGenreValues.stream().map(ignored -> "?").collect(java.util.stream.Collectors.joining(", ")));
+            sql.append(")\n");
+        }
+        sql.append("""
             LEFT JOIN movie_tags mt
               ON mt.provider_code = s.provider_code
              AND mt.external_movie_id = COALESCE(s.external_movie_id, m.external_movie_id)
@@ -71,6 +94,7 @@ public class ShowtimeRecommendationRepository {
               AND s.starts_at >= ?
             """);
         List<Object> params = new ArrayList<>();
+        params.addAll(activeGenreValues);
         params.add(Timestamp.valueOf(lowerBound));
 
         appendSearchFilters(sql, params, activeFilters);
@@ -201,6 +225,17 @@ public class ShowtimeRecommendationRepository {
 
     private Long getNullableLong(long value, boolean wasNull) {
         return wasNull ? null : value;
+    }
+
+    private Set<String> normalizeGenreValues(Set<String> values) {
+        if (values == null || values.isEmpty()) {
+            return Set.of();
+        }
+        return values.stream()
+            .map(value -> value == null ? "" : value.trim().toLowerCase(Locale.ROOT))
+            .map(value -> value.startsWith("genre:") ? value.substring("genre:".length()) : value)
+            .filter(value -> !value.isBlank())
+            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 
     private Integer getNullableInt(int value, boolean wasNull) {

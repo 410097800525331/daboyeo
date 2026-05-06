@@ -17,30 +17,27 @@ import kr.daboyeo.backend.domain.recommendation.RecommendationModels.ShowtimeCan
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.TagProfile;
 import org.junit.jupiter.api.Test;
 
-class LocalModelRecommendationClientTests {
+class CodexRecommendationClientTests {
 
-    private final LocalModelRecommendationClient client = new LocalModelRecommendationClient(properties(), new ObjectMapper());
+    private final CodexRecommendationClient client = new CodexRecommendationClient(properties(), new ObjectMapper());
 
     @Test
-    void buildPromptDoesNotExposeInternalTokens() {
+    void fastPromptDoesNotExposeInternalScoreTokens() {
         TagProfile profile = new TagProfile();
         profile.setAudience("friends");
         profile.setMood("exciting");
         profile.addAvoid(List.of("too_long"));
         String prompt = client.buildPrompt(RecommendationMode.FAST, profile, List.of(scoredCandidate()));
 
-        assertThat(prompt).contains("Test Movie", "\"id\":1", "\"b\"", "\"vp\"");
-        assertThat(prompt).contains("#신나는", "#좌석여유", "#12세");
-        assertThat(prompt).doesNotContain("#큰소리주의");
-        assertThat(prompt).contains("Return only", "why=b tags only", "v=vp tags only");
+        assertThat(prompt).contains("Test Movie", "\"id\":1", "User profile:", "Candidates:");
+        assertThat(prompt).contains("Return only", "tasteMatch", "fitHints", "practicalValue");
         assertThat(prompt).doesNotContain("\"showtimeId\"", "\"recommendations\"", "\"reason\"", "\"valuePoint\"");
-        assertThat(prompt).doesNotContain("\"score\"", "\"matchedTags\"", "\"penalties\"", "\"tg\"", "\"rt\"", "\"age\"", "\"th\"", "\"time\"", "\"price\"", "\"seat\"");
-        assertThat(prompt).doesNotContain("caution");
-        assertThat(prompt.length()).isLessThan(900);
+        assertThat(prompt).doesNotContain("\"score\"", "\"matchedTags\"", "\"penalties\"", "\"tg\"", "\"rt\"", "\"th\"", "\"time\"", "\"seat\"");
+        assertThat(prompt.length()).isLessThan(2600);
     }
 
     @Test
-    void precisePromptRequestsCompactAiAnalysisResponse() {
+    void precisePromptRequestsComparativeAiAnalysisResponse() {
         TagProfile profile = new TagProfile();
         profile.setAudience("friends");
         profile.setMood("exciting");
@@ -49,15 +46,16 @@ class LocalModelRecommendationClientTests {
 
         String prompt = client.buildPrompt(RecommendationMode.PRECISE, profile, List.of(scoredCandidate()));
 
-        assertThat(prompt).contains("Test Movie", "\"id\":1", "\"b\"", "\"vp\"");
+        assertThat(prompt).contains("Test Movie", "\"id\":1", "Decision style: CODEX_PRECISE", "tradeoffHints");
         assertThat(prompt).contains(
-            "Return only {\"r\":[{\"id\":1,\"a\":\"#SF취향\"}]}",
-            "Use b first",
-            "liked=[#SF취향]",
-            "copy one hashtag from liked"
+            "s=integer 0-100 final recommendation score",
+            "why=2 Korean sentences",
+            "a=2-3 Korean sentences",
+            "v=one Korean sentence",
+            "c=short Korean caution or empty string"
         );
-        assertThat(prompt).doesNotContain("\"why\"", "\"v\"", "\"score\"", "\"matchedTags\"", "\"penalties\"", "caution");
-        assertThat(prompt.length()).isLessThan(850);
+        assertThat(prompt).doesNotContain("\"score\"", "\"matchedTags\"", "\"penalties\"");
+        assertThat(prompt.length()).isLessThan(3200);
     }
 
     @Test
@@ -68,12 +66,12 @@ class LocalModelRecommendationClientTests {
         profile.addAvoid(List.of("too_long"));
         profile.addLikedGenre("sf");
 
-        String prompt = client.buildPrompt(AiProvider.GPT, RecommendationMode.FAST, profile, List.of(scoredCandidate()));
+        String prompt = client.buildPrompt(AiProvider.CODEX, RecommendationMode.FAST, profile, List.of(scoredCandidate()));
 
         assertThat(prompt).contains(
             "User profile:",
             "Candidates:",
-            "Decision style: GPT_FAST",
+            "Decision style: CODEX_FAST",
             "single-pass but evidence-based comparison",
             "avoid generic caution-first wording",
             "\"why\"",
@@ -104,14 +102,14 @@ class LocalModelRecommendationClientTests {
             List.of("genre:comedy", "genre:drama", "mood:light")
         );
 
-        String prompt = client.buildPrompt(AiProvider.GPT, RecommendationMode.FAST, profile, List.of(candidate));
+        String prompt = client.buildPrompt(AiProvider.CODEX, RecommendationMode.FAST, profile, List.of(candidate));
 
         assertThat(prompt).contains(
             "preference_genre_hints=",
             "preference_genre_hints=[#\uC561\uC158\uCDE8\uD5A5, #SF\uCDE8\uD5A5]",
             "\"tasteMatch\":[]",
             "Claim direct genre/poster match only when candidate tasteMatch is non-empty.",
-            "empty-tasteMatch reserve must stay at or below 74",
+            "empty-tasteMatch reserve must stay at or below 68",
             "instead of leading with \"direct evidence is missing\""
         );
     }
@@ -127,7 +125,7 @@ class LocalModelRecommendationClientTests {
             List.of("genre:sf", "mood:light")
         );
 
-        String prompt = client.buildPrompt(AiProvider.GPT, RecommendationMode.FAST, profile, List.of(candidate));
+        String prompt = client.buildPrompt(AiProvider.CODEX, RecommendationMode.FAST, profile, List.of(candidate));
 
         assertThat(prompt).contains("\"tasteMatch\":[\"#SF");
     }
@@ -140,10 +138,10 @@ class LocalModelRecommendationClientTests {
         profile.addAvoid(List.of("too_long", "loud"));
         profile.addLikedGenre("sf");
 
-        String prompt = client.buildPrompt(AiProvider.GPT, RecommendationMode.PRECISE, profile, List.of(scoredCandidate()));
+        String prompt = client.buildPrompt(AiProvider.CODEX, RecommendationMode.PRECISE, profile, List.of(scoredCandidate()));
 
         assertThat(prompt).contains(
-            "Decision style: GPT_PRECISE",
+            "Decision style: CODEX_PRECISE",
             "Evaluate every supplied candidate",
             "why each selected candidate beats a nearby alternative",
             "selected genre intent",
@@ -163,7 +161,7 @@ class LocalModelRecommendationClientTests {
     void compactAiResponseIsMappedToExistingAiPickShape() throws Exception {
         String json = "{\"r\":[{\"id\":1,\"why\":\"#가볍게 #친구랑\",\"v\":\"#17:00상영 #좌석여유\"}]}";
 
-        AiResult result = client.parseResult(json, "gemma-test").orElseThrow();
+        AiResult result = client.parseResult(json, "codex-test").orElseThrow();
 
         AiPick pick = result.picks().get(0);
         assertThat(pick.showtimeId()).isEqualTo(1L);
@@ -178,7 +176,7 @@ class LocalModelRecommendationClientTests {
     void preciseAnalysisResponseIsMappedToAiPickAnalysisPoint() throws Exception {
         String json = "{\"r\":[{\"id\":1,\"a\":\"#SF취향\"},{\"id\":2,\"a\":\"#몰입취향\"}]}";
 
-        AiResult result = client.parseResult(json, "gemma-test").orElseThrow();
+        AiResult result = client.parseResult(json, "codex-test").orElseThrow();
 
         assertThat(result.picks()).extracting(AiPick::showtimeId).containsExactly(1L, 2L);
         assertThat(result.picks()).extracting(AiPick::analysisPoint).containsExactly("#SF취향", "#몰입취향");
@@ -218,15 +216,11 @@ class LocalModelRecommendationClientTests {
 
     private RecommendationProperties properties() {
         return new RecommendationProperties(
-            null,
-            null,
-            null,
             20,
-            5,
-            5,
-            280,
-            96,
-            56,
+            12,
+            20,
+            900,
+            1700,
             List.of("http://localhost:5173")
         );
     }

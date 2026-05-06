@@ -2,6 +2,148 @@
 
 ## Current Task
 
+- task: `Investigate provider genre crawl availability`
+- phase: `investigation`
+- scope: `Determine whether CGV/Lotte/Megabox pages or APIs expose real movie genre metadata that the crawler can collect for recommendation tags, before adding any fallback enrichment.`
+- verification_target: `Inspect existing collector fields, live/raw provider payload samples, and DB raw_json/provider_meta evidence to decide which provider can supply canonical-ish genre source data and which still needs external metadata fallback.`
+- classification: `score_total=6; single-session; orchestration_value=low; agent_budget=0; evaluation_need=full`
+- score_breakdown: `provider API/page evidence 2; data fidelity risk 2; no write mutation 1; recommendation contract impact 1`
+- hard_triggers: `data_fidelity_risk; external_source_dependency; implementation_depends_on_discovery_result`
+- selected_rules: `read-only investigation; no DB/code mutation except STATE.md; preserve raw provider characteristics; do not infer tags from title-only evidence; no secret output`
+- selected_skills: `repo-local verification`
+- execution_topology: `single-session`
+- orchestration_value: `low`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the task is a sequential read-only audit plus live timing loop with no disjoint write set.`
+- reason: `User clarified the likely root cause is crawler-side missing genre metadata and said provider pages visibly show genre data. Correct next step is evidence-gathering against current collectors/provider responses before any enrichment implementation.`
+- write_sets: `STATE.md; ERROR_LOG.md only if material runtime errors occur`
+- contract_freeze: `Do not edit collectors, ingest, backend, or DB in this phase. Verify whether provider movie list/detail/showtime endpoints contain real genre fields, identify currently ignored fields, and separate provider-crawlable tags from external-metadata-only gaps.`
+- evaluation_need: `full; the decision changes whether recommendation tags should come from provider crawling or external enrichment.`
+- project_invariants: `No secrets in code or output, no arbitrary title-only genre inference, preserve provider raw data, keep recommendation strict gate honest, avoid new heavy external dependency unless optional and env-gated.`
+- task_acceptance: `provider genre normalization maps meaningful Korean/English provider genres to canonical keys; generic provider buckets like 일반콘텐트 do not become recommendation genres; enrichment is invoked by collect_all_to_tidb.py after writes; current live movie_tags get canonical tags for at least several non-animation selected genres where reliable metadata exists; API no longer returns empty for every non-animation genre with tagged current movies.`
+- non_goals: `Do not redesign the AI page, do not make fake genre tags, do not require local Codex desktop on deployed server, do not hardcode secrets, do not change DB schema unless a blocking need appears.`
+- hard_checks: `python -m py_compile scripts/ingest/collect_all_to_tidb.py scripts/ingest/enrich_movie_tags.py; enrichment validate-only/dry-run; focused live recommendation API smoke for genre choices; git diff --check`
+- llm_review_rubric: `Check that new tags are evidence-backed, generic provider category values stay excluded, server execution does not depend on local-only files/tools, and strict selected-genre filtering remains honest.`
+- evidence_required: `Collector field inventory, provider raw payload samples, DB raw_json/provider_meta evidence, crawlability verdict per provider, and minimal implementation recommendation.`
+- verification_evidence: `2026-05-06 read-only crawlability investigation found provider detail genre data is available for Lotte and Megabox but current ingest mostly reads shallow ticketing/master lists. Lotte ticketing list rows expose MovieGenreNameKR fields but current samples are null; Lotte movie detail endpoint /LCWS/Movie/MovieData.aspx MethodName=GetMovieDetailTOBE by representationMovieCode returned genres for sampled current movies: 왕과 사는 남자=사극/드라마, 살목지=공포(호러), 프로젝트 헤일메리=SF, 슈퍼 마리오 갤럭시=애니메이션, 악마는 프라다를 입는다 2=드라마, 마녀배달부 키키=애니메이션/드라마/가족. Megabox master list rows lack genre, but mobile detail HTML https://m.megabox.co.kr/movie-detail?rpstMovieNo={movieNo} contains <span>장르</span>; sampled current movies returned 마이클=드라마, 악마는 프라다를 입는다 2=드라마, 군체=스릴러/액션, 살목지=공포(호러), 리마인더스 오브 힘=드라마/로맨스, 슈퍼 마리오 갤럭시=애니메이션, 프로젝트 헤일메리=SF, 걸즈 밴드 크라이=애니메이션, 피어스=드라마/스릴러. CGV collector could not be tested because CGV_API_SECRET is not configured in this environment; public mobile CGV detail pages historically include genre text, but current repo CGV signed API path remains blocked without secret. Verdict: for Lotte/Megabox this is not an impossible external enrichment problem; it is a crawler depth problem. Minimal next implementation should add provider detail fetch + canonical normalization after movie list discovery, cache/throttle detail calls, store raw detail in raw_json or provider_meta_json, and feed canonical_genres_from_provider_row with MovieGenreNameKR1/2/3 and Megabox parsed genre.`
+
+## Retrospective
+
+- task: `Server-safe automatic recommendation genre tagging`
+- score_total: `9`
+- evaluation_fit: `full fit; the work needed normalization checks, live DB mutation evidence, selected-genre API smokes, bridge runtime smokes, and benchmark timing`
+- orchestration_fit: `single-session fit; Selfdex planning was read-only and the actual write path was tightly coupled across ingest helper, metadata enrichment, repository prefilter, service gating, and bridge startup`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `live smoke exposed two runtime issues after the tag fix: selected-genre DB prefilter was needed for long-tail family candidates, and bridge jobs needed --disable plugins in addition to --ignore-user-config; a restart script also hit the known PowerShell $db? interpolation bug and was corrected`
+- reviewer_findings: `new recommendation genre tags are evidence-backed only; generic provider buckets remain excluded; KOBIS enrichment is optional/env-gated; selected genres now prefilter in SQL so broad popular showtimes cannot hide rare tagged movies; no fake recommendations are made when a genre has no current tag evidence`
+- verification_outcome: `script compile, override validation, enrichment dry-run/write, live DB audit, focused Gradle tests, bootJar, Spring/bridge restart, all-genre API smoke, fast/precise 3-run benchmark, and git diff --check all completed`
+- next_gate_adjustment: `for future selected-genre bugs, check three layers before prompt/scoring edits: canonical metadata presence, SQL candidate eligibility window, and AI bridge status ok versus fallback`
+
+- task: `Lighten fast AI recommendation and repair result CTA details`
+- score_total: `7`
+- evaluation_fit: `full fit; the change touched browser-visible copy/CSS, official provider CTA fallbacks, and backend fast-mode defaults`
+- orchestration_fit: `single-session fit with one read-only explorer; implementation write sets were tightly coupled and cheaper to keep in main`
+- predicted_topology: `single-session + read-only explorer`
+- actual_topology: `single-session + read-only explorer`
+- spawn_count: `1`
+- rework_or_reclassification: `Selfdex generic collect_all_to_tidb.py suggestion was rejected as stale for this browser-comment request, then /goal was frozen around fast recommendation UX and CTA behavior`
+- reviewer_findings: `No fake price values were added; provider split is display-only from providerCode; booking CTA keeps safeUrl and falls back only to fixed http/https provider pages`
+- verification_outcome: `node --check passed for both JS mirrors; focused Gradle tests passed outside sandbox; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `For AI result-card fixes, first distinguish data-contract fields already present from UX copy gaps before adding backend model fields`
+
+- task: `Add post-crawl movie tag enrichment pipeline`
+- phase: `verified`
+- scope: `Turn the one-off current animation movie tag backfill into a repeatable post-crawl metadata enrichment step so selected-genre recommendations do not depend on provider APIs exposing normalized genres; widen candidate fetch depth for explicit selected-genre flows so popular repeated showtimes do not crowd out later tagged movies.`
+- verification_target: `A source-controlled override catalog can validate curated movie tag evidence, the enrichment script can dry-run and write current/future movie_tags without title-only inference, collect_all_to_tidb.py runs the enrichment after write by default, ambiguous title-only cases remain untagged, and animation-selected recommendations return a full tagged candidate set when enough tagged movies exist.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- reason: `Hard triggers: recommendation genre contract, live DB write path, external-provider metadata gaps, and post-crawl pipeline behavior. Selfdex suggested collect_all_to_tidb.py responsibility cleanup, but Socratic review showed refactoring alone does not solve missing provider genres; the smallest useful /goal is a bounded metadata-tag enrichment pipeline.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; scripts/ingest/collect_all_to_tidb.py; scripts/ingest/enrich_movie_tags.py; scripts/ingest/current_movie_tag_overrides.json; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java`
+- contract_freeze: `Do not infer genres from arbitrary title substrings. Keep showtime crawling as provider truth, then add recommendation tags from exact provider/external_movie_id overrides with explicit evidence notes. Run enrichment after successful collect_all_to_tidb.py writes by default, allow --skip-metadata-tags, and support validate-only/dry-run modes. For explicit selected genre flows, fetch a wider upcoming candidate pool before tag filtering so one heavily scheduled movie cannot hide later tagged movies. No secrets or raw auth output.`
+- verification_evidence: `override catalog validate-only passed with 8 exact-id entries and 8 tags; enrich_movie_tags.py dry-run/write matched 8 and left ambiguous Jjanggu title untagged; collect_all_to_tidb.py bounded Megabox write ran metadata_tag_enrichment by default; focused RecommendationServiceCandidateFilterTests passed outside sandbox; bootJar passed; localhost:5500 Spring + Codex bridge health is ready; animation-selected Codex smoke returned 3 recommendations including Mario dubbed, Kiki, and Girls Band Cry instead of only the first crowded movie.`
+
+- task: `Fill live showtime data via crawler ingest`
+- phase: `verified`
+- scope: `Run the repository crawler/ingest script to collect current and future Lotte/Megabox showtime data and write it into the configured TiDB/MySQL database for the local recommendation/runtime flow; if provider genre tags are too coarse for animation matching, add a small curated DB tag backfill only for externally verified animated titles.`
+- verification_target: `Dry-run enumerates provider dates, bounded write ingest completes without exposing secrets, showtimes/current-future row counts increase or remain populated, externally verified current animation titles get genre:animation tags, and localhost recommendation/search paths have fresh candidate data.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- reason: `Hard triggers: external provider crawl, live database writes, recommendation data freshness, and provider-specific raw data preservation. No subagent because the user did not authorize delegation and the task is one sequential dry-run/write/verify pipeline.`
+- write_sets: `STATE.md; ERROR_LOG.md if material crawl/DB/runtime failures occur; configured TiDB/MySQL data via scripts/ingest/collect_all_to_tidb.py and curated movie_tags backfill; ignored runtime logs under backend/build/** if needed`
+- contract_freeze: `Use the existing collector ingest script, do not edit collector code unless a blocking script bug appears, do not print DB passwords/API secrets/raw auth, dry-run provider date selection first, then run a bounded all-provider future-date write before expanding. Keep CGV out of this script because collect_all_to_tidb.py currently ingests Lotte and Megabox only. Do not infer animation from arbitrary title substrings; only add genre:animation tags for current movies with direct public/official evidence or existing curated poster metadata.`
+
+- task: `Connect Codex bridge runtime`
+- phase: `verified`
+- scope: `Start/restart the local Spring server and Codex bridge worker on localhost:5500 so the Codex-only recommendation provider is actually connected, not just configured in source.`
+- verification_target: `Provider health returns only codex with ready status, and a real POST /api/recommendations request through the Codex provider returns an ok/model-backed response rather than bridge_error or code-score fallback caused by Codex process launch failure.`
+- classification: `score_total=5; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `Runtime integration touches bridge token, Spring process, Codex CLI launch path, and live recommendation behavior, but no source-code contract change is requested. No subagent because the work is one tightly coupled local process handshake.`
+- write_sets: `STATE.md; ERROR_LOG.md if material runtime failures need recording; ignored runtime files under backend/build/**`
+- contract_freeze: `Do not print bridge tokens or Codex auth contents. Restart Spring and the bridge with the same ephemeral DABOYEO_AI_BRIDGE_TOKEN, prefer the copied workspace-local Codex executable if WindowsApps launch is blocked, keep startup showtime sync disabled, and verify with both provider health and an actual recommendation request.`
+
+- task: `Remove local model provider and rebuild Codex-only fallback`
+- phase: `verified`
+- scope: `Delete the local Gemma/LM Studio recommendation path from backend, frontend, scripts, and config; keep GPT through the Codex bridge as the only AI provider; rebuild the code-score fallback so fallback results are taste-anchored, score-calibrated, and written as natural recommendation copy instead of awkward tag fragments.`
+- verification_target: `Runtime recommendation requests resolve to Codex only, provider health exposes only Codex, no LM Studio/local Gemma env/config/script path remains in active source, frontend has no provider switch/local storage, fallback result copy is natural and score caps no-direct reserves, focused backend tests plus JS syntax checks plus bootJar/git diff checks pass when feasible.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- reason: `Hard triggers: recommendation provider contract, external-request/runtime config removal, AI bridge behavior, fallback scoring semantics, and frontend/static mirror UX. No subagent because the user did not request delegation and the backend/frontend/script changes share one tightly coupled provider contract.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; backend/src/main/java/kr/daboyeo/backend/config/RecommendationProperties.java; backend/src/main/java/kr/daboyeo/backend/domain/recommendation/RecommendationModels.java; backend/src/main/java/kr/daboyeo/backend/service/recommendation/**; backend/src/main/resources/application.yml; backend/README.md; backend/src/test/java/kr/daboyeo/backend/service/recommendation/**; scripts/ai_bridge_agent.py; .env.example; frontend/src/js/api/client.js; backend/src/main/resources/static/src/js/api/client.js; frontend/src/js/pages/daboyeoAi.js; backend/src/main/resources/static/src/js/pages/daboyeoAi.js; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Keep the existing recommendation request/response shape for browser compatibility, but treat blank/local/gpt/codex aiProvider inputs as Codex. Remove local LM Studio/Gemma and direct GPT HTTP provider branches from active runtime/config/script/UI. Keep the Codex bridge job flow and provider health endpoint with Codex only. Fallback must select distinct movies from scorer output, preserve taste-first ordering, cap no-direct taste reserves below direct matches, and return Korean narrative reason/analysis/value/caution fields without leaking internal tags or score mechanics.`
+
+- task: `Fix anime fallback genre evidence and score badge layout`
+- phase: `verified`
+- scope: `Stop fallback scoring from treating title keywords as genre evidence for animation, and make result-card score badges resilient to long movie titles.`
+- verification_target: `A movie with an animation-looking title but no explicit genre:animation tag must not count as a direct animation taste match; real tagged animation candidates still rank as direct matches; result card heading wraps without score badge overlap in frontend and Spring static CSS; focused scorer/service tests plus JS/CSS static checks pass.`
+- classification: `score_total=6; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `User flagged a browser layout break risk and a recommendation correctness bug caused by title-based genre inference. The fix is a tight domain-model/CSS/test patch with no delegation value.`
+- write_sets: `STATE.md; backend/src/main/java/kr/daboyeo/backend/domain/recommendation/RecommendationModels.java; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationScorer.java if needed; backend/src/test/java/kr/daboyeo/backend/service/recommendation/**; frontend/src/css/daboyeoAi.css; backend/src/main/resources/static/src/css/daboyeoAi.css; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Do not infer genre:animation or other content genres from movie title substrings in live showtime candidates. Use explicit movie_tags/provider metadata for genre evidence; title may remain display text only. Keep screen/age convenience tags only when they do not create genre matches. Result card heading should reserve space for the score badge and allow long titles to wrap naturally.`
+
+- task: `Make fallback ranking require selected genre metadata`
+- phase: `verified`
+- scope: `Rebuild fallback/AI candidate selection so selected genres are scored from explicit candidate genre tags and non-matching reserve candidates are not shown as recommendations when a genre was explicitly selected.`
+- verification_target: `When preferredGenres contains animation and no candidate has genre:animation, recommendation returns a no selected-genre candidate response instead of 왕사남/other reserve movies; when explicit genre:animation exists, only tagged animation candidates are sent to Codex/fallback; title-only anime-looking candidates still do not qualify; focused recommendation tests, bootJar, and localhost smoke pass.`
+- classification: `score_total=7; single-session; orchestration_value=low; agent_budget=0; evaluation_need=full`
+- reason: `Hard trigger: recommendation acceptance semantics changed from reserve-fill to explicit selected-genre gating. The user explicitly rejected non-animation reserve output after selecting animation, so fallback ranking must use tag/genre evidence as a candidate eligibility contract.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceQualityTests.java if needed`
+- contract_freeze: `If survey.preferredGenres is non-empty, recommendation eligibility requires an explicit candidate genre tag overlap with at least one selected genre. Do not fill the result list with poster-genre, mood, audience, schedule, or practical reserve candidates when selected-genre matches are absent or fewer than three. If no explicit selected-genre match exists, return a no_selected_genre_candidates style response with an honest message instead of recommendations. Keep no-genre-selected flows able to use broader fallback scoring.`
+
+- task: `Make AI genre selection single-choice`
+- phase: `implementation`
+- scope: `Change the AI recommendation genre step from multi-select up to five genres to one selected genre only, while keeping the backend preferredGenres array contract for compatibility.`
+- verification_target: `Frontend and Spring static daboyeoAi.js expose GENRE_LIMIT=1, selecting a new genre replaces the old one, genre copy says one genre, HTML module cache keys are bumped, and localhost serves the updated module.`
+- classification: `score_total=4; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `User clarified the missed requested behavior. This is a narrow browser-visible frontend/static mirror change with cache-bust and runtime refresh, no backend API contract change, and no delegation value.`
+- write_sets: `STATE.md; frontend/src/js/pages/daboyeoAi.js; backend/src/main/resources/static/src/js/pages/daboyeoAi.js; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Genre step allows at most one selected genre. Clicking the selected genre clears it; clicking a different genre replaces the selection. Continue remains disabled until one genre is selected. Send the selected genre as the existing one-item preferredGenres array. Mirror source and Spring static files and bump cache keys.`
+
+- task: `Force fresh AI poster seed resources after poster rename`
+- phase: `implementation`
+- scope: `User reports the AI page still looks unapplied after poster filename/tag/duplicate merge. Server API already returns English slug poster URLs, so force the browser-visible AI page to reload the latest module and poster-seed response.`
+- verification_target: `Served daboyeoAi.html references a new cache key; frontend/static getPosterSeed adds a cache-busting query value and no-store fetch option; localhost poster-seed still returns 18 slug paths for default and animation.`
+- classification: `score_total=3; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `Browser-visible stale state/cache symptom after verified backend asset/tag change. Tiny static/frontend mirror hotfix with no backend contract change and no delegation value.`
+- write_sets: `STATE.md; frontend/src/js/api/client.js; backend/src/main/resources/static/src/js/api/client.js; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Keep poster-seed API behavior unchanged, add only client-side fresh fetch/cache-bust behavior for poster seed loading, and bump AI page module/style cache keys in both frontend source and Spring static mirror.`
+
+- task: `Rename poster assets to English title slugs and enrich poster tags from web research`
+- phase: `implementation`
+- scope: `Rename every movie/anime poster WebP in frontend and Spring static mirrors from rank/movieCd filenames to English movie-title slugs, update poster manifests to the new paths, enrich poster tag JSON from web-researched title/genre/context evidence, and merge/delete anime duplicates that currently live in the general movie poster pool.`
+- verification_target: `All manifest posterPath/posterFile/staticPosterFile references point to existing renamed files; no old numeric poster filenames remain under movie/anime poster directories except .gitkeep; movie-pool animation duplicates are removed after matching movieCd against the anime pool; PosterSeedService still loads enriched tags; localhost poster-seed APIs return valid renamed poster URLs.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- reason: `Hard triggers: shared recommendation data contract, asset path rewrite, and user-requested duplicate deletion. Scope spans generated poster assets, backend recommendation manifests, frontend/static mirrors, web-researched tag data, focused backend loading tests, bootJar, and localhost API checks. No subagents because current tool policy requires explicit user request for delegation and write ownership is one tightly coupled manifest/assets slice.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; frontend/src/assets/R2/posters/movie/**; frontend/src/assets/R2/posters/anime/**; backend/src/main/resources/static/src/assets/R2/posters/movie/**; backend/src/main/resources/static/src/assets/R2/posters/anime/**; backend/src/main/resources/recommendation/korea-boxoffice-top50-posters.json; backend/src/main/resources/recommendation/korea-animation-boxoffice-top30-posters.json; backend/src/main/resources/recommendation/korea-boxoffice-top50-poster-tags.json; backend/src/main/resources/recommendation/korea-animation-boxoffice-top30-poster-tags.json; backend/src/test/java/kr/daboyeo/backend/service/recommendation/PosterSeedServiceTests.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/PreferenceProfileBuilderTests.java`
+- contract_freeze: `Use English movie-title slugs for poster filenames without rank/movieCd noise unless a collision requires a suffix. Prefer KOBIS/Wikipedia/Wikidata-style English title and genre evidence; keep KOBIS movieCd as the stable manifest id. For movieCd overlaps between movie and anime pools, keep the anime-pool asset/manifest/tag entry, remove the movie-pool duplicate entry, and delete the duplicate movie-pool files in frontend and Spring static mirrors. Enrich only recommendation tag JSON fields already consumed by PosterSeedService unless code changes are explicitly needed. Mirror every frontend poster rename into Spring static resources.`
+
+- task: `Limit poster choice flow to 18 items with visible 3-page progress`
+- phase: `implementation`
+- scope: `Reduce AI poster selection seed requests from 40 to 18 and make the poster pagination visibly communicate that the flow has 3 pages of 6 posters.`
+- verification_target: `Frontend and Spring static AI page request 18 posters, render exactly 3 page buttons when 18 posters are available, and cache-busted Spring-served HTML loads the updated module.`
+- classification: `score_total=4; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `Narrow frontend/static mirror UX adjustment with no backend API contract change; keep page size 6, reduce poster limit to 18, show one page/total text indicator that updates on arrow navigation, and verify with JS syntax plus static checks.`
+- write_sets: `STATE.md; frontend/src/js/pages/daboyeoAi.js; backend/src/main/resources/static/src/js/pages/daboyeoAi.js; frontend/src/css/daboyeoAi.css; backend/src/main/resources/static/src/css/daboyeoAi.css; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Set POSTER_LIMIT=18, keep POSTER_BATCH_SIZE=6, render one non-button page/total text indicator above the poster grid, update the number through existing previous/next arrow navigation, mirror frontend source to Spring static resources, and bump module cache keys.`
+
 - task: `Wire anime poster pool into recommendation flow`
 - phase: `verified`
 - scope: `Connect the verified anime poster manifest/assets to the recommendation poster-selection flow. When animation is selected as a preferred genre, the poster seed API and frontend should show the R2/posters/anime pool first while preserving the existing general movie pool for other genres.`
@@ -13,81 +155,136 @@
 
 ## Next Task
 
-- task: `Wire anime poster pool into recommendation flow`
-- status: `active`
-- scope: `애니 장르 선택 시 애니 전용 poster seed를 우선 노출하도록 PosterSeedService/API/frontend selection logic을 연결한다.`
-- non_goal: `No new poster scraping or recommendation scoring rewrite. The anime pool is namespaced at the seed id layer to avoid movieCd collisions with the general movie pool.`
+- task: `none`
+- status: `not queued`
+- scope: `Current request owns the active poster asset/tag cleanup until verification finishes.`
+- non_goal: `No new poster scraping, DB write, recommendation scoring rewrite, or UI redesign beyond existing 18-poster page indicator work.`
 
 ## Orchestration Profile
 
 - score_total: `8`
-- score_breakdown: `2 backend API contract change, 2 poster seed id collision risk, 1 frontend selection flow change, 1 static mirror sync, 1 focused test coverage, 1 runtime restart and push`
-- hard_triggers: `API behavior changes; recommendation preference input changes; poster seed id collision must be avoided`
-- selected_rules: `freeze explicit poster pool contract before writes; keep general poster seed behavior backward-compatible; namespace anime seed ids to avoid movieCd collisions; pass selected frontend genres to poster-seed API; mirror frontend JS to Spring static resources; verify focused backend tests, JS syntax, runtime API/static checks, commit, and push`
-- selected_skills: `none`
+- score_breakdown: `2 recommendation genre contract, 2 DB tag write path, 2 provider metadata gap, 1 ingest pipeline integration, 1 candidate fetch depth/runtime smoke`
+- hard_triggers: `data_fidelity_risk; live database write path; recommendation response quality semantics; external provider metadata gap`
+- selected_rules: `use selfdex read-only plan only as input; freeze tag evidence contract before writes; do not infer genre from title-only matches; verify validate-only, dry-run/write, compile, and localhost recommendation smoke`
+- selected_skills: `selfdex`
 - execution_topology: `single-session`
 - orchestration_value: `medium`
 - agent_budget: `0`
-- spawn_decision: `no spawn; relocation and manifest rewrite are tightly coupled and easier to verify in one lane`
-- efficiency_basis: `One path contract spans all touched files, so direct main editing avoids handoff overhead.`
-- selection_reason: `User fixed /goal to finish the queued anime recommendation poster-pool wiring and commit/push.`
+- spawn_decision: `no spawn; user invoked selfdex, but the write set is one small sequential script/catalog/integration patch with one DB verification path`
+- efficiency_basis: `Override catalog schema, enrichment script, collect_all integration, and runtime smoke share one tight contract; local implementation is cheaper than handing off overlapping writes.`
+- selection_reason: `User asked to review the Selfdex plan with Socratic questioning and start the /goal for the missing-provider-genre problem.`
 
 ## Evaluation Plan
 
-- evaluation_need: `light`
+- evaluation_need: `full`
 - project_invariants:
   - `Do not print, commit, or document real DB passwords, OAuth tokens, cookies, API keys, tunnel tokens, or OAuth auth paths.`
-  - `Do not expose secrets, private Kakao admin keys, Codex auth, bridge token, local model URL, or local filesystem paths to browser responses.`
+  - `Do not expose secrets, private Kakao admin keys, Codex auth, bridge token, or local filesystem paths to browser responses.`
   - `Do not overwrite unrelated frontend/backend user edits or current R2 poster assets.`
-  - `Preserve existing recommendation flow, Codex bridge runtime, and poster-seed behavior.`
+  - `Preserve existing recommendation flow, Codex bridge runtime, poster-seed behavior, and same-origin browser compatibility.`
   - `Preserve same-origin Spring-served frontend behavior on localhost:5500.`
   - `Preserve /api/showtimes/refresh as a manual server API unless removal becomes necessary, but do not call it from browser entry flows.`
 - task_acceptance:
-  - `PosterSeedService loads both general movie and anime poster manifests/tag files.`
-  - `Default poster-seed API keeps general movie poster behavior and existing general ids.`
-  - `poster-seed API accepts selected genres and prioritizes the anime pool when animation is selected.`
-  - `Anime seed ids are namespaced so duplicate movieCd values do not collide with the general pool.`
-  - `Frontend poster loading sends selected genres before rendering the poster step, and Spring static JS mirror matches.`
-  - `Commit and push the completed goal after verification.`
+  - `Selfdex read-only plan is considered but not followed blindly when it misses the current genre-metadata failure.`
+  - `Current movie tag overrides are exact provider/external_movie_id entries with evidence notes, not loose title substring rules.`
+  - `enrich_movie_tags.py supports --validate-only, --dry-run, and write modes.`
+  - `collect_all_to_tidb.py runs metadata tag enrichment after successful writes unless --skip-metadata-tags is passed.`
+  - `Animation-selected recommendation smoke returns three tagged recommendations when at least three distinct tagged movies exist, and 짱구/Audition 109 stays without genre:animation.`
 - non_goals:
-  - `No new poster scraping or external source fetch.`
-  - `No scoring calibration rewrite, DB writes, provider crawling, schema migration, or unrelated cleanup.`
+  - `No schema migration, broad collector refactor, CGV signed API repair, frontend redesign, poster asset change, fuzzy title matching, or secret/token disclosure.`
 - hard_checks:
-  - `Update STATE before backend/frontend edits.`
-  - `Add focused backend coverage for default vs animation poster seed behavior and anime id lookup.`
-  - `Run focused Gradle recommendation tests when feasible.`
-  - `Run node --check on touched frontend/static JS.`
-  - `Run git diff --check and runtime localhost checks before commit.`
+  - `Run enrich_movie_tags.py --validate-only.`
+  - `Run enrich_movie_tags.py --dry-run with safe DB output only.`
+  - `Run enrichment write against configured TiDB if dry-run matches the frozen contract.`
+  - `Run python -m compileall -q scripts/ingest.`
+  - `Run focused RecommendationService candidate/filter tests if service candidate-depth code changes.`
+  - `Run a localhost animation recommendation smoke.`
 - llm_review_rubric:
-  - `Do not let Codex/GPT score no-direct reserve candidates as perfect taste fits.`
-  - `Do not return fewer than 3 final items merely because direct taste matches are sparse when scored reserves exist.`
+  - `Do not reintroduce title-only genre inference.`
+  - `Do not make provider generic tags like 일반콘텐트 count as selected genre evidence.`
+  - `Do not print DB passwords, API secrets, cookies, or raw auth payloads.`
+  - `Do not make the ingestion script depend on external web lookups during normal crawl writes.`
 - evidence_required:
-  - `default poster API returns movie poster path`
-  - `animation poster API returns anime poster path and namespaced id`
-  - `focused backend test result`
-  - `frontend/static JS syntax check`
-  - `git diff --check, commit hash, push result`
+  - `selfdex plan verdict`
+  - `validate-only result`
+  - `dry-run/write tag enrichment result`
+  - `compileall result`
+  - `localhost recommendation smoke result`
 
 ## Writer Slot
 
 - writer_slot: `main`
-- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; docs/TASK_RETROSPECTIVE.md; .gitignore local Gradle runtime ignore; backend/src/main/java/kr/daboyeo/backend/service/recommendation/PosterSeedService.java; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/main/java/kr/daboyeo/backend/api/recommendation/RecommendationController.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/*PosterSeed*Tests.java; frontend/src/js/api/client.js; frontend/src/js/pages/daboyeoAi.js; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/js/api/client.js; backend/src/main/resources/static/src/js/pages/daboyeoAi.js; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; scripts/ingest/collect_all_to_tidb.py; scripts/ingest/enrich_movie_tags.py; scripts/ingest/current_movie_tag_overrides.json; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; configured TiDB movie_tags through the new enrichment script`
 
 ## Contract Freeze
 
-- status: `frozen for anime poster pool recommendation wiring`
-- source_basis: `Verified poster split provides general movie assets under R2/posters/movie and anime assets under R2/posters/anime. Current API/frontend only request the default general poster seed, so selected animation genres cannot pull the richer anime pool.`
-- output_code: `Load a second anime seed pool, namespace anime seed ids, expose genre-aware poster seed API, pass selected frontend genres into getPosterSeed, and mirror JS changes to Spring static resources.`
-- output_tests: `Focused PosterSeedService/PreferenceProfileBuilder tests, node --check for touched JS, git diff --check, localhost API checks for default and animation poster seed paths, commit, and push.`
-- output_docs: `STATE verification note and retrospective entry; ERROR_LOG.md only if material verification failure occurs.`
-- write_sets: `STATE.md; ERROR_LOG.md if needed; docs/TASK_RETROSPECTIVE.md; .gitignore local Gradle runtime ignore; PosterSeedService/RecommendationService/RecommendationController; focused recommendation tests; frontend and backend static recommendation JS plus daboyeoAi module cache-bust HTML`
+- status: `frozen for post-crawl metadata tag enrichment plus selected-genre fetch depth repair`
+- source_basis: `Provider showtime APIs are valid for schedules but too coarse for recommendation genres. The Socratic answer is to keep crawler data untouched and add a separate exact-id metadata enrichment step that writes explicit movie_tags only from curated evidence. Runtime smoke then showed 8 tagged future movies but only 2 recommendations because the first 240 upcoming candidates were crowded by repeated Mario showtimes before genre filtering.`
+- output_code: `Add scripts/ingest/current_movie_tag_overrides.json and scripts/ingest/enrich_movie_tags.py; wire collect_all_to_tidb.py to run enrichment after write by default with a skip flag; widen RecommendationService candidate fetch depth only when explicit preferred genres are selected.`
+- output_tests: `validate-only, DB dry-run/write enrichment, compileall, focused RecommendationService candidate/filter tests, animation-selected recommendation smoke, and a DB assertion that 짱구/Audition 109 has no genre:animation tag.`
+- output_docs: `STATE verification note; ERROR_LOG.md if material failures occur.`
+- write_sets: `STATE.md; ERROR_LOG.md if needed; scripts/ingest/collect_all_to_tidb.py; scripts/ingest/enrich_movie_tags.py; scripts/ingest/current_movie_tag_overrides.json; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; configured TiDB movie_tags`
 
 ## Reviewer
 
 - review_required: `self-review`
-- reviewer_focus: `Confirm default movie poster seed remains backward-compatible, animation selected genres prioritize anime posters, namespaced anime ids resolve in profile building, and no unrelated dirty changes are reverted.`
+- reviewer_focus: `Confirm the patch solves missing provider genres without title-only inference, keeps normal crawl writes deterministic/offline, and preserves explicit selected-genre gating.`
 
 ## Last Update
+
+- timestamp: `2026-05-06 14:47:24 +09:00`
+- note: `Verified the score_total=8 single-session /goal. The final fix is exact provider/external_movie_id metadata tag enrichment plus a selected-genre candidate fetch-depth repair so popular repeated showtimes cannot crowd out later tagged movies before genre filtering. Focused tests, bootJar, script validation, collect_all integration, DB tag assertions, and localhost Codex animation smoke passed; sandbox Gradle/native and bridge CLI argument mismatches were recorded or handled as resolved runtime issues.`
+
+- timestamp: `2026-05-06 14:39:00 +09:00`
+- note: `Expanded the frozen write set after verification found 8 future animation-tagged movies but the animation recommendation smoke returned only 2 items. Root cause: RecommendationService queried only the first 240 upcoming showtime rows before selected-genre filtering, so heavily repeated Mario showtimes crowded out later tagged movies. The service patch is limited to widening candidate fetch depth for explicit selected-genre flows.`
+
+- timestamp: `2026-05-06 14:17:00 +09:00`
+- note: `Verified crawler data fill. Dry-run selected 2026-05-06, 2026-05-07, and 2026-05-08 for both Lotte and Megabox. First bounded write upserted 80 Lotte and 80 Megabox showtimes; expanded bounded write upserted 300 Lotte and 300 Megabox showtimes. Final DB counts: showtimes_total=1596, current/future=1596, movies=193, theaters=249, screens=349, movie_tags=296, max starts_at=2026-05-08 22:20:00, by provider LOTTE_CINEMA=310 and MEGABOX=1286 current/future showtimes. Provider raw genre tags were generic, so externally verified current animation titles received 8 curated genre:animation tags, while 짱구/Audition 109 remained untagged. /api/live/nearby returned 8 results, /api/health stayed ok, provider health stayed codex ready, and animation-selected POST /api/recommendations returned status=ok, model=codex, count=3. Retrospective: score_total=8, evaluation_fit=full fit, predicted_topology=single-session, actual_topology=single-session, spawn_count=0, rework_or_reclassification=expanded from crawler-only ingest to curated animation tag backfill after provider tags proved too coarse, reviewer_findings=do not rely on title-only inference and report CGV exclusion, verification_outcome=passed, next_gate_adjustment=for selected-genre recommendations verify both future showtimes and explicit genre tags after ingest.`
+
+- timestamp: `2026-05-06 14:02:25 +09:00`
+- note: `Opened a new score_total=8 single-session ingest task after the user asked to run the crawler script and fill data. The frozen contract is to use scripts/ingest/collect_all_to_tidb.py, dry-run all-provider future date selection first, then run a bounded Lotte/Megabox write, avoid secret disclosure, and verify DB current/future showtime coverage plus localhost runtime behavior.`
+
+- timestamp: `2026-05-06 14:14:46 +09:00`
+- note: `Expanded the ingest contract after runtime smoke showed animation selection still returned no_selected_genre_candidates even though current showtimes now include animated titles. Provider raw tags are generic 일반콘텐트, so the next bounded DB write is a curated movie_tags backfill for externally verified animation titles only; ambiguous title-only cases such as 짱구/Audition 109 stay untagged.`
+
+- timestamp: `2026-05-06 13:26:19 +09:00`
+- note: `Verified Codex bridge runtime connection. Restarted localhost:5500 Spring and the Python bridge worker with one shared ephemeral bridge token and startup sync disabled, using the workspace-local backend/build/codex-bin/codex.exe path because the previous WindowsApps/default Codex launch produced WinError 5 during actual jobs. /api/health returned ok on Spring PID 7648, provider health returned one ready codex provider, and a live POST /api/recommendations smoke with aiProvider=codex returned status=ok, model=codex, and 3 recommendations. Retrospective: score_total=5, evaluation_fit=light fit, predicted_topology=single-session, actual_topology=single-session, spawn_count=0, rework_or_reclassification=runtime launch path switched from default/WindowsApps to copied workspace Codex executable, reviewer_findings=heartbeat alone was insufficient so real recommendation smoke was required, verification_outcome=passed, next_gate_adjustment=always verify Codex bridge with a job completion, not provider heartbeat only.`
+
+- timestamp: `2026-05-06 13:23:55 +09:00`
+- note: `Opened a new score_total=5 single-session runtime task to connect the Codex bridge. The contract is to restart Spring and the bridge with one shared ephemeral token if needed, avoid printing token/auth contents, keep startup sync disabled, and verify readiness with provider health plus a real Codex recommendation smoke rather than heartbeat alone.`
+
+- timestamp: `2026-05-06 12:55:35 +09:00`
+- note: `Verified selected-genre fallback gating. RecommendationService now filters AI/fallback candidate pools to explicit selected-genre overlaps when preferredGenres is non-empty, returns no_selected_genre_candidates instead of reserve movies when no tagged candidate exists, and does not send mismatched candidates to Codex. Focused RecommendationService/Scorer tests and bootJar passed outside sandbox after the known native-platform.dll failure, localhost:5500 restarted on PID 20516 with /api/health 200, and an animation-selected smoke returned no_selected_genre_candidates with zero recommendations instead of non-animation fallback items.`
+
+- timestamp: `2026-05-06 13:03:00 +09:00`
+- note: `Opened a new score_total=7 single-session task after the user rejected non-animation fallback results after selecting animation. The frozen contract now treats selected genre as explicit candidate eligibility: if preferredGenres is non-empty, recommendations must come only from candidates with overlapping genre tags, and no explicit selected-genre matches should return a no-candidate style response instead of reserve movies.`
+
+- timestamp: `2026-05-06 12:47:00 +09:00`
+- note: `Verified anime fallback evidence and score badge layout repair. ShowtimeCandidate.allTags no longer derives genre/content tags from title substrings; explicit movie_tags still drive genre matches. Added RecommendationScorer regressions proving title-only anime-like names do not match genre:animation while explicit genre:animation still scores higher. The result heading now uses a two-column grid with minmax title space, nowrap score badge, and overflow wrapping for long titles in both frontend and Spring static CSS. Focused RecommendationScorer/Service tests passed outside sandbox, bootJar passed, title-keyword inference leftover search returned no active-source matches, localhost:5500 restarted from PID 10116 to PID 20196 with /api/health 200, served HTML/CSS contains 20260506-score-layout and the grid/wrap rules, a live animation-genre fallback request returned only 68-point reserve items with direct-match caution, and git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-06 12:45:00 +09:00`
+- note: `Opened a new score_total=6 single-session task after the user flagged anime fallback correctness and score badge layout. The frozen contract now says live showtime genre evidence must come from explicit movie tags/provider metadata, not title substrings; result-card headings must reserve score badge space so long titles wrap without overlap.`
+
+- timestamp: `2026-05-06 12:32:00 +09:00`
+- note: `Verified Codex-only recommendation cleanup. Active local/Gemma/LM Studio provider paths were removed from backend config/domain/client/service/script/frontend/static mirrors and legacy aiProvider values now resolve to Codex for compatibility. Fallback scoring/copy now keeps no-direct taste reserves capped below direct taste matches and emits Korean narrative reason/analysis/value/caution copy instead of tag fragments. Leftover search for LocalModel/local model/Gemma/LM Studio/provider switch env/UI terms returned no active-source matches, node --check passed for both AI page JS mirrors, py_compile passed for scripts/ai_bridge_agent.py, focused recommendation Gradle tests passed outside sandbox, bootJar passed, git diff --check passed with CRLF warnings only, localhost:5500 is running from PID 13548, served daboyeoAi.html has cache key 20260506-codex-only, served JS exposes GPT (Codex) only, and provider health returns one provider: codex.`
+
+- timestamp: `2026-05-06 11:43:00 +09:00`
+- note: `Reclassified the new user goal as score_total=8, single-session, evaluation_need=full. The active contract is now Codex-only recommendation runtime plus fallback quality repair: remove local Gemma/LM Studio and direct GPT HTTP provider branches, keep aiProvider payload compatibility by resolving legacy inputs to Codex, remove frontend provider switching, keep Codex bridge health/job flow, and rebuild fallback copy/scoring so code-score results are less awkward and no-direct reserves stay below direct taste matches.`
+
+- timestamp: `2026-05-06 11:31:00 +09:00`
+- note: `Verified AI genre single-choice hotfix. The genre step now uses GENRE_LIMIT=1, selectedGenres normalizes and slices to one item, toggleGenre clears the selected genre when clicked again and replaces the previous genre when a different one is clicked, and the copy now says one genre only. The frontend and Spring static daboyeoAi.js mirrors import client.js with cache key 20260506-single-genre, and both daboyeoAi.html mirrors use the same module/style cache key. node --check passed for both JS mirrors, bootJar passed, localhost:5500 restarted from PID 16984 to PID 14000 with startup sync disabled, /api/health returned 200, served daboyeoAi.html has the single-genre cache key and no prior poster cache keys, served daboyeoAi.js has GENRE_LIMIT=1, replacement toggle assignment, and no 5-item genre-limit text, and git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-06 11:18:00 +09:00`
+- note: `Verified browser-visible freshness hotfix after user reported the AI page looked unapplied. Server inspection showed localhost:5500 already returned English slug poster URLs, but the AI page still referenced the prior 20260506-poster-page-text module/style cache key and poster-seed requests had no explicit no-store/cache-bust. Updated frontend and Spring static client.js so getPosterSeed appends a Date.now() query value and fetches with cache: no-store, bumped both daboyeoAi.html cache keys to 20260506-poster-rename-fresh, rebuilt bootJar, and restarted localhost:5500 from PID 13688 to PID 16984. node --check passed for both client.js mirrors, bootJar passed, /api/health returned 200, served daboyeoAi.html has the fresh key and no old key, served client.js has Date.now() and no-store, default poster-seed with cache-bust returned 18 movie slug paths, animation poster-seed returned 18 anime slug paths, and git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-06 11:08:00 +09:00`
+- note: `Verified poster filename rename, tag enrichment, and anime duplicate merge. All movie/anime WebP files in frontend and Spring static mirrors now use English title slugs; general movie pool is 46 entries after removing anime-owned duplicate movieCd values 20136803, 20197803, 20235974, and 20252432, while anime pool remains 30 entries. Manifest/tag integrity check passed with movie=46, anime=30, tag counts matching manifests, zero movie/anime movieCd overlap, all posterPath/posterFile/staticPosterFile references resolving, and no stale numeric rank/movieCd filename pattern in API output. Tags now include titleEn and enriched genres/moods/pace/audiences/avoid/ageRating/tagSources based on KOBIS plus Wikipedia/Wikidata-style public title/genre research and conservative local taxonomy normalization. Focused PosterSeedServiceTests and PreferenceProfileBuilderTests passed outside sandbox after the known native-platform.dll failure; bootJar passed outside sandbox; node --check passed for both daboyeoAi.js mirrors; git diff --check passed with CRLF warnings only. Runtime was refreshed from stale PID 16648 to PID 13688 on localhost:5500 with startup sync disabled, /api/health returned 200, default poster-seed limit=18 returned 18 movie slug paths with 0 anime paths and 0 stale numeric paths, animation poster-seed limit=18 returned 18 namespaced anime slug paths, and sampled static assets returned 200. Retrospective: score_total=8, evaluation_fit=full matched the asset/data contract risk, predicted_topology=single-session, actual_topology=single-session, spawn_count=0, rework/reclassification=runtime stale PID only, reviewer_findings=none after self-review, verification_outcome=passed, next_gate_adjustment=use netstat before Spring restarts because Get-NetTCPConnection can miss the live listener in this environment.`
+
+- timestamp: `2026-05-06 10:38:00 +09:00`
+- note: `Verified single text poster page indicator follow-up. Replaced the three page buttons with one non-button ai-poster-page-indicator text node that renders currentPage / totalBatches from state.posters.activeBatchIndex, so existing previous/next arrow navigation changes only the number. Removed renderPosterRounds, ai-poster-rounds, and ai-round-button code/styles from frontend and Spring static mirrors. Cache keys were bumped to 20260506-poster-page-text. node --check passed for both JS mirrors, bootJar passed outside the sandbox after the known native-platform.dll failure, localhost:5500 restarted from PID 10344 to PID 16648 with /api/health 200, served HTML/JS/CSS confirmed the new cache key, indicator code, and no old round-button code, and git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-06 10:29:00 +09:00`
+- note: `Verified 18-poster 3-page AI poster-step UX adjustment. Frontend and Spring static daboyeoAi.js now request POSTER_LIMIT=18 while keeping POSTER_BATCH_SIZE=6. Poster page controls render above the grid as page/total labels such as 1 / 3 instead of open-ended round labels, with active and completed states styled in both CSS mirrors. daboyeoAi.html CSS and JS cache keys were bumped to 20260506-poster-pages. node --check passed for frontend and Spring static JS, bootJar passed outside the sandbox after the known native-platform.dll failure, stale localhost:5500 PID 18824 was replaced with PID 10344, /api/health returned 200, served HTML/JS/CSS all contained the updated cache keys and poster page code, and animation poster-seed limit=18 returned 18 anime paths for 3 pages. git diff --check passed with CRLF warnings only.`
 
 - timestamp: `2026-05-05 20:25:01 +09:00`
 - note: `Verified anime poster pool recommendation wiring. PosterSeedService now loads general movie and anime seed pools, namespaces anime seed ids as anime:<movieCd>, keeps default poster-seed calls on R2/posters/movie, and prioritizes R2/posters/anime when genres includes animation or genre:animation. RecommendationController/Service accept optional genres, frontend getPosterSeed passes selectedGenres, daboyeoAi module cache keys were bumped, and Spring static JS/HTML mirrors match. Focused PosterSeedServiceTests and PreferenceProfileBuilderTests passed, bootJar passed, node --check passed for touched frontend/static JS, git diff --check passed with CRLF warnings only, WORKSPACE_CONTEXT verification commands ran, localhost default poster API returned 8 movie paths with 0 anime ids, localhost animation API returned 8 anime paths with 8 namespaced ids, comma genre:animation,sf also returned anime paths, and localhost:5500 is healthy on PID 27076. Self-review found no blocking issues. Commit and push remain as the final handoff step for this /goal.`
@@ -1112,6 +1309,18 @@
 
 ## Retrospective
 
+- task: `Make fallback ranking require selected genre metadata`
+- score_total: `7`
+- evaluation_fit: `full fit; the user-facing failure was a recommendation correctness contract, so tests, build, and live localhost smoke were all needed`
+- orchestration_fit: `single-session fit; candidate ranking, Codex handoff, fallback output, and focused tests all shared one eligibility rule`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the previous reserve-fill behavior was intentionally tightened after the user rejected non-animation results for an animation-selected flow`
+- reviewer_findings: `selected genres now act as explicit candidate eligibility; title-only anime-looking names and non-matching reserve movies are blocked from Codex/fallback when a genre is selected`
+- verification_outcome: `focused recommendation tests passed outside sandbox; bootJar passed; localhost:5500 restarted on PID 20516; animation-selected smoke returned no_selected_genre_candidates with zero recommendations`
+- next_gate_adjustment: `when a user selects a genre, prefer honest no-candidate output over filling cards from weaker non-genre signals`
+
 - task: `GPT recommendation prompt depth differentiation`
 - score_total: `6`
 - evaluation_fit: `full fit; the change affected prompt contract, provider config, service sanitization, result-card rendering, and running jar state`
@@ -1569,3 +1778,39 @@
 - reviewer_findings: `direct taste candidates remain first, reserve candidates can fill empty slots, Codex/GPT now return model score s, and server validation caps no-direct taste reserves at 74`
 - verification_outcome: `focused recommendation service/client/scorer tests passed outside sandbox; bootJar passed; runtime local fallback and Codex smokes returned 3 action/SF recommendations with reserve scores below the direct match`
 - next_gate_adjustment: `for sparse live DB pools, prefer tiered reserve fill plus visible lower scores over strict exclusion that makes the UI look empty`
+
+- task: `Remove local model provider and rebuild Codex-only fallback`
+- score_total: `8`
+- evaluation_fit: `full fit; provider contract removal, fallback quality, frontend/static mirrors, bridge script, tests, build, and localhost served checks all needed evidence`
+- orchestration_fit: `single-session fit; backend provider enum/config/client/service, bridge script, frontend payload, and tests shared one Codex-only contract`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the user moved from genre/poster flow polish to removing the local model architecture and recalibrating awkward code-score fallback output`
+- reviewer_findings: `active source no longer exposes LM Studio/Gemma/local provider selection, legacy provider inputs resolve to Codex, fallback hides internal tags and caps no-direct reserves at 68`
+- verification_outcome: `leftover search found no active local-model/provider-switch terms; node --check passed for both AI page JS mirrors; py_compile passed for ai_bridge_agent.py; focused Gradle tests and bootJar passed outside sandbox; localhost:5500 serves codex-only HTML/JS and provider health returns only codex`
+- next_gate_adjustment: `when the provider set changes, verify request mapping, bridge worker polling, browser payload, static mirror cache keys, and fallback copy together instead of treating them as separate cleanups`
+
+- task: `Fix anime fallback genre evidence and score badge layout`
+- score_total: `6`
+- evaluation_fit: `light fit; acceptance was concrete and covered by focused scorer/service tests, static CSS checks, and one live fallback smoke`
+- orchestration_fit: `single-session fit; the domain tag derivation and CSS heading repair were a tight small patch with no delegation value`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the previous Codex-only fallback work still left title keyword genre inference in ShowtimeCandidate.allTags, which the browser result exposed`
+- reviewer_findings: `movie titles no longer create genre:animation or other genre tags; explicit movie_tags still work; long result titles now wrap in a reserved title column without colliding with the score badge`
+- verification_outcome: `focused RecommendationScorer/Service tests passed outside sandbox; bootJar passed; served CSS/HTML has 20260506-score-layout and grid/wrap rules; live animation fallback produced 68-point reserve items with direct-match caution; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `for recommendation genre bugs, check both scoring code and candidate tag derivation because display-title heuristics can masquerade as valid metadata`
+
+- task: `Add post-crawl movie tag enrichment pipeline`
+- score_total: `8`
+- evaluation_fit: `full fit; this touched live DB metadata, collector integration, recommendation eligibility, and localhost Codex behavior`
+- orchestration_fit: `single-session fit; Selfdex was used read-only, but the actual implementation was one coupled enrichment-plus-recommendation contract with no safe disjoint write lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `Selfdex initially suggested collect_all_to_tidb.py responsibility cleanup, but Socratic review redirected the /goal to exact-id tag enrichment; live smoke then exposed candidate fetch crowding, so the frozen write set expanded to RecommendationService and its focused tests`
+- reviewer_findings: `provider genres can be too coarse for recommendation eligibility, so curated exact-id movie_tags must be post-crawl metadata and title-only ambiguous cases must remain untagged`
+- verification_outcome: `override validate-only, script compile, dry-run/write enrichment, collect_all default enrichment, DB tag assertions, focused RecommendationServiceCandidateFilterTests, bootJar, provider health, animation Codex smoke, and git diff --check passed; sandbox Gradle native DLL failure was logged as resolved`
+- next_gate_adjustment: `when selected-genre recommendations look empty or sparse, check both metadata existence and the pre-filter candidate fetch window before tuning scoring copy or fallback ranking`

@@ -7,7 +7,11 @@
     "fetchedAt": "2026-05-05T07:17:24.523047+00:00",
     "kobisRowsAvailable": 500,
     "kobisRowsScanned": 400,
-    "note": "KOBIS cumulative values can change due to rereleases and ongoing releases."
+    "note": "KOBIS cumulative values can change due to rereleases and ongoing releases.",
+    "postProcessing": {
+      "renamedPosterFiles": "English movie-title slugs, generated from KOBIS/Wikipedia/Wikidata title research",
+      "animeDuplicateOwner": "anime pool is the canonical poster owner for animation duplicates shared with the general movie top list"
+    }
   },
   "movies": [
     {
@@ -23,13 +27,14 @@
       "genre": "애니메이션",
       "runtime": "103분 4초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/01-20197803.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/01-20197803.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/01-20197803.webp",
+      "posterPath": "/src/assets/R2/posters/anime/frozen-ii.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/frozen-ii.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/frozen-ii.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2019/11/5658d961585b46dd8b05225665af2c5a.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "4bb485acf9b8120d3a27f9df13e7380696d4f643124d100b58fef844806b36c2"
+      "posterSha256": "4bb485acf9b8120d3a27f9df13e7380696d4f643124d100b58fef844806b36c2",
+      "titleEn": "Frozen II"
     },
     {
       "rank": 2,
@@ -44,13 +49,14 @@
       "genre": "애니메이션, 어드벤처, 가족, 코미디, 뮤지컬, 판타지",
       "runtime": "108분 2초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/02-20136803.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/02-20136803.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/02-20136803.webp",
+      "posterPath": "/src/assets/R2/posters/anime/frozen.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/frozen.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/frozen.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2014/01/feb828eee7e94a57b4d00a282bdfbbdd.jpg",
       "posterWidth": 2014,
       "posterHeight": 2870,
-      "posterSha256": "fc02b213a240a3602ee4fade4e470ca3c492048bf3652c39200566693f9893ab"
+      "posterSha256": "fc02b213a240a3602ee4fade4e470ca3c492048bf3652c39200566693f9893ab",
+      "titleEn": "Frozen"
     },
     {
       "rank": 3,
@@ -65,13 +71,14 @@
       "genre": "애니메이션",
       "runtime": "96분 18초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/03-20235974.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/03-20235974.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/03-20235974.webp",
+      "posterPath": "/src/assets/R2/posters/anime/inside-out-2.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/inside-out-2.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/inside-out-2.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2024/06/041e1f5d30ad452ea0c31714aadb8734.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "806bd291b6d4ebdb8a48088213cd1928152b29f569d04f44bef532a37c91688f"
+      "posterSha256": "806bd291b6d4ebdb8a48088213cd1928152b29f569d04f44bef532a37c91688f",
+      "titleEn": "Inside Out 2"
     },
     {
       "rank": 4,
@@ -86,13 +93,14 @@
       "genre": "애니메이션",
       "runtime": "108분 0초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/04-20252432.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/04-20252432.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/04-20252432.webp",
+      "posterPath": "/src/assets/R2/posters/anime/zootopia-2.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/zootopia-2.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/zootopia-2.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2025/10/17ab11ead2944e87bcea14eb3d5b067a.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "93e4d5e9c84b2bb507d9cc854592b12bbe6c49eff1738a8e5a995aaccf71a29c"
+      "posterSha256": "93e4d5e9c84b2bb507d9cc854592b12bbe6c49eff1738a8e5a995aaccf71a29c",
+      "titleEn": "Zootopia 2"
     },
     {
       "rank": 5,
@@ -107,13 +115,14 @@
       "genre": "애니메이션",
       "runtime": "109분 9초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/05-20228930.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/05-20228930.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/05-20228930.webp",
+      "posterPath": "/src/assets/R2/posters/anime/elemental.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/elemental.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/elemental.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2023/05/1d8f3d4b27d8479e9250de7c217028ec.jpg",
       "posterWidth": 1611,
       "posterHeight": 2295,
-      "posterSha256": "04978638d880d3dc7b4448f9fb11e11cb9fb68fc3e602edf4beb71d77b066816"
+      "posterSha256": "04978638d880d3dc7b4448f9fb11e11cb9fb68fc3e602edf4beb71d77b066816",
+      "titleEn": "Elemental"
     },
     {
       "rank": 6,
@@ -128,13 +137,14 @@
       "genre": "애니메이션",
       "runtime": "155분 0초",
       "ageRating": "15세이상관람가",
-      "posterPath": "/src/assets/R2/posters/anime/06-20253289.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/06-20253289.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/06-20253289.webp",
+      "posterPath": "/src/assets/R2/posters/anime/demon-slayer-kimetsu-no-yaiba-the-movie-infinity-castle.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/demon-slayer-kimetsu-no-yaiba-the-movie-infinity-castle.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/demon-slayer-kimetsu-no-yaiba-the-movie-infinity-castle.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2025/08/2e041167829c4d19a0537fefc4559a1e.jpg",
       "posterWidth": 990,
       "posterHeight": 1418,
-      "posterSha256": "3bfb3c06faf63d9ebe01f2d2012b8f4f407aec45f0cca7140634d03e63516636"
+      "posterSha256": "3bfb3c06faf63d9ebe01f2d2012b8f4f407aec45f0cca7140634d03e63516636",
+      "titleEn": "Demon Slayer: Kimetsu no Yaiba - The Movie: Infinity Castle"
     },
     {
       "rank": 7,
@@ -149,13 +159,14 @@
       "genre": "애니메이션",
       "runtime": "121분 47초",
       "ageRating": "12세이상관람가",
-      "posterPath": "/src/assets/R2/posters/anime/07-20226270.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/07-20226270.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/07-20226270.webp",
+      "posterPath": "/src/assets/R2/posters/anime/suzume.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/suzume.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/suzume.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2023/03/05d730d461d84c798c28a4b4c4695ce8.jpg",
       "posterWidth": 1979,
       "posterHeight": 2835,
-      "posterSha256": "f9606ee82ff368edfd14adffcb99be63826f09288f0bd30b8ede7d3bf14c63b9"
+      "posterSha256": "f9606ee82ff368edfd14adffcb99be63826f09288f0bd30b8ede7d3bf14c63b9",
+      "titleEn": "Suzume"
     },
     {
       "rank": 8,
@@ -170,13 +181,14 @@
       "genre": "애니메이션, 액션, 어드벤처, 코미디, 가족",
       "runtime": "91분 0초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/08-20110511.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/08-20110511.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/08-20110511.webp",
+      "posterPath": "/src/assets/R2/posters/anime/kung-fu-panda-2.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/kung-fu-panda-2.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/kung-fu-panda-2.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/upload/up_img/2011/05/mov_8572FJ_20110511134203_1.jpg",
       "posterWidth": 950,
       "posterHeight": 1361,
-      "posterSha256": "350dbcc5bbeb846ac5f4a31cdd511b7dffe792d24cdf77b064f3425dfe3cb281"
+      "posterSha256": "350dbcc5bbeb846ac5f4a31cdd511b7dffe792d24cdf77b064f3425dfe3cb281",
+      "titleEn": "Kung Fu Panda 2"
     },
     {
       "rank": 9,
@@ -191,13 +203,14 @@
       "genre": "애니메이션, 코미디",
       "runtime": "101분 41초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/09-20151225.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/09-20151225.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/09-20151225.webp",
+      "posterPath": "/src/assets/R2/posters/anime/inside-out.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/inside-out.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/inside-out.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2015/06/ab2a8f185f6a492ca7bf20d3a660f626.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "7d14bd3cc43ce975c1c5eaf0df9e1f81c9f3f28ab43df2a902038922d2d77589"
+      "posterSha256": "7d14bd3cc43ce975c1c5eaf0df9e1f81c9f3f28ab43df2a902038922d2d77589",
+      "titleEn": "Inside Out"
     },
     {
       "rank": 10,
@@ -212,13 +225,14 @@
       "genre": "애니메이션",
       "runtime": "124분 26초",
       "ageRating": "12세이상관람가",
-      "posterPath": "/src/assets/R2/posters/anime/10-20228555.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/10-20228555.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/10-20228555.webp",
+      "posterPath": "/src/assets/R2/posters/anime/the-first-slam-dunk.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/the-first-slam-dunk.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/the-first-slam-dunk.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2023/12/9023413652504fb5ab723bbe1ef992a6.png",
       "posterWidth": 1081,
       "posterHeight": 1569,
-      "posterSha256": "91b91f1bc771e603833f1614d27a6c72cd1b8cc95cd784c23824085d294e4bd2"
+      "posterSha256": "91b91f1bc771e603833f1614d27a6c72cd1b8cc95cd784c23824085d294e4bd2",
+      "titleEn": "The First Slam Dunk"
     },
     {
       "rank": 11,
@@ -233,13 +247,14 @@
       "genre": "애니메이션, 액션, 어드벤처",
       "runtime": "108분 25초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/11-20155501.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/11-20155501.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/11-20155501.webp",
+      "posterPath": "/src/assets/R2/posters/anime/zootopia.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/zootopia.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/zootopia.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2016/02/cf832840d27d42d195561df63bcd24db.jpg",
       "posterWidth": 2014,
       "posterHeight": 2870,
-      "posterSha256": "05ef93a1496e2dc4dd04bdf684dc6aaf02607ac6a8aebbe41e5b63408155d3f8"
+      "posterSha256": "05ef93a1496e2dc4dd04bdf684dc6aaf02607ac6a8aebbe41e5b63408155d3f8",
+      "titleEn": "Zootopia"
     },
     {
       "rank": 12,
@@ -254,13 +269,14 @@
       "genre": "애니메이션, 코미디, 액션, 가족",
       "runtime": "92분 0초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/12-20080653.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/12-20080653.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/12-20080653.webp",
+      "posterPath": "/src/assets/R2/posters/anime/kung-fu-panda.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/kung-fu-panda.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/kung-fu-panda.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/upload/up_img/cleansing/x00/04/07/mov_20080653_45565.jpg",
       "posterWidth": 600,
       "posterHeight": 861,
-      "posterSha256": "b30616a324ca2242494c449ccb42028b30570e53615d553056f14833d036e469"
+      "posterSha256": "b30616a324ca2242494c449ccb42028b30570e53615d553056f14833d036e469",
+      "titleEn": "Kung Fu Panda"
     },
     {
       "rank": 13,
@@ -275,13 +291,14 @@
       "genre": "애니메이션, 액션, 어드벤처",
       "runtime": "94분 47초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/13-20151803.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/13-20151803.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/13-20151803.webp",
+      "posterPath": "/src/assets/R2/posters/anime/kung-fu-panda-3.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/kung-fu-panda-3.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/kung-fu-panda-3.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2015/12/24b87dd690c24d4b99815e1607fac3f0.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "cbfec7f16bf06715cd5842de732865922f52c7292cd414940639a8904fe8067e"
+      "posterSha256": "cbfec7f16bf06715cd5842de732865922f52c7292cd414940639a8904fe8067e",
+      "titleEn": "Kung Fu Panda 3"
     },
     {
       "rank": 14,
@@ -296,13 +313,14 @@
       "genre": "애니메이션, 드라마, 멜로/로맨스",
       "runtime": "106분 41초",
       "ageRating": "12세이상관람가",
-      "posterPath": "/src/assets/R2/posters/anime/14-20161872.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/14-20161872.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/14-20161872.webp",
+      "posterPath": "/src/assets/R2/posters/anime/your-name.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/your-name.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/your-name.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2021/08/4dc6d5dfe9684afb8cdf438d1c9cbe73.jpg",
       "posterWidth": 1378,
       "posterHeight": 1974,
-      "posterSha256": "c81e9ffcb4bd3c07848bda40a098f26bdaad2ab1869216fefad39210bc3e91e1"
+      "posterSha256": "c81e9ffcb4bd3c07848bda40a098f26bdaad2ab1869216fefad39210bc3e91e1",
+      "titleEn": "Your Name."
     },
     {
       "rank": 15,
@@ -317,13 +335,14 @@
       "genre": "애니메이션",
       "runtime": "99분 35초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/15-20240737.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/15-20240737.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/15-20240737.webp",
+      "posterPath": "/src/assets/R2/posters/anime/moana-2.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/moana-2.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/moana-2.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2024/11/b0a0a5ae940443049c18e22e4787b08b.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "d5c4c2670cc4bba235a9c3146917a7b20a1b6f763dc0a68481bddd213c16ca85"
+      "posterSha256": "d5c4c2670cc4bba235a9c3146917a7b20a1b6f763dc0a68481bddd213c16ca85",
+      "titleEn": "Moana 2"
     },
     {
       "rank": 16,
@@ -338,13 +357,14 @@
       "genre": "애니메이션",
       "runtime": "126분 44초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/16-20179985.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/16-20179985.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/16-20179985.webp",
+      "posterPath": "/src/assets/R2/posters/anime/coco.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/coco.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/coco.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2017/12/1ae7dd091d16427cb97c6afd6ecfabf8.jpg",
       "posterWidth": 4350,
       "posterHeight": 6233,
-      "posterSha256": "91f2739d3cd936cf15da7264b5189c909d1c36f295e5f57e4e213a75c32a78e9"
+      "posterSha256": "91f2739d3cd936cf15da7264b5189c909d1c36f295e5f57e4e213a75c32a78e9",
+      "titleEn": "Coco"
     },
     {
       "rank": 17,
@@ -359,13 +379,14 @@
       "genre": "애니메이션, 액션, 어드벤처",
       "runtime": "99분 52초",
       "ageRating": "15세이상관람가",
-      "posterPath": "/src/assets/R2/posters/anime/17-20256757.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/17-20256757.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/17-20256757.webp",
+      "posterPath": "/src/assets/R2/posters/anime/chainsaw-man-the-movie-reze-arc.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/chainsaw-man-the-movie-reze-arc.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/chainsaw-man-the-movie-reze-arc.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2025/10/8279675e83074e7b913797004d505908.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "7a380c63901d66c57e5a94b154e7f6aec070eb9f5a36b3fff2c754cd8805c601"
+      "posterSha256": "7a380c63901d66c57e5a94b154e7f6aec070eb9f5a36b3fff2c754cd8805c601",
+      "titleEn": "Chainsaw Man - The Movie: Reze Arc"
     },
     {
       "rank": 18,
@@ -380,13 +401,14 @@
       "genre": "애니메이션, 어드벤처, 코미디",
       "runtime": "99분 58초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/18-20184047.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/18-20184047.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/18-20184047.webp",
+      "posterPath": "/src/assets/R2/posters/anime/toy-story-4.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/toy-story-4.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/toy-story-4.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2019/06/2ed97ef814f0469ab6a02e3da2cf3d8d.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "d2427223ae2b07ba6b81ad0e93ededcc1e54f497bfcf10af2d63728a241f9f73"
+      "posterSha256": "d2427223ae2b07ba6b81ad0e93ededcc1e54f497bfcf10af2d63728a241f9f73",
+      "titleEn": "Toy Story 4"
     },
     {
       "rank": 19,
@@ -401,13 +423,14 @@
       "genre": "애니메이션",
       "runtime": "89분 42초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/19-20173403.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/19-20173403.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/19-20173403.webp",
+      "posterPath": "/src/assets/R2/posters/anime/despicable-me-3.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/despicable-me-3.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/despicable-me-3.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2017/07/f587275fddd3449a9daaa741fd20031e.jpg",
       "posterWidth": 1400,
       "posterHeight": 2006,
-      "posterSha256": "a3ef5778b5bf9016c6e37616f6b6a3a1ff3962ec25a13ace0d08b17b0cff2ffc"
+      "posterSha256": "a3ef5778b5bf9016c6e37616f6b6a3a1ff3962ec25a13ace0d08b17b0cff2ffc",
+      "titleEn": "Despicable Me 3"
     },
     {
       "rank": 20,
@@ -422,13 +445,14 @@
       "genre": "애니메이션",
       "runtime": "92분 0초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/20-20040566.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/20-20040566.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/20-20040566.webp",
+      "posterPath": "/src/assets/R2/posters/anime/shrek-2.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/shrek-2.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/shrek-2.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/upload/up_img/cleansing/x00/00/85/mov_20040566_38332.jpg",
       "posterWidth": 600,
       "posterHeight": 861,
-      "posterSha256": "ee525974c27309d8ec7494eff206e839cd01fc0788fdb320b8f1b24a345bc3ac"
+      "posterSha256": "ee525974c27309d8ec7494eff206e839cd01fc0788fdb320b8f1b24a345bc3ac",
+      "titleEn": "Shrek 2"
     },
     {
       "rank": 21,
@@ -443,13 +467,14 @@
       "genre": "애니메이션, 액션, 어드벤처, 코미디, 가족",
       "runtime": "125분 0초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/21-20183361.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/21-20183361.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/21-20183361.webp",
+      "posterPath": "/src/assets/R2/posters/anime/incredibles-2.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/incredibles-2.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/incredibles-2.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2018/07/2609ee0e0fe84f19bbef2d6c7f4529c1.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "c6507dc979004e0fd328cd03aa58bd1dd7e474534ec14ec5d6187f109de85777"
+      "posterSha256": "c6507dc979004e0fd328cd03aa58bd1dd7e474534ec14ec5d6187f109de85777",
+      "titleEn": "Incredibles 2"
     },
     {
       "rank": 22,
@@ -464,13 +489,14 @@
       "genre": "애니메이션",
       "runtime": "119분 2초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/22-20040756.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/22-20040756.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/22-20040756.webp",
+      "posterPath": "/src/assets/R2/posters/anime/howls-moving-castle.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/howls-moving-castle.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/howls-moving-castle.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2014/11/aee6f95f9cf64bfd95223c1fdbb1bca8.jpg",
       "posterWidth": 2014,
       "posterHeight": 2870,
-      "posterSha256": "39cb1ec18be9d64d662a552fa5d8041422af624d3cd2552dfd350ab57b72a5c8"
+      "posterSha256": "39cb1ec18be9d64d662a552fa5d8041422af624d3cd2552dfd350ab57b72a5c8",
+      "titleEn": "Howl's Moving Castle"
     },
     {
       "rank": 23,
@@ -485,13 +511,14 @@
       "genre": "애니메이션, 액션, 어드벤처",
       "runtime": "101분 47초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/23-20131248.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/23-20131248.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/23-20131248.webp",
+      "posterPath": "/src/assets/R2/posters/anime/how-to-train-your-dragon-2.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/how-to-train-your-dragon-2.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/how-to-train-your-dragon-2.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2014/07/81c76f3ba77540ccb1798101d10e8f48.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "ee62721934be9cd5712c37e2b0d65576de64a8f0bd1715d8559b5e2c3063dbf3"
+      "posterSha256": "ee62721934be9cd5712c37e2b0d65576de64a8f0bd1715d8559b5e2c3063dbf3",
+      "titleEn": "How to Train Your Dragon 2"
     },
     {
       "rank": 24,
@@ -506,13 +533,14 @@
       "genre": "애니메이션, 코미디, 어드벤처, 가족, 판타지",
       "runtime": "92분 0초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/24-20070116.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/24-20070116.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/24-20070116.webp",
+      "posterPath": "/src/assets/R2/posters/anime/shrek-the-third.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/shrek-the-third.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/shrek-the-third.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/upload/up_img/cleansing/x00/02/46/mov_20070116_42259.jpg",
       "posterWidth": 600,
       "posterHeight": 861,
-      "posterSha256": "83861c036218ca6599fced570b7b8ed8bf8eca97ad5d0dd066d3cf74ded7189d"
+      "posterSha256": "83861c036218ca6599fced570b7b8ed8bf8eca97ad5d0dd066d3cf74ded7189d",
+      "titleEn": "Shrek the Third"
     },
     {
       "rank": 25,
@@ -527,13 +555,14 @@
       "genre": "애니메이션, 액션, 코미디",
       "runtime": "107분 54초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/25-20149951.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/25-20149951.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/25-20149951.webp",
+      "posterPath": "/src/assets/R2/posters/anime/big-hero-6.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/big-hero-6.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/big-hero-6.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2015/01/20d35a79794246938957b9c8eac7a52d.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "7079b19000a0ec2771bce51b254f70a5cb30f67b249d418ce9f6001c5cae27ef"
+      "posterSha256": "7079b19000a0ec2771bce51b254f70a5cb30f67b249d418ce9f6001c5cae27ef",
+      "titleEn": "Big Hero 6"
     },
     {
       "rank": 26,
@@ -548,13 +577,14 @@
       "genre": "애니메이션",
       "runtime": "90분 55초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/26-20145361.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/26-20145361.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/26-20145361.webp",
+      "posterPath": "/src/assets/R2/posters/anime/minions.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/minions.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/minions.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2015/07/b7149b2b220d4bc6a36531a8abca8882.jpg",
       "posterWidth": 2014,
       "posterHeight": 2870,
-      "posterSha256": "89924960df2c4945d722c38a4d9658ccc0091aec34caac481f60f9b7e9e05dc9"
+      "posterSha256": "89924960df2c4945d722c38a4d9658ccc0091aec34caac481f60f9b7e9e05dc9",
+      "titleEn": "Minions"
     },
     {
       "rank": 27,
@@ -569,13 +599,14 @@
       "genre": "애니메이션, 코미디, 어드벤처, 가족",
       "runtime": "98분 0초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/27-20100190.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/27-20100190.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/27-20100190.webp",
+      "posterPath": "/src/assets/R2/posters/anime/how-to-train-your-dragon.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/how-to-train-your-dragon.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/how-to-train-your-dragon.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2011/12/97763ac5f0fb465287ba61b402dda323.jpg",
       "posterWidth": 1000,
       "posterHeight": 1433,
-      "posterSha256": "f077c32f249dede39303381f4ce7b3e8a193ecdaaa2ca59e18e3d7167f5b7dc3"
+      "posterSha256": "f077c32f249dede39303381f4ce7b3e8a193ecdaaa2ca59e18e3d7167f5b7dc3",
+      "titleEn": "How to Train Your Dragon"
     },
     {
       "rank": 28,
@@ -590,13 +621,14 @@
       "genre": "애니메이션, 어드벤처, 코미디",
       "runtime": "102분 57초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/28-20159058.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/28-20159058.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/28-20159058.webp",
+      "posterPath": "/src/assets/R2/posters/anime/finding-dory.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/finding-dory.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/finding-dory.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2016/06/01b06b05488c43caa7b272ab4721241d.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "8446494a7b608b5efe737fc63cd7c94bc29eb7dfa3fafbe1a373c2bf936e7cbc"
+      "posterSha256": "8446494a7b608b5efe737fc63cd7c94bc29eb7dfa3fafbe1a373c2bf936e7cbc",
+      "titleEn": "Finding Dory"
     },
     {
       "rank": 29,
@@ -611,13 +643,14 @@
       "genre": "애니메이션, 코미디, 가족",
       "runtime": "90분 44초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/29-20156082.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/29-20156082.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/29-20156082.webp",
+      "posterPath": "/src/assets/R2/posters/anime/the-secret-life-of-pets.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/the-secret-life-of-pets.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/the-secret-life-of-pets.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2016/06/36f51361442940a0a72eb8952677f9ff.jpg",
       "posterWidth": 3957,
       "posterHeight": 5669,
-      "posterSha256": "2dd015f2d8632f7fbd0dd8ba51147896ec0694d9a8b8619fc3ca4c02b39bd6ea"
+      "posterSha256": "2dd015f2d8632f7fbd0dd8ba51147896ec0694d9a8b8619fc3ca4c02b39bd6ea",
+      "titleEn": "The Secret Life of Pets"
     },
     {
       "rank": 30,
@@ -632,14 +665,14 @@
       "genre": "애니메이션, 코미디, 가족",
       "runtime": "97분 28초",
       "ageRating": "전체관람가",
-      "posterPath": "/src/assets/R2/posters/anime/30-20174061.webp",
-      "posterFile": "frontend/src/assets/R2/posters/anime/30-20174061.webp",
-      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/30-20174061.webp",
+      "posterPath": "/src/assets/R2/posters/anime/the-boss-baby.webp",
+      "posterFile": "frontend/src/assets/R2/posters/anime/the-boss-baby.webp",
+      "staticPosterFile": "backend/src/main/resources/static/src/assets/R2/posters/anime/the-boss-baby.webp",
       "posterSourceUrl": "https://www.kobis.or.kr/common/mast/movie/2017/03/53a53ff01f564f62a93802df0e54f3b1.jpg",
       "posterWidth": 1978,
       "posterHeight": 2835,
-      "posterSha256": "44a35f01370ee14f968b5f309217733178167f13710f96f0ff4f8fed027144d0"
+      "posterSha256": "44a35f01370ee14f968b5f309217733178167f13710f96f0ff4f8fed027144d0",
+      "titleEn": "The Boss Baby"
     }
   ]
 }
-

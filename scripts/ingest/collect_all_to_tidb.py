@@ -28,12 +28,14 @@ from collectors.common.repository import insert_dict, insert_many_dicts, upsert_
 from collectors.common.tidb import connect_tidb, load_tidb_config
 from collectors.lotte import LotteCinemaCollector
 from collectors.megabox import MegaboxCollector
+from scripts.ingest.genre_tagging import canonical_genres_from_provider_row
 
 
 LOTTE = "LOTTE_CINEMA"
 MEGABOX = "MEGABOX"
 LOTTE_BOOKING_URL = "https://www.lottecinema.co.kr/NLCHS/Ticketing"
 TAG_SOURCE_INGEST = "ingest"
+DEFAULT_METADATA_OVERRIDES_PATH = Path(__file__).with_name("current_movie_tag_overrides.json")
 FORMAT_TAG_PATTERNS: list[tuple[str, str]] = [
     ("imax", "imax"),
     ("4dx", "4dx"),
@@ -285,17 +287,8 @@ def collect_movie_tags(provider: str, row: dict[str, Any]) -> list[dict[str, Any
     seen: set[tuple[str, str]] = set()
     raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
 
-    genre_fields = [
-        row.get("genre_name"),
-        row.get("genre"),
-        raw.get("MovieGenreNameKR"),
-        raw.get("cttsTyDivCdNm"),
-        raw.get("cttsTyDivCdEngNm"),
-        raw.get("movieCttsNm"),
-    ]
-    for field_value in genre_fields:
-        for genre in _split_genre_values(field_value):
-            _append_tag(tags, seen, "genre", genre, Decimal("1.0000"))
+    for genre in canonical_genres_from_provider_row(row):
+        _append_tag(tags, seen, "genre", genre, Decimal("0.9500"))
 
     age_fields = [
         row.get("age_rating"),
@@ -1156,6 +1149,20 @@ def collect_dry_run(args: argparse.Namespace) -> dict[str, Any]:
     return result
 
 
+def enrich_metadata_tags(cursor: Any, args: argparse.Namespace) -> dict[str, Any]:
+    from scripts.ingest.enrich_movie_tags import enrich_movie_tags
+
+    return enrich_movie_tags(
+        cursor,
+        Path(args.metadata_overrides),
+        current_only=True,
+        dry_run=False,
+        provider_auto_tags=not args.skip_provider_auto_tags,
+        kobis_metadata=not args.skip_kobis_metadata,
+        kobis_limit=args.kobis_metadata_limit,
+    )
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Collect Lotte/Megabox data and ingest it into TiDB")
     parser.add_argument("--provider", choices=["lotte", "megabox", "all"], default="all")
@@ -1169,6 +1176,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--limit-schedules", type=int, default=5)
     parser.add_argument("--include-seats", action="store_true")
     parser.add_argument("--max-seat-snapshots", type=int, default=1)
+    parser.add_argument("--metadata-overrides", default=str(DEFAULT_METADATA_OVERRIDES_PATH))
+    parser.add_argument("--skip-metadata-tags", action="store_true", help="Skip post-crawl curated movie_tags enrichment.")
+    parser.add_argument("--skip-provider-auto-tags", action="store_true", help="Skip canonical genre normalization from provider metadata during post-crawl enrichment.")
+    parser.add_argument("--skip-kobis-metadata", action="store_true", help="Skip optional KOBIS metadata enrichment even when a KOBIS API key is configured.")
+    parser.add_argument("--kobis-metadata-limit", type=int, default=60, help="Maximum current/future movies to check through optional KOBIS metadata enrichment.")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
 
@@ -1191,6 +1203,8 @@ def run(argv: list[str] | None = None) -> int:
                 result["providers"].append(ingest_lotte(cursor, args))
             if args.provider in {"megabox", "all"}:
                 result["providers"].append(ingest_megabox(cursor, args))
+            if not args.skip_metadata_tags:
+                result["metadata_tag_enrichment"] = enrich_metadata_tags(cursor, args)
 
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
     return 0

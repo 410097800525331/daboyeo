@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class RecommendationScorer {
 
-    private static final int BASE_SCORE = 50;
-    private static final int NO_DIRECT_TASTE_MATCH_CAP = 74;
+    private static final int BASE_SCORE = 46;
+    private static final int NO_DIRECT_TASTE_MATCH_CAP = 68;
 
     public List<ScoredCandidate> score(TagProfile profile, List<ShowtimeCandidate> candidates) {
         return score(profile, candidates, null);
@@ -61,14 +61,14 @@ public class RecommendationScorer {
         score -= avoidPenalty(profile, candidate, penalties);
 
         if (candidate.runtimeMinutes() != null && candidate.runtimeMinutes() <= 110) {
-            score += 3;
+            score += 2;
         }
 
         if (hasTasteAnchor) {
             if (hasDirectTasteMatch) {
-                score += 5;
+                score += 12;
             } else {
-                score -= 12;
+                score -= 18;
                 penalties.add("taste_mismatch");
             }
         }
@@ -139,13 +139,13 @@ public class RecommendationScorer {
             return 0;
         }
         if (price <= 10_000) {
-            return 8;
-        }
-        if (price <= 13_000) {
             return 5;
         }
+        if (price <= 13_000) {
+            return 3;
+        }
         if (price <= 16_000) {
-            return 2;
+            return 1;
         }
         return 0;
     }
@@ -166,16 +166,16 @@ public class RecommendationScorer {
         }
         double ratio = remaining / (double) total;
         if (ratio >= 0.4) {
-            value += 5;
+            value += 4;
         } else if (ratio >= 0.2) {
-            value += 2;
+            value += 1;
         } else {
-            value -= 3;
+            value -= 4;
         }
 
         if (filters != null && filters.hasPersonCount()) {
             if (remaining >= filters.personCount() * 4) {
-                value += 2;
+                value += 1;
             } else if (remaining == filters.personCount()) {
                 value -= 1;
             }

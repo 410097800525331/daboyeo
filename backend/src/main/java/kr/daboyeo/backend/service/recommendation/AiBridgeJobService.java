@@ -56,7 +56,7 @@ public class AiBridgeJobService {
         Instant now = Instant.now();
         request.providers().forEach(providerValue -> {
             AiProvider provider = safeProvider(providerValue);
-            if (provider == AiProvider.LOCAL || provider == AiProvider.CODEX) {
+            if (provider == AiProvider.CODEX) {
                 heartbeats.put(provider, new Heartbeat(request.bridgeId(), now));
             }
         });

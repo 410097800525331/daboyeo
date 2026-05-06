@@ -8,17 +8,6 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding;
 
 @ConfigurationProperties(prefix = "daboyeo.recommendation")
 public record RecommendationProperties(
-    String lmStudioBaseUrl,
-    String fastModel,
-    String preciseModel,
-    String gptBaseUrl,
-    String gptModel,
-    String gptFastReasoningEffort,
-    String gptPreciseReasoningEffort,
-    Integer gptFastAiCandidateLimit,
-    Integer gptPreciseAiCandidateLimit,
-    Integer gptFastMaxTokens,
-    Integer gptPreciseMaxTokens,
     String codexModel,
     Integer codexFastAiCandidateLimit,
     Integer codexPreciseAiCandidateLimit,
@@ -29,158 +18,79 @@ public record RecommendationProperties(
     Integer bridgeHeartbeatTtlSeconds,
     Integer bridgeJobTtlSeconds,
     Integer minStartBufferMinutes,
-    Integer fastAiCandidateLimit,
-    Integer preciseAiCandidateLimit,
-    Integer fastMaxTokens,
-    Integer preciseMaxTokens,
-    Integer responseTextMaxLength,
     List<String> frontendOrigins
 ) {
 
     public RecommendationProperties(
-        String lmStudioBaseUrl,
-        String fastModel,
-        String preciseModel,
         Integer minStartBufferMinutes,
-        Integer fastAiCandidateLimit,
-        Integer preciseAiCandidateLimit,
-        Integer fastMaxTokens,
-        Integer preciseMaxTokens,
-        Integer responseTextMaxLength,
+        Integer codexFastAiCandidateLimit,
+        Integer codexPreciseAiCandidateLimit,
+        Integer codexFastMaxTokens,
+        Integer codexPreciseMaxTokens,
         List<String> frontendOrigins
     ) {
         this(
-            lmStudioBaseUrl,
-            fastModel,
-            preciseModel,
             null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
+            codexFastAiCandidateLimit,
+            codexPreciseAiCandidateLimit,
+            codexFastMaxTokens,
+            codexPreciseMaxTokens,
             null,
             null,
             null,
             null,
             minStartBufferMinutes,
-            fastAiCandidateLimit,
-            preciseAiCandidateLimit,
-            fastMaxTokens,
-            preciseMaxTokens,
-            responseTextMaxLength,
             frontendOrigins
         );
     }
 
     @ConstructorBinding
     public RecommendationProperties {
-        lmStudioBaseUrl = defaultString(lmStudioBaseUrl, "http://127.0.0.1:1234/v1");
-        fastModel = defaultString(fastModel, "gemma-4-e2b-it");
-        preciseModel = defaultString(preciseModel, "gemma-4-e4b-it");
-        gptBaseUrl = defaultString(gptBaseUrl, "http://127.0.0.1:10531/v1");
-        gptModel = defaultString(gptModel, "gpt-5.5");
-        gptFastReasoningEffort = defaultString(gptFastReasoningEffort, "low");
-        gptPreciseReasoningEffort = defaultString(gptPreciseReasoningEffort, "high");
-        gptFastAiCandidateLimit = clamp(gptFastAiCandidateLimit, 8, 5, 12);
-        gptPreciseAiCandidateLimit = clamp(gptPreciseAiCandidateLimit, 12, 8, 16);
-        gptFastMaxTokens = clamp(gptFastMaxTokens, 720, 420, 1000);
-        gptPreciseMaxTokens = clamp(gptPreciseMaxTokens, 1300, 900, 1800);
         codexModel = defaultString(codexModel, "codex");
-        codexFastAiCandidateLimit = clamp(codexFastAiCandidateLimit, 12, 8, 24);
-        codexPreciseAiCandidateLimit = clamp(codexPreciseAiCandidateLimit, 20, 12, 30);
-        codexFastMaxTokens = clamp(codexFastMaxTokens, 900, 520, 1400);
+        codexFastAiCandidateLimit = clamp(codexFastAiCandidateLimit, 6, 3, 24);
+        codexPreciseAiCandidateLimit = clamp(codexPreciseAiCandidateLimit, 20, 3, 30);
+        codexFastMaxTokens = clamp(codexFastMaxTokens, 650, 420, 1400);
         codexPreciseMaxTokens = clamp(codexPreciseMaxTokens, 1700, 1000, 2400);
         bridgeToken = defaultString(bridgeToken, "");
         bridgeResultTimeoutSeconds = clamp(bridgeResultTimeoutSeconds, 90, 5, 300);
         bridgeHeartbeatTtlSeconds = clamp(bridgeHeartbeatTtlSeconds, 45, 5, 300);
         bridgeJobTtlSeconds = clamp(bridgeJobTtlSeconds, 180, 30, 600);
         minStartBufferMinutes = minStartBufferMinutes == null ? 20 : Math.max(0, minStartBufferMinutes);
-        fastAiCandidateLimit = clamp(fastAiCandidateLimit, 5, 3, 8);
-        preciseAiCandidateLimit = clamp(preciseAiCandidateLimit, 5, 3, 8);
-        fastMaxTokens = clamp(fastMaxTokens, 280, 160, 420);
-        preciseMaxTokens = clamp(preciseMaxTokens, 160, 96, 260);
-        responseTextMaxLength = clamp(responseTextMaxLength, 56, 32, 96);
         if (frontendOrigins == null || frontendOrigins.isEmpty()) {
             frontendOrigins = List.of("http://localhost:5173", "http://127.0.0.1:5173", "http://*:5173");
         }
     }
 
     public String modelFor(RecommendationMode mode) {
-        return mode == RecommendationMode.FAST ? fastModel : preciseModel;
+        return codexModel;
     }
 
     public String modelFor(AiProvider provider, RecommendationMode mode) {
-        if (provider == AiProvider.GPT) {
-            return gptModel;
-        }
-        if (provider == AiProvider.CODEX) {
-            return codexModel;
-        }
-        return modelFor(mode);
-    }
-
-    public String baseUrlFor(AiProvider provider) {
-        if (provider == AiProvider.CODEX) {
-            return "";
-        }
-        return provider == AiProvider.GPT ? gptBaseUrl : lmStudioBaseUrl;
-    }
-
-    public String reasoningEffortFor(AiProvider provider, RecommendationMode mode) {
-        if (provider != AiProvider.GPT) {
-            return "";
-        }
-        return mode == RecommendationMode.FAST ? gptFastReasoningEffort : gptPreciseReasoningEffort;
+        return codexModel;
     }
 
     public String providerLabel(AiProvider provider) {
-        if (provider == AiProvider.CODEX) {
-            return "Codex";
-        }
-        return provider == AiProvider.GPT ? "GPT" : "로컬 Gemma";
+        return "GPT (Codex)";
     }
 
     public int aiCandidateLimitFor(RecommendationMode mode) {
-        return mode == RecommendationMode.FAST ? fastAiCandidateLimit : preciseAiCandidateLimit;
+        return mode == RecommendationMode.FAST ? codexFastAiCandidateLimit : codexPreciseAiCandidateLimit;
     }
 
     public int aiCandidateLimitFor(AiProvider provider, RecommendationMode mode) {
-        if (provider == AiProvider.GPT) {
-            return mode == RecommendationMode.FAST ? gptFastAiCandidateLimit : gptPreciseAiCandidateLimit;
-        }
-        if (provider == AiProvider.CODEX) {
-            return mode == RecommendationMode.FAST ? codexFastAiCandidateLimit : codexPreciseAiCandidateLimit;
-        }
         return aiCandidateLimitFor(mode);
     }
 
     public int maxTokensFor(RecommendationMode mode) {
-        return mode == RecommendationMode.FAST ? fastMaxTokens : preciseMaxTokens;
+        return mode == RecommendationMode.FAST ? codexFastMaxTokens : codexPreciseMaxTokens;
     }
 
     public int maxTokensFor(AiProvider provider, RecommendationMode mode) {
-        if (provider == AiProvider.GPT) {
-            return mode == RecommendationMode.FAST ? gptFastMaxTokens : gptPreciseMaxTokens;
-        }
-        if (provider == AiProvider.CODEX) {
-            return mode == RecommendationMode.FAST ? codexFastMaxTokens : codexPreciseMaxTokens;
-        }
         return maxTokensFor(mode);
     }
 
     public int responseTextMaxLengthFor(AiProvider provider, RecommendationMode mode) {
-        if (provider == AiProvider.GPT || provider == AiProvider.CODEX) {
-            return mode == RecommendationMode.FAST ? 180 : 320;
-        }
-        return responseTextMaxLength;
+        return mode == RecommendationMode.FAST ? 180 : 320;
     }
 
     private static String defaultString(String value, String fallback) {

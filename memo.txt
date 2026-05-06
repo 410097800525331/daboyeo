@@ -1,0 +1,30 @@
+맞아. 네가 본 게 맞았고, 원인은 크롤링 불가능이 아니라 현재 크롤러가 너무 얕은 목록 API만 보고 있어서 상세 장르를 안 가져오는 문제야.
+
+확인 결과:
+
+롯데시네마
+예매 목록 GetTicketingPageTOBE 쪽은 MovieGenreNameKR 필드가 있는데 현재 샘플 대부분 null.
+그런데 영화상세 API GetMovieDetailTOBE를 representationMovieCode로 호출하면 장르가 나옴.
+예: 프로젝트 헤일메리=SF, 살목지=공포(호러), 슈퍼 마리오 갤럭시=애니메이션, 마녀배달부 키키=애니메이션/드라마/가족.
+
+메가박스
+현재 master list API에는 장르가 없음.
+그런데 모바일 상세 페이지에는 <span>장르</span>로 장르가 박혀 있음.
+예: 
+슈퍼 마리오 갤럭시 상세
+에서 애니메이션, 프로젝트 헤일메리=SF, 군체=스릴러/액션, 피어스=드라마/스릴러.
+
+CGV
+현재 환경에 CGV_API_SECRET이 없어서 repo의 signed API는 확인 못 함. CGV는 나중에 secret 있는 환경에서 별도 확인 필요.
+
+결론: 태그 문제 맞고, 더 정확히는 crawler depth 문제야.
+외부 TMDB/KOBIS까지 가기 전에, 롯데/메가박스는 provider 상세 페이지/상세 API에서 장르를 직접 가져올 수 있음.
+
+다음 구현은 이 순서가 맞아:
+
+롯데 movie list 수집 후 GetMovieDetailTOBE 추가 호출
+메가박스 movie list 수집 후 모바일 상세 HTML에서 장르 파싱
+사극 → history, 공포(호러) → horror, SF → sf, 스릴러 → thriller, 애니메이션 → animation 식으로 canonical 변환
+movie_tags에 provider evidence 기반으로 저장
+다시 모든 장르 벤치
+조사 증거는 STATE.md에 기록해뒀고, git diff --check는 CRLF warning만 있음.

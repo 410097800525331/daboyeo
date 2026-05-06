@@ -625,3 +625,114 @@ Do not rewrite existing entries; append only.
   summary: `기본 sandbox에서 git index.lock 생성 권한 실패`
   details: `검증 완료 후 git add -A를 실행했지만 D:/git/daboyeo/.git/index.lock Permission denied로 staging이 실패했다. 동일한 staging을 정상 Windows 권한으로 재시도해 완료했다.`
   status: `resolved`
+
+- time: `2026-05-06 11:06:00 +09:00`
+  location: `poster rename/tag enrichment verification`
+  summary: `sandbox Gradle native DLL 실패와 구버전 5500 Spring PID 포트 점유`
+  details: `focused Gradle tests와 bootJar는 sandbox에서 Windows native-platform.dll 로딩 실패로 시작하지 못해 정상 Windows 권한으로 재실행했고 둘 다 통과했다. 런타임 확인 중 기존 Spring PID 16648이 localhost:5500을 계속 점유해 새 jar가 포트 충돌로 종료되었고, PID 16648을 종료한 뒤 새 bootJar를 PID 13688로 재시작해 /api/health 및 poster-seed API/static asset 검증이 통과했다.`
+  status: `resolved`
+
+- time: `2026-05-06 12:32:00 +09:00`
+  location: `Codex-only recommendation provider verification`
+  summary: `sandbox Gradle native DLL 실패와 기본 샌드박스 Spring 자식 프로세스 종료`
+  details: `Codex-only provider cleanup 후 focused Gradle test와 bootJar는 sandbox에서 Windows native-platform.dll 로딩 실패로 시작되지 않아 정상 Windows 권한으로 재실행했고 통과했다. 기본 샌드박스에서 Start-Process로 띄운 Java jar는 /api/health 200 확인 직후 command runner 종료와 함께 내려가서, 정상 Windows 권한으로 localhost:5500 Spring jar를 다시 실행했고 PID 13548에서 /api/health 및 served HTML/JS/provider health 검증이 통과했다.`
+  status: `resolved`
+
+- time: `2026-05-06 12:47:00 +09:00`
+  location: `anime fallback genre evidence verification`
+  summary: `sandbox Gradle native DLL 실패와 회귀 테스트 기대값 조정`
+  details: `추천 장르 근거 수정 후 sandbox에서 focused Gradle test를 실행했지만 기존과 같은 Windows native-platform.dll 로딩 실패로 Gradle이 시작되지 않았다. 정상 Windows 권한으로 재실행한 첫 테스트에서는 새 explicit tense 테스트가 audience:friends 태그를 명시하지 않아 기대값이 실패했고, 테스트 데이터를 명시 태그 기반 계약에 맞춘 뒤 focused tests와 bootJar가 통과했다.`
+  status: `resolved`
+
+- time: `2026-05-06 12:55:35 +09:00`
+  location: `selected-genre fallback verification`
+  summary: `sandbox Gradle native DLL 실패 후 정상 Windows 권한 검증 통과`
+  details: `선택 장르 fallback을 명시 장르 태그 기반 eligibility로 고친 뒤 sandbox Gradle test가 기존과 같은 native-platform.dll 로딩 실패로 시작되지 않았다. 정상 Windows 권한으로 focused RecommendationService/RecommendationScorer tests와 bootJar를 재실행해 통과했고, localhost:5500 Spring을 새 jar로 재시작해 animation 선택 smoke에서 no_selected_genre_candidates와 추천 0건을 확인했다.`
+  status: `resolved`
+
+- time: `2026-05-06 13:26:19 +09:00`
+  location: `Codex bridge runtime connection`
+  summary: `브릿지 heartbeat는 ready였지만 실제 Codex job 실행이 WinError 5로 실패`
+  details: `기존 브릿지 워커는 provider health에서 polling 중으로 보였지만 실제 추천 job에서는 기본 Codex 실행 경로가 Access denied로 실패했다. Spring과 bridge를 같은 임시 토큰으로 재시작하고, bridge의 codex command를 ignored build 경로의 workspace-local codex.exe로 고정한 뒤 provider health와 실제 aiProvider=codex 추천 smoke가 통과했다. 토큰과 Codex 인증 내용은 기록하지 않았다.`
+  status: `resolved`
+
+- time: `2026-05-06 14:17:00 +09:00`
+  location: `crawler ingest verification`
+  summary: `sandbox Python의 PyMySQL 접근 불가와 schema verifier 확장 테이블 누락`
+  details: `기본 샌드박스 Python은 AppData user site-packages 접근이 막혀 PyMySQL import에 실패했다. 정상 Windows 권한에서는 PyMySQL 접근과 TiDB 연결이 가능해 dry-run, bounded write ingest, DB count 검증을 진행했다. scripts/verify/verify_tidb_ingest.py는 collection_runs/canonical_movies/provider_raw_payloads 등 확장 테이블 누락으로 실패했지만, 이번 collect_all_to_tidb.py write 경로에 필요한 movies/theaters/screens/showtimes/movie_tags 코어 테이블은 존재해 적재와 런타임 smoke가 통과했다.`
+  status: `resolved`
+
+- time: `2026-05-06 14:40:40 +09:00`
+  location: `selected-genre candidate fetch verification`
+  summary: `sandbox Gradle native DLL 실패 후 정상 Windows 권한 테스트 통과`
+  details: `선택 장르가 있을 때 후보 조회 폭을 넓히는 RecommendationService 변경 후 sandbox Gradle test가 기존과 같은 native-platform.dll 로딩 실패로 시작되지 않았다. 정상 Windows 권한으로 focused RecommendationServiceCandidateFilterTests를 재실행해 통과했다.`
+  status: `resolved`
+
+- time: `2026-05-06 14:47:56 +09:00`
+  location: `Codex bridge restart after recommendation rebuild`
+  summary: `bridge 재시작 인자 불일치 후 현재 스크립트 계약으로 재연결`
+  details: `새 bootJar를 localhost:5500에 반영하면서 ai_bridge_agent.py를 과거 인자인 --base-url/--log-level로 시작해 bridge가 usage 오류로 종료됐다. 현재 스크립트 사용법인 --server/--codex-command/--codex-cwd로 Spring과 bridge를 같은 임시 토큰에 맞춰 재시작했고 /api/recommendation/providers/health에서 codex ready를 확인했다. 토큰과 인증 내용은 기록하지 않았다.`
+  status: `resolved`
+# 2026-05-06 15:29 +09:00
+
+- time: `2026-05-06 15:29 +09:00`
+- location: `backend gradle focused recommendation tests`
+- summary: `Sandboxed Gradle could not initialize native services on Windows.`
+- details: `gradle test --tests kr.daboyeo.backend.service.recommendation.RecommendationServiceCandidateFilterTests --tests kr.daboyeo.backend.service.recommendation.CodexRecommendationClientTests failed with native-platform.dll load error inside sandbox. The same focused command passed when rerun outside sandbox with approval.`
+- status: `resolved`
+
+# 2026-05-06 15:38 +09:00
+
+- time: `2026-05-06 15:38 +09:00`
+- location: `Spring restart on localhost:5500`
+- summary: `Initial background restart attempts failed because the sandbox shell had duplicate Path/PATH environment keys and old PID 16976 still owned port 5500.`
+- details: `gradle bootJar had the same sandbox native-platform.dll failure and passed outside sandbox. Start-Process failed until the process environment Path key was normalized. The stale Java process on port 5500 was stopped, then the rebuilt jar was started outside sandbox as PID 20368 with startup showtime sync disabled. /api/health returned ok and the AI page served the 20260506-fast-cta cache key.`
+- status: `resolved`
+
+# 2026-05-06 15:46 +09:00
+
+- time: `2026-05-06 15:46 +09:00`
+- location: `AI bridge worker startup`
+- summary: `Initial bridge worker launches did not register a Codex heartbeat because the launch environment could not see the Local OpenAI Codex path and a quoted WindowsApps path was split by Start-Process.`
+- details: `The repo .env token was used through process environment only, not printed or passed as a command-line token. The first worker started but advertised no active codex provider because DABOYEO_CODEX_COMMAND pointed to an invisible Local path in the elevated launch environment. The second attempt failed from a space-split codex path. Restarting without DABOYEO_CODEX_COMMAND let Python resolve codex.exe from PATH and provider health returned ready.`
+- status: `resolved`
+
+# 2026-05-06 15:52 +09:00
+
+- time: `2026-05-06 15:52 +09:00`
+- location: `AI bridge Codex job execution`
+- summary: `Provider health was ready but recommendation jobs still fell back because the bridge worker resolved the WindowsApps codex.exe path, which cannot be executed directly from the worker.`
+- details: `ai-bridge.err.log showed WinError 5 access denied for Codex jobs. Local OpenAI codex.exe executed correctly in the interactive shell, while WindowsApps codex.exe returned access denied. A workspace-local ignored copy was placed at backend/build/tools/codex.exe and the bridge worker was restarted with that explicit executable. Provider health returned ready and a fast recommendation API smoke returned status=ok, model=codex, and 3 recommendations.`
+- status: `resolved`
+
+# 2026-05-06 16:20 +09:00
+
+- time: `2026-05-06 16:20 +09:00`
+- location: `genre metadata enrichment dry-run setup`
+- summary: `Default Python lacked PyMySQL and sandboxed pip could not unpack wheels due Windows temp permission errors.`
+- details: `The enrichment scripts require PyMySQL for TiDB access. Installing PyMySQL into backend/build/tmp/pymysql_vendor_current failed inside the sandbox even after redirecting TMP/TEMP into the workspace, then succeeded with approved elevated pip install scoped to the ignored build/tmp target.`
+- status: `resolved`
+
+# 2026-05-06 17:00 +09:00
+
+- time: `2026-05-06 17:00 +09:00`
+- location: `AI bridge Codex exec after Spring restart`
+- summary: `Codex bridge worker was ready but jobs fell back because Codex CLI plugin sync failed with 403 before producing a result.`
+- details: `The recommendation worker does not need user/plugin config. scripts/ai_bridge_agent.py was changed to run codex exec with --ignore-user-config while keeping CODEX_HOME auth available, avoiding plugin sync during bridge jobs.`
+- status: `resolved`
+
+# 2026-05-06 17:14 +09:00
+
+- time: `2026-05-06 17:14 +09:00`
+- location: `AI bridge Codex exec after Spring restart`
+- summary: `Codex bridge still needed plugin feature suppression after --ignore-user-config.`
+- details: `A workspace-local codex.exe mini run succeeded with --disable plugins even though analytics warnings still printed 403. scripts/ai_bridge_agent.py now passes --ignore-user-config and --disable plugins before bridge jobs; live recommendation smokes returned status=ok/model=codex.`
+- status: `resolved`
+
+# 2026-05-06 17:14 +09:00
+
+- time: `2026-05-06 17:14 +09:00`
+- location: `localhost:5500 Spring restart`
+- summary: `PowerShell DB URL interpolation broke the restarted Spring datasource URL.`
+- details: `The first restart script built jdbc:mysql://.../$db?serverTimezone... with PowerShell interpolation, so $db? was parsed incorrectly and Spring tried to connect to an invalid database name. The server was restarted again using explicit string concatenation for the JDBC URL; /api/health, provider health, and live recommendation smokes passed.`
+- status: `resolved`

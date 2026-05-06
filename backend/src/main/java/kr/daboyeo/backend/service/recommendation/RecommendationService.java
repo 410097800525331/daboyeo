@@ -50,8 +50,9 @@ public class RecommendationService {
 
     private static final Logger logger = LoggerFactory.getLogger(RecommendationService.class);
     private static final int CANDIDATE_LIMIT = 240;
+    private static final int SELECTED_GENRE_CANDIDATE_LIMIT = 1200;
     private static final int RESULT_LIMIT = 3;
-    private static final int NO_DIRECT_TASTE_MATCH_CAP = 74;
+    private static final int NO_DIRECT_TASTE_MATCH_CAP = 68;
     private static final String RELAXED_FILTER_MESSAGE = "선택 조건과 정확히 맞는 상영이 없어 조건을 넓혀 추천했어.";
     private static final Pattern INTERNAL_TEXT_PATTERN = Pattern.compile(
         "(?i)\\bscore\\s*[:=]?\\s*\\d+\\b|\\bmatchedtags\\b|\\bpenalties\\b|\\b(?:audience|mood|genre|content|pace):[a-z0-9_]+\\b"
@@ -68,7 +69,7 @@ public class RecommendationService {
     private final PosterSeedService posterSeedService;
     private final PreferenceProfileBuilder preferenceProfileBuilder;
     private final RecommendationScorer scorer;
-    private final LocalModelRecommendationClient localModelClient;
+    private final CodexRecommendationClient codexClient;
     private final RecommendationProfileRepository profileRepository;
     private final ShowtimeRecommendationRepository showtimeRepository;
 
@@ -77,7 +78,7 @@ public class RecommendationService {
         PosterSeedService posterSeedService,
         PreferenceProfileBuilder preferenceProfileBuilder,
         RecommendationScorer scorer,
-        LocalModelRecommendationClient localModelClient,
+        CodexRecommendationClient codexClient,
         RecommendationProfileRepository profileRepository,
         ShowtimeRecommendationRepository showtimeRepository
     ) {
@@ -85,7 +86,7 @@ public class RecommendationService {
         this.posterSeedService = posterSeedService;
         this.preferenceProfileBuilder = preferenceProfileBuilder;
         this.scorer = scorer;
-        this.localModelClient = localModelClient;
+        this.codexClient = codexClient;
         this.profileRepository = profileRepository;
         this.showtimeRepository = showtimeRepository;
     }
@@ -116,9 +117,7 @@ public class RecommendationService {
     }
 
     public List<AiProviderStatus> providerHealth() {
-        return List.of(AiProvider.LOCAL, AiProvider.CODEX).stream()
-            .map(localModelClient::providerStatus)
-            .toList();
+        return List.of(codexClient.providerStatus(AiProvider.CODEX));
     }
 
     public RecommendationResponse recommend(RecommendationRequest request) {
@@ -157,12 +156,33 @@ public class RecommendationService {
         String runId = newRunId();
         int startBufferMinutes = properties.minStartBufferMinutes();
         LocalDateTime minStartsAt = LocalDateTime.now().plusMinutes(startBufferMinutes);
-        CandidateSearchResult candidateSearch = findCandidatesWithFallback(searchFilters, minStartsAt);
+        Set<String> selectedGenreValues = selectedGenreValues(tagProfile);
+        int candidateLimit = hasSelectedGenreAnchor(tagProfile)
+            ? SELECTED_GENRE_CANDIDATE_LIMIT
+            : CANDIDATE_LIMIT;
+        CandidateSearchResult candidateSearch = findCandidatesWithFallback(
+            searchFilters,
+            minStartsAt,
+            candidateLimit,
+            selectedGenreValues
+        );
         SearchFilters effectiveSearchFilters = candidateSearch.filters();
         List<ShowtimeCandidate> candidates = candidateSearch.candidates();
         String modelName = properties.modelFor(aiProvider, mode);
 
         if (candidates.isEmpty()) {
+            if (hasSelectedGenreAnchor(tagProfile)) {
+                return noCandidateResponse(
+                    startedAt,
+                    runId,
+                    resolvedAnonymousId,
+                    mode,
+                    modelName,
+                    normalizedRequest,
+                    "no_selected_genre_candidates",
+                    selectedGenreNoMatchMessage(tagProfile)
+                );
+            }
             if (searchFilters != null && searchFilters.active()) {
                 return noCandidateResponse(
                     startedAt,
@@ -207,13 +227,23 @@ public class RecommendationService {
         }
 
         List<ScoredCandidate> tasteAwareScored = rankTasteAwareCandidates(scored, tagProfile);
+        if (tasteAwareScored.isEmpty() && hasSelectedGenreAnchor(tagProfile)) {
+            return noCandidateResponse(
+                startedAt,
+                runId,
+                resolvedAnonymousId,
+                mode,
+                modelName,
+                normalizedRequest,
+                "no_selected_genre_candidates",
+                selectedGenreNoMatchMessage(tagProfile)
+            );
+        }
         List<ScoredCandidate> aiCandidates = selectDistinctMovieItems(
             tasteAwareScored,
             properties.aiCandidateLimitFor(aiProvider, mode)
         );
-        var aiResult = aiProvider == AiProvider.LOCAL
-            ? localModelClient.rankAndExplain(mode, tagProfile, aiCandidates)
-            : localModelClient.rankAndExplain(aiProvider, mode, tagProfile, aiCandidates);
+        var aiResult = codexClient.rankAndExplain(mode, tagProfile, aiCandidates);
         List<RecommendationItem> items = aiResult
             .map(result -> itemsFromAi(aiCandidates, result.picks(), tagProfile, mode, aiProvider))
             .filter(list -> !list.isEmpty())
@@ -224,11 +254,7 @@ public class RecommendationService {
             mode.wireValue(),
             aiResult.map(result -> result.modelName()).orElse(modelName == null || modelName.isBlank() ? "not-configured" : modelName),
             aiResult.isPresent() ? "ok" : "fallback",
-            !candidateSearch.message().isBlank()
-                ? candidateSearch.message()
-                : aiResult.isPresent()
-                ? properties.providerLabel(aiProvider) + "가 후보를 재정렬하고 이유를 작성했어."
-                : "AI 응답을 쓰지 못해서 코드 점수 기반으로 추천했어.",
+            responseMessage(candidateSearch.message(), aiResult.isPresent(), aiProvider),
             items
         );
         saveRunBestEffort(
@@ -245,20 +271,50 @@ public class RecommendationService {
         return response;
     }
 
-    private CandidateSearchResult findCandidatesWithFallback(SearchFilters filters, LocalDateTime minStartsAt) {
-        List<ShowtimeCandidate> exactCandidates = findUpcomingCandidates(filters, minStartsAt);
+    private String responseMessage(String candidateSearchMessage, boolean aiResultPresent, AiProvider provider) {
+        if (candidateSearchMessage != null && !candidateSearchMessage.isBlank()) {
+            return candidateSearchMessage;
+        }
+        if (aiResultPresent) {
+            return properties.providerLabel(provider) + "가 후보를 비교하고 이유를 작성했어.";
+        }
+        return "GPT 응답이 지연돼서 코드 점수 기반으로 임시 추천했어. 취향 태그와 상영 조건이 같이 맞는 순서로 정렬했어.";
+    }
+
+    private CandidateSearchResult findCandidatesWithFallback(
+        SearchFilters filters,
+        LocalDateTime minStartsAt,
+        int candidateLimit,
+        Set<String> requiredGenreValues
+    ) {
+        List<ShowtimeCandidate> exactCandidates = findUpcomingCandidates(
+            filters,
+            minStartsAt,
+            candidateLimit,
+            requiredGenreValues
+        );
         if (!exactCandidates.isEmpty() || filters == null || !filters.active()) {
             return new CandidateSearchResult(exactCandidates, filters, "");
         }
 
         for (SearchFilters relaxedFilters : relaxedSearchFilters(filters)) {
-            List<ShowtimeCandidate> relaxedCandidates = findUpcomingCandidates(relaxedFilters, minStartsAt);
+            List<ShowtimeCandidate> relaxedCandidates = findUpcomingCandidates(
+                relaxedFilters,
+                minStartsAt,
+                candidateLimit,
+                requiredGenreValues
+            );
             if (!relaxedCandidates.isEmpty()) {
                 return new CandidateSearchResult(relaxedCandidates, relaxedFilters, RELAXED_FILTER_MESSAGE);
             }
         }
 
-        List<ShowtimeCandidate> broadCandidates = findUpcomingCandidates(null, minStartsAt);
+        List<ShowtimeCandidate> broadCandidates = findUpcomingCandidates(
+            null,
+            minStartsAt,
+            candidateLimit,
+            requiredGenreValues
+        );
         if (!broadCandidates.isEmpty()) {
             return new CandidateSearchResult(broadCandidates, null, RELAXED_FILTER_MESSAGE);
         }
@@ -366,10 +422,23 @@ public class RecommendationService {
         }
     }
 
-    private List<ShowtimeCandidate> findUpcomingCandidates(SearchFilters filters, LocalDateTime minStartsAt) {
-        List<ShowtimeCandidate> candidates = filters != null && filters.active()
-            ? showtimeRepository.findUpcomingCandidates(CANDIDATE_LIMIT, minStartsAt, filters)
-            : showtimeRepository.findUpcomingCandidates(CANDIDATE_LIMIT, minStartsAt);
+    private List<ShowtimeCandidate> findUpcomingCandidates(
+        SearchFilters filters,
+        LocalDateTime minStartsAt,
+        int candidateLimit,
+        Set<String> requiredGenreValues
+    ) {
+        boolean hasRequiredGenres = requiredGenreValues != null && !requiredGenreValues.isEmpty();
+        List<ShowtimeCandidate> candidates;
+        if (filters != null && filters.active()) {
+            candidates = hasRequiredGenres
+                ? showtimeRepository.findUpcomingCandidates(candidateLimit, minStartsAt, filters, requiredGenreValues)
+                : showtimeRepository.findUpcomingCandidates(candidateLimit, minStartsAt, filters);
+        } else {
+            candidates = hasRequiredGenres
+                ? showtimeRepository.findUpcomingCandidates(candidateLimit, minStartsAt, null, requiredGenreValues)
+                : showtimeRepository.findUpcomingCandidates(candidateLimit, minStartsAt);
+        }
         return candidates == null ? List.of() : candidates;
     }
 
@@ -547,6 +616,17 @@ public class RecommendationService {
         return score;
     }
 
+    private int fallbackScore(ScoredCandidate scored, TagProfile profile) {
+        int score = clampScore(scored.score());
+        if (hasTasteAnchor(profile) && !hasGenreOverlap(scored, tasteAnchorGenres(profile))) {
+            return Math.min(score, NO_DIRECT_TASTE_MATCH_CAP);
+        }
+        if (hasTasteAnchor(profile)) {
+            return Math.max(76, score);
+        }
+        return score;
+    }
+
     private int clampScore(int score) {
         return Math.max(0, Math.min(100, score));
     }
@@ -555,10 +635,42 @@ public class RecommendationService {
         return !tasteAnchorGenres(profile).isEmpty();
     }
 
+    private boolean hasSelectedGenreAnchor(TagProfile profile) {
+        return profile != null && !profile.preferredGenres().isEmpty();
+    }
+
+    private Set<String> selectedGenreValues(TagProfile profile) {
+        if (profile == null || profile.preferredGenres().isEmpty()) {
+            return Set.of();
+        }
+        return profile.preferredGenres().stream()
+            .map(tag -> tag == null ? "" : tag.trim().toLowerCase(Locale.ROOT))
+            .map(tag -> tag.startsWith("genre:") ? tag.substring("genre:".length()) : tag)
+            .filter(tag -> !tag.isBlank())
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private String selectedGenreNoMatchMessage(TagProfile profile) {
+        String genreText = profile.preferredGenres().stream()
+            .map(tag -> tag == null ? "" : tag.trim().toLowerCase(Locale.ROOT))
+            .filter(tag -> !tag.isBlank())
+            .map(tag -> tag.startsWith("genre:") ? tag.substring("genre:".length()) : tag)
+            .map(this::genreLabel)
+            .distinct()
+            .collect(Collectors.joining(", "));
+        if (genreText.isBlank()) {
+            genreText = "선택한 장르";
+        }
+        return genreText + " 장르 태그가 붙은 현재 상영 후보가 없어. 제목만 보고 장르를 추정하지 않도록 추천을 멈췄어.";
+    }
+
     private String qualityReason(String reason, ScoredCandidate scored, RecommendationMode mode, AiProvider provider) {
         String sanitized = sanitizeUserFacingText(reason);
-        if (isNarrativeProvider(provider) && !isWeakNarrativeReason(sanitized, scored.candidate())) {
-            return limitText(sanitized, mode == RecommendationMode.PRECISE ? 220 : 170);
+        if (isNarrativeProvider(provider)) {
+            if (!isWeakNarrativeReason(sanitized, scored.candidate())) {
+                return limitText(sanitized, mode == RecommendationMode.PRECISE ? 220 : 170);
+            }
+            return groundedReason(scored);
         }
         if (isWeakReason(sanitized, scored.candidate())) {
             return groundedReason(scored);
@@ -568,7 +680,7 @@ public class RecommendationService {
     }
 
     private boolean isNarrativeProvider(AiProvider provider) {
-        return provider == AiProvider.GPT || provider == AiProvider.CODEX;
+        return provider == AiProvider.CODEX;
     }
 
     private boolean isWeakReason(String reason, ShowtimeCandidate candidate) {
@@ -591,39 +703,30 @@ public class RecommendationService {
             return true;
         }
         return normalized.codePointCount(0, normalized.length()) < 10
+            || isTagOnlyText(normalized)
             || GENERIC_REASON_PATTERN.matcher(normalized).find()
             || INTERNAL_TEXT_PATTERN.matcher(normalized).find();
     }
 
     private String groundedReason(ScoredCandidate scored) {
         ShowtimeCandidate candidate = scored.candidate();
-        List<String> tags = new ArrayList<>();
-        scored.matchedTags().stream()
-            .filter(this::isReasonSourceTag)
-            .map(this::tagPhrase)
-            .filter(value -> !value.isBlank())
-            .forEach(tags::add);
-        candidate.allTags().stream()
-            .filter(this::isReasonSourceTag)
-            .map(this::tagPhrase)
-            .filter(value -> !value.isBlank())
-            .forEach(tags::add);
-        if (candidate.runtimeMinutes() != null && candidate.runtimeMinutes() <= 125) {
-            tags.add("#부담적은러닝타임");
+        List<String> signals = contentSignals(scored, 2);
+        String signalText = signals.isEmpty() ? "상영 조건" : String.join(", ", signals);
+        if (scored.penalties().contains("taste_mismatch")) {
+            return "선택한 장르와 직접 겹치지는 않지만 " + signalText + " 쪽 조건이 좋아서 예비 추천으로 넣었어.";
         }
-        if (!candidate.ageRating().isBlank()) {
-            tags.add(ageTag(candidate.ageRating()));
-        }
-        if (tags.isEmpty()) {
-            tags.add("#조건근접");
-        }
-        return joinTags(tags, 4);
+        String title = displayText(candidate.title());
+        String subject = title.isBlank() ? "이 후보" : title;
+        return subject + "은 선택한 취향 신호와 " + signalText + "이 잘 맞아서 추천 순위를 높였어.";
     }
 
     private String qualityValuePoint(String valuePoint, ShowtimeCandidate candidate, RecommendationMode mode, AiProvider provider) {
         String sanitized = sanitizeUserFacingText(valuePoint);
-        if (isNarrativeProvider(provider) && !isWeakNarrativeValuePoint(sanitized, candidate)) {
-            return limitText(sanitized, mode == RecommendationMode.PRECISE ? 170 : 140);
+        if (isNarrativeProvider(provider)) {
+            if (!isWeakNarrativeValuePoint(sanitized, candidate)) {
+                return limitText(sanitized, mode == RecommendationMode.PRECISE ? 170 : 140);
+            }
+            return groundedValuePoint(candidate);
         }
         if (isWeakValuePoint(sanitized, candidate)) {
             return groundedValuePoint(candidate);
@@ -656,30 +759,131 @@ public class RecommendationService {
             return true;
         }
         return normalized.codePointCount(0, normalized.length()) < 6
+            || isTagOnlyText(normalized)
+            || isTerseTimeOnlyValue(normalized)
             || INTERNAL_TEXT_PATTERN.matcher(normalized).find();
     }
 
+    private boolean isTagOnlyText(String value) {
+        if (value == null || value.isBlank() || !hasUserFacingTag(value)) {
+            return false;
+        }
+        return USER_TAG_PATTERN.matcher(value).replaceAll("").replaceAll("[\\s·,./-]+", "").isBlank();
+    }
+
+    private boolean isTerseTimeOnlyValue(String value) {
+        if (value == null || value.isBlank() || !value.matches(".*\\d{1,2}:\\d{2}.*")) {
+            return false;
+        }
+        return value.replaceAll("[0-9:상영\\s./\\-]+", "").isBlank();
+    }
+
     private String groundedValuePoint(ShowtimeCandidate candidate) {
-        List<String> tags = new ArrayList<>();
+        List<String> parts = new ArrayList<>();
         if (candidate.startsAt() != null) {
-            tags.add("#" + DateTimeFormatter.ofPattern("HH:mm").format(candidate.startsAt()) + "상영");
+            parts.add(DateTimeFormatter.ofPattern("MM-dd HH:mm").format(candidate.startsAt()) + " 상영");
         }
         if (candidate.minPriceAmount() != null) {
-            tags.add("#" + candidate.minPriceAmount() + "원");
+            parts.add(candidate.minPriceAmount() + "원부터");
         }
         String seat = seatHint(candidate.remainingSeatCount(), candidate.totalSeatCount());
         if ("enough".equals(seat)) {
-            tags.add("#좌석여유");
+            parts.add("좌석 여유 있음");
         } else if ("limited".equals(seat)) {
-            tags.add("#좌석주의");
+            parts.add("좌석이 많지 않음");
         }
         if (!candidate.theaterName().isBlank()) {
-            tags.add("#예매가능");
+            parts.add(displayText(candidate.theaterName()));
         }
-        if (tags.isEmpty()) {
-            tags.add("#예매정보");
+        if (parts.isEmpty()) {
+            return "예매 가능한 상영 후보라 바로 비교하기 좋아.";
         }
-        return joinTags(tags, 4);
+        return String.join(" · ", parts) + " 기준으로 예매 판단이 쉬워.";
+    }
+
+    private String groundedCaution(ScoredCandidate scored, TagProfile profile) {
+        List<String> cautions = new ArrayList<>();
+        if (hasTasteAnchor(profile) && !hasGenreOverlap(scored, tasteAnchorGenres(profile))) {
+            cautions.add("선택한 장르와 직접 겹치는 후보는 아니라서 취향 우선순위는 한 단계 낮게 봤어");
+        }
+        scored.penalties().stream()
+            .map(this::cautionLabel)
+            .filter(value -> !value.isBlank())
+            .forEach(cautions::add);
+        ShowtimeCandidate candidate = scored.candidate();
+        if ("limited".equals(seatHint(candidate.remainingSeatCount(), candidate.totalSeatCount()))) {
+            cautions.add("남은 좌석이 많지 않아 예매 시점 확인이 필요해");
+        }
+        return cautions.stream().distinct().limit(2).collect(Collectors.joining(" "));
+    }
+
+    private String cautionLabel(String penalty) {
+        if (penalty == null || penalty.isBlank()) {
+            return "";
+        }
+        return switch (penalty.trim().toLowerCase(Locale.ROOT)) {
+            case "taste_mismatch" -> "취향 직접 매칭은 약해";
+            case "too_long" -> "러닝타임이 길 수 있어";
+            case "violence" -> "폭력적인 장면이 부담될 수 있어";
+            case "complex" -> "설정이나 전개가 복잡할 수 있어";
+            case "sad_ending" -> "먹먹한 결말을 피하고 싶다면 주의가 필요해";
+            case "loud" -> "큰 소리나 강한 자극이 있을 수 있어";
+            default -> "";
+        };
+    }
+
+    private List<String> contentSignals(ScoredCandidate scored, int limit) {
+        List<String> signals = new ArrayList<>();
+        scored.matchedTags().stream()
+            .filter(this::isReasonSourceTag)
+            .map(this::tagLabel)
+            .filter(value -> !value.isBlank())
+            .forEach(signals::add);
+        if (signals.isEmpty()) {
+            scored.candidate().allTags().stream()
+                .filter(this::isReasonSourceTag)
+                .map(this::tagLabel)
+                .filter(value -> !value.isBlank())
+                .forEach(signals::add);
+        }
+        ShowtimeCandidate candidate = scored.candidate();
+        if (candidate.runtimeMinutes() != null && candidate.runtimeMinutes() <= 125) {
+            signals.add("부담 적은 러닝타임");
+        }
+        if (!candidate.ageRating().isBlank()) {
+            signals.add(displayText(candidate.ageRating()));
+        }
+        return signals.stream().distinct().limit(limit).toList();
+    }
+
+    private String tagLabel(String tag) {
+        if (tag == null || tag.isBlank()) {
+            return "";
+        }
+        String normalized = tag.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "audience:alone" -> "혼자 보기";
+            case "audience:friends" -> "친구랑 보기";
+            case "audience:date" -> "데이트";
+            case "audience:family" -> "가족 관람";
+            case "audience:child" -> "아이와 함께";
+            case "mood:light" -> "가볍게 보기";
+            case "mood:immersive" -> "몰입감";
+            case "mood:exciting" -> "신나는 분위기";
+            case "mood:calm" -> "잔잔한 분위기";
+            case "mood:tense" -> "긴장감";
+            case "mood:warm" -> "따뜻한 정서";
+            case "mood:visual" -> "시각적 재미";
+            case "pace:easy" -> "따라가기 쉬운 전개";
+            case "pace:fast" -> "빠른 전개";
+            case "pace:slow" -> "천천히 보는 흐름";
+            default -> {
+                if (normalized.startsWith("genre:")) {
+                    yield genreLabel(normalized.substring("genre:".length())) + " 취향";
+                }
+                yield "";
+            }
+        };
     }
 
     private String ageTag(String ageRating) {
@@ -876,6 +1080,7 @@ public class RecommendationService {
                 .filter(scored -> hasGenreOverlap(scored, profile.preferredGenres()))
                 .toList();
             appendDistinctMovieCandidates(ordered, seenMovies, directPreferred);
+            return ordered;
         }
 
         Set<String> posterGenres = new LinkedHashSet<>(profile.likedGenres());
@@ -941,20 +1146,17 @@ public class RecommendationService {
         AiProvider provider
     ) {
         ShowtimeCandidate candidate = scored.candidate();
-        int resolvedScore = scored.score();
+        int resolvedScore = fallbackScore(scored, profile);
         String reason = groundedReason(scored);
-        String caution = "";
+        String caution = groundedCaution(scored, profile);
         String valuePoint = groundedValuePoint(candidate);
-        String analysisPoint = qualityAnalysisPoint("", scored, profile, mode, provider);
-        String resolvedAnalysisPoint = isNarrativeProvider(provider) || mode == RecommendationMode.PRECISE
-            ? blankToDefault(sanitizeUserFacingText(analysisPoint), analysisPoint(scored, profile))
-            : "";
+        String resolvedAnalysisPoint = analysisPoint(scored, profile);
         return new RecommendationItem(
             candidate.movieId(),
             candidate.showtimeId(),
             displayText(candidate.title()),
             resolvedScore,
-            blankToDefault(sanitizeUserFacingText(reason), "#조건근접"),
+            blankToDefault(sanitizeUserFacingText(reason), "조건에 가장 근접한 후보야."),
             resolvedAnalysisPoint,
             blankToDefault(sanitizeUserFacingText(caution), ""),
             blankToDefault(sanitizeUserFacingText(valuePoint), valuePoint(candidate)),
@@ -1005,7 +1207,7 @@ public class RecommendationService {
             candidate.showtimeId(),
             displayText(candidate.title()),
             resolvedScore,
-            blankToDefault(sanitizeUserFacingText(reason), "#조건근접"),
+            blankToDefault(sanitizeUserFacingText(reason), "조건에 가장 근접한 후보야."),
             resolvedAnalysisPoint,
             blankToDefault(sanitizeUserFacingText(caution), ""),
             blankToDefault(sanitizeUserFacingText(valuePoint), valuePoint(candidate)),
@@ -1042,7 +1244,7 @@ public class RecommendationService {
             candidate.showtimeId(),
             displayText(candidate.title()),
             resolvedScore,
-            blankToDefault(sanitizeUserFacingText(reason), "#조건근접"),
+            blankToDefault(sanitizeUserFacingText(reason), "조건에 가장 근접한 후보야."),
             resolvedAnalysisPoint,
             blankToDefault(sanitizeUserFacingText(caution), ""),
             blankToDefault(sanitizeUserFacingText(valuePoint), valuePoint(candidate)),
@@ -1110,17 +1312,17 @@ public class RecommendationService {
         for (String tag : candidate.allTags()) {
             String normalized = tag == null ? "" : tag.toLowerCase(Locale.ROOT);
             if (normalized.startsWith("genre:") && !isGenericGenreTag(normalized) && likedGenres.contains(normalized)) {
-                return "#" + genreLabel(normalized.substring("genre:".length())) + "취향";
+                return "선택한 " + genreLabel(normalized.substring("genre:".length())) + " 취향과 후보 장르가 직접 겹쳐서 코드 점수에서 우선순위를 높였어.";
             }
         }
         if (scored.penalties().contains("taste_mismatch")) {
-            return "#조건보조";
+            return "취향 장르 직접 매칭은 약하지만, 상영 조건과 다른 취향 신호가 보조 근거로 잡혔어.";
         }
         return candidate.allTags().stream()
             .filter(tag -> tag != null && tag.toLowerCase(Locale.ROOT).startsWith("genre:") && !isGenericGenreTag(tag))
-            .map(tag -> "#" + genreLabel(tag.substring("genre:".length())) + "계열")
+            .map(tag -> genreLabel(tag.substring("genre:".length())) + " 계열 신호와 상영 조건을 같이 본 코드 점수 근거야.")
             .findFirst()
-            .orElse("#장르근접");
+            .orElse("장르 신호와 예매 조건을 같이 본 코드 점수 근거야.");
     }
 
     private Set<String> tasteAnchorGenres(TagProfile profile) {

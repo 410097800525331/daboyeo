@@ -42,29 +42,28 @@ public final class RecommendationModels {
     }
 
     public enum AiProvider {
-        LOCAL,
-        GPT,
         CODEX;
 
         public static AiProvider from(String value) {
             if (value == null || value.isBlank()) {
-                return LOCAL;
+                return CODEX;
             }
             String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
-            if ("LOCAL".equals(normalized) || "LOCAL_OPENAI_COMPATIBLE".equals(normalized)) {
-                return LOCAL;
-            }
-            if ("GPT".equals(normalized) || "REMOTE_GATEWAY".equals(normalized) || "CODEX_OAUTH_GATEWAY".equals(normalized)) {
-                return GPT;
-            }
-            if ("CODEX".equals(normalized) || "CODEX_BRIDGE".equals(normalized) || "CODEX_WORKER".equals(normalized)) {
+            if ("CODEX".equals(normalized)
+                || "CODEX_BRIDGE".equals(normalized)
+                || "CODEX_WORKER".equals(normalized)
+                || "GPT".equals(normalized)
+                || "REMOTE_GATEWAY".equals(normalized)
+                || "CODEX_OAUTH_GATEWAY".equals(normalized)
+                || "LOCAL".equals(normalized)
+                || "LOCAL_OPENAI_COMPATIBLE".equals(normalized)) {
                 return CODEX;
             }
             throw new IllegalArgumentException("지원하지 않는 AI provider야.");
         }
 
         public String wireValue() {
-            return name().toLowerCase(Locale.ROOT);
+            return "codex";
         }
     }
 
@@ -299,12 +298,11 @@ public final class RecommendationModels {
                 all.add("mood:visual");
                 all.add("content:loud");
             }
-            addProviderDerivedTags(all, screen);
+            addMetadataDerivedTags(all, screen);
             return all;
         }
 
-        private void addProviderDerivedTags(Set<String> all, String screen) {
-            String text = normalizeForTagInference(title + " " + String.join(" ", all));
+        private void addMetadataDerivedTags(Set<String> all, String screen) {
             String age = normalizeForTagInference(ageRating + " " + String.join(" ", all));
 
             if (containsAny(age, "age_rating:all", "전체", "all")) {
@@ -317,74 +315,6 @@ public final class RecommendationModels {
             } else if (containsAny(age, "age_rating:19", "19", "청불", "adult")) {
                 all.add("mood:tense");
                 all.add("content:adult");
-            }
-
-            if (containsAny(text, "마리오", "짱구", "키키", "더빙", "애니", "극장판")) {
-                all.add("genre:animation");
-                all.add("mood:light");
-                all.add("mood:visual");
-                all.add("audience:child");
-                all.add("audience:family");
-            }
-
-            if (containsAny(text, "악마는 프라다")) {
-                all.add("genre:comedy");
-                all.add("genre:drama");
-                all.add("mood:light");
-                all.add("mood:warm");
-                all.add("mood:funny");
-                all.add("audience:date");
-                all.add("audience:friends");
-            }
-
-            if (containsAny(text, "귀멸", "무한성", "kimetsu", "demon slayer")) {
-                all.add("genre:animation");
-                all.add("genre:action");
-                all.add("genre:fantasy");
-                all.add("genre:thriller");
-                all.add("mood:tense");
-                all.add("mood:exciting");
-                all.add("mood:visual");
-                all.add("audience:friends");
-                all.add("content:violence");
-            }
-
-            if (containsAny(text, "살목지", "미이라", "호러", "공포", "스릴러")) {
-                all.add("genre:horror");
-                all.add("genre:thriller");
-                all.add("mood:tense");
-                all.add("audience:friends");
-                all.add("content:dark");
-                all.add("content:violence");
-            }
-
-            if (containsAny(text, "헤일메리", "sf", "사이언스", "우주")) {
-                all.add("genre:sf");
-                all.add("genre:adventure");
-                all.add("genre:drama");
-                all.add("mood:immersive");
-                all.add("mood:calm");
-            }
-
-            if (containsAny(text, "미션 임파서블", "mission impossible", "쥬라기", "jurassic", "어벤져스", "avengers", "아바타", "avatar", "탑건", "범죄도시")) {
-                all.add("genre:action");
-                all.add("genre:adventure");
-                all.add("mood:exciting");
-                all.add("mood:visual");
-                all.add("audience:friends");
-            }
-
-            if (containsAny(text, "라이브", "밴드", "콘서트", "공연", "비발디", "사카모토")) {
-                all.add("genre:music");
-                all.add("mood:immersive");
-                all.add("mood:exciting");
-                all.add("audience:friends");
-            }
-
-            if (containsAny(text, "[f]", "르누아르", "류이치", "사토상")) {
-                all.add("mood:calm");
-                all.add("mood:immersive");
-                all.add("pace:slow");
             }
 
             if (screen.contains("atmos") || screen.contains("dolby")) {

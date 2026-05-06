@@ -4,9 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,7 +22,6 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import kr.daboyeo.backend.config.RecommendationProperties;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiPick;
-import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiProvider;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiResult;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.PosterChoices;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.RecommendationMode;
@@ -41,7 +43,7 @@ class RecommendationServiceCandidateFilterTests {
     private final PosterSeedService posterSeedService = mock(PosterSeedService.class);
     private final PreferenceProfileBuilder profileBuilder = mock(PreferenceProfileBuilder.class);
     private final RecommendationScorer scorer = mock(RecommendationScorer.class);
-    private final LocalModelRecommendationClient localModelClient = mock(LocalModelRecommendationClient.class);
+    private final CodexRecommendationClient codexClient = mock(CodexRecommendationClient.class);
     private final RecommendationProfileRepository profileRepository = mock(RecommendationProfileRepository.class);
     private final ShowtimeRecommendationRepository showtimeRepository = mock(ShowtimeRecommendationRepository.class);
 
@@ -59,7 +61,7 @@ class RecommendationServiceCandidateFilterTests {
             eq(response.runId()),
             eq("anon_test"),
             eq("fast"),
-            eq("gemma-4-e2b-it"),
+            eq("codex"),
             any(),
             eq(List.of()),
             eq(null),
@@ -95,7 +97,40 @@ class RecommendationServiceCandidateFilterTests {
     }
 
     @Test
-    void passesConfiguredFastAiCandidateLimitToLocalModel() {
+    void noSelectedGenreKeepsDefaultCandidateFetchLimit() {
+        RecommendationService service = service(20);
+        ShowtimeCandidate candidate = candidate(1, "First");
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(List.of(candidate));
+        when(scorer.score(any(TagProfile.class), eq(List.of(candidate)), eq(null)))
+            .thenReturn(List.of(scored(candidate, 90)));
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+
+        service.recommend(request());
+
+        verify(showtimeRepository).findUpcomingCandidates(eq(240), any(LocalDateTime.class));
+    }
+
+    @Test
+    void selectedGenreUsesWiderCandidateFetchBeforeFiltering() {
+        RecommendationService service = service(20);
+        TagProfile profile = new TagProfile();
+        profile.addPreferredGenre("animation");
+        ShowtimeCandidate mario = candidate(1, "Super Mario Galaxy", Set.of("genre:animation", "mood:light"));
+        ShowtimeCandidate kiki = candidate(2, "Kiki's Delivery Service", Set.of("genre:animation", "mood:warm"));
+        when(profileBuilder.build(any(), any(), any())).thenReturn(profile);
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), isNull(), anySet()))
+            .thenReturn(List.of(mario, kiki));
+        when(scorer.score(eq(profile), eq(List.of(mario, kiki)), eq(null)))
+            .thenReturn(List.of(scored(mario, 96), scored(kiki, 93)));
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+
+        service.recommend(request());
+
+        verify(showtimeRepository).findUpcomingCandidates(eq(1200), any(LocalDateTime.class), isNull(), eq(Set.of("animation")));
+    }
+
+    @Test
+    void passesConfiguredFastAiCandidateLimitToCodexClient() {
         RecommendationService service = service(20, 3, 5);
         ShowtimeCandidate first = candidate(1, "First");
         ShowtimeCandidate second = candidate(2, "Second");
@@ -110,13 +145,13 @@ class RecommendationServiceCandidateFilterTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
             .thenReturn(List.of(first, second, third, fourth));
         when(scorer.score(any(TagProfile.class), any(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         service.recommend(request());
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
-        verify(localModelClient).rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), aiCandidates.capture());
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), aiCandidates.capture());
         assertThat(aiCandidates.getValue()).hasSize(3);
     }
 
@@ -128,7 +163,7 @@ class RecommendationServiceCandidateFilterTests {
             .thenReturn(List.of(candidate));
         when(scorer.score(any(TagProfile.class), any(), any()))
             .thenReturn(List.of(scored(candidate, 90)));
-        when(localModelClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
         doThrow(new RuntimeException("TiDB timeout")).when(profileRepository).saveRun(
             any(),
             any(),
@@ -148,7 +183,7 @@ class RecommendationServiceCandidateFilterTests {
     }
 
     @Test
-    void passesConfiguredPreciseAiCandidateLimitToLocalModel() {
+    void passesConfiguredPreciseAiCandidateLimitToCodexClient() {
         RecommendationService service = service(20, 5, 5);
         ShowtimeCandidate first = candidate(1, "First");
         ShowtimeCandidate second = candidate(2, "Second");
@@ -167,19 +202,19 @@ class RecommendationServiceCandidateFilterTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
             .thenReturn(List.of(first, second, third, fourth, fifth, sixth));
         when(scorer.score(any(TagProfile.class), any(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         service.recommend(request("precise"));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
-        verify(localModelClient).rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), aiCandidates.capture());
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), aiCandidates.capture());
         assertThat(aiCandidates.getValue()).hasSize(5);
     }
 
     @Test
-    void routesGptProviderToProviderSpecificModelClient() {
-        RecommendationService service = service(20, 3, 5);
+    void legacyGptProviderInputStillUsesCodexClient() {
+        RecommendationService service = service(20, 4, 5);
         ShowtimeCandidate first = candidate(1, "First");
         ShowtimeCandidate second = candidate(2, "Second");
         ShowtimeCandidate third = candidate(3, "Third");
@@ -193,18 +228,18 @@ class RecommendationServiceCandidateFilterTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
             .thenReturn(List.of(first, second, third, fourth));
         when(scorer.score(any(TagProfile.class), any(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(any(AiProvider.class), any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         service.recommend(request("fast", null, "gpt"));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
-        verify(localModelClient).rankAndExplain(eq(AiProvider.GPT), eq(RecommendationMode.FAST), any(TagProfile.class), aiCandidates.capture());
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), aiCandidates.capture());
         assertThat(aiCandidates.getValue()).hasSize(4);
     }
 
     @Test
-    void gptPreciseUsesWiderDefaultCandidatePoolThanLocalPrecise() {
+    void legacyGptPreciseInputUsesCodexConfiguredCandidatePool() {
         RecommendationService service = service(20);
         List<ShowtimeCandidate> candidates = IntStream.rangeClosed(1, 13)
             .mapToObj(index -> candidate(index, "Candidate " + index))
@@ -215,18 +250,18 @@ class RecommendationServiceCandidateFilterTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
             .thenReturn(candidates);
         when(scorer.score(any(TagProfile.class), any(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(any(AiProvider.class), any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         service.recommend(request("precise", null, "gpt"));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
-        verify(localModelClient).rankAndExplain(eq(AiProvider.GPT), eq(RecommendationMode.PRECISE), any(TagProfile.class), aiCandidates.capture());
-        assertThat(aiCandidates.getValue()).hasSize(12);
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), aiCandidates.capture());
+        assertThat(aiCandidates.getValue()).hasSize(5);
     }
 
     @Test
-    void codexPreciseUsesWiderDefaultCandidatePoolThanGptPrecise() {
+    void codexPreciseUsesConfiguredCandidatePool() {
         RecommendationService service = service(20);
         List<ShowtimeCandidate> candidates = IntStream.rangeClosed(1, 25)
             .mapToObj(index -> candidate(index, "Candidate " + index))
@@ -237,18 +272,18 @@ class RecommendationServiceCandidateFilterTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
             .thenReturn(candidates);
         when(scorer.score(any(TagProfile.class), any(), any())).thenReturn(scored);
-        when(localModelClient.rankAndExplain(any(AiProvider.class), any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         service.recommend(request("precise", null, "codex"));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
-        verify(localModelClient).rankAndExplain(eq(AiProvider.CODEX), eq(RecommendationMode.PRECISE), any(TagProfile.class), aiCandidates.capture());
-        assertThat(aiCandidates.getValue()).hasSize(20);
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), aiCandidates.capture());
+        assertThat(aiCandidates.getValue()).hasSize(5);
     }
 
     @Test
-    void directPreferredGenreMatchesStayFirstAndReserveCandidatesFillShortfall() {
+    void selectedGenreMatchesAreTheOnlyEligibleFallbackCandidates() {
         RecommendationService service = service(20, 5, 5);
         TagProfile profile = new TagProfile();
         profile.addPreferredGenre("sf");
@@ -260,53 +295,48 @@ class RecommendationServiceCandidateFilterTests {
         ShowtimeCandidate prada = candidate(3, "Devil Wears Prada 2", Set.of("genre:drama", "genre:comedy", "mood:light"));
         ShowtimeCandidate mario = candidate(4, "Super Mario Galaxy", Set.of("genre:animation", "mood:light"));
         when(profileBuilder.build(any(), any(), any())).thenReturn(profile);
-        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), isNull(), anySet()))
             .thenReturn(List.of(project, projectLater, prada, mario));
         when(scorer.score(eq(profile), eq(List.of(project, projectLater, prada, mario)), eq(null)))
             .thenReturn(List.of(scored(project, 100), scored(projectLater, 98), scored(prada, 74), scored(mario, 68)));
-        when(localModelClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         RecommendationResponse response = service.recommend(request());
 
+        assertThat(response.status()).isEqualTo("fallback");
         assertThat(response.recommendations())
             .extracting(item -> item.title())
-            .containsExactly("Project Hail Mary", "Devil Wears Prada 2", "Super Mario Galaxy");
+            .containsExactly("Project Hail Mary");
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
-        verify(localModelClient).rankAndExplain(eq(RecommendationMode.FAST), eq(profile), aiCandidates.capture());
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), eq(profile), aiCandidates.capture());
         assertThat(aiCandidates.getValue())
             .extracting(scored -> scored.candidate().title())
-            .containsExactly("Project Hail Mary", "Devil Wears Prada 2", "Super Mario Galaxy");
+            .containsExactly("Project Hail Mary");
     }
 
     @Test
-    void posterGenreMatchesAreFallbackWhenPreferredGenresHaveNoCurrentCandidate() {
+    void selectedGenreWithoutExplicitCandidateReturnsNoSelectedGenreCandidateStatus() {
         RecommendationService service = service(20, 5, 5);
         TagProfile profile = new TagProfile();
-        profile.addPreferredGenre("sf");
-        profile.addPreferredGenre("action");
+        profile.addPreferredGenre("animation");
         profile.addLikedGenre("drama");
         profile.addLikedGenre("comedy");
         ShowtimeCandidate prada = candidate(1, "Devil Wears Prada 2", Set.of("genre:drama", "genre:comedy", "mood:light"));
-        ShowtimeCandidate mario = candidate(2, "Super Mario Galaxy", Set.of("genre:animation", "mood:light"));
+        ShowtimeCandidate marioTitleOnly = candidate(2, "Super Mario Galaxy", Set.of("mood:light"));
         when(profileBuilder.build(any(), any(), any())).thenReturn(profile);
-        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
-            .thenReturn(List.of(prada, mario));
-        when(scorer.score(eq(profile), eq(List.of(prada, mario)), eq(null)))
-            .thenReturn(List.of(scored(prada, 74), scored(mario, 74)));
-        when(localModelClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), isNull(), anySet()))
+            .thenReturn(List.of(prada, marioTitleOnly));
+        when(scorer.score(eq(profile), eq(List.of(prada, marioTitleOnly)), eq(null)))
+            .thenReturn(List.of(scored(prada, 68), scored(marioTitleOnly, 68)));
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         RecommendationResponse response = service.recommend(request());
 
-        assertThat(response.recommendations())
-            .extracting(item -> item.title())
-            .containsExactly("Devil Wears Prada 2", "Super Mario Galaxy");
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
-        verify(localModelClient).rankAndExplain(eq(RecommendationMode.FAST), eq(profile), aiCandidates.capture());
-        assertThat(aiCandidates.getValue())
-            .extracting(scored -> scored.candidate().title())
-            .containsExactly("Devil Wears Prada 2", "Super Mario Galaxy");
+        assertThat(response.status()).isEqualTo("no_selected_genre_candidates");
+        assertThat(response.recommendations()).isEmpty();
+        assertThat(response.message()).contains("애니메이션", "제목만 보고 장르를 추정하지 않도록");
+        verify(codexClient, never()).rankAndExplain(any(), any(), any());
     }
 
     @Test
@@ -319,11 +349,11 @@ class RecommendationServiceCandidateFilterTests {
         ShowtimeCandidate prada = candidate(2, "Devil Wears Prada 2", Set.of("genre:comedy", "genre:drama", "mood:light"));
         ShowtimeCandidate mario = candidate(3, "Super Mario Galaxy", Set.of("genre:animation", "mood:light"));
         when(profileBuilder.build(any(), any(), any())).thenReturn(profile);
-        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), isNull(), anySet()))
             .thenReturn(List.of(project, prada, mario));
         when(scorer.score(eq(profile), eq(List.of(project, prada, mario)), eq(null)))
             .thenReturn(List.of(scored(project, 91), scored(prada, 74), scored(mario, 65)));
-        when(localModelClient.rankAndExplain(any(AiProvider.class), any(), any(), any()))
+        when(codexClient.rankAndExplain(any(), any(), any()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
                 "codex",
@@ -338,10 +368,10 @@ class RecommendationServiceCandidateFilterTests {
 
         assertThat(response.recommendations())
             .extracting(item -> item.title())
-            .containsExactly("Project Hail Mary", "Devil Wears Prada 2", "Super Mario Galaxy");
+            .containsExactly("Project Hail Mary");
         assertThat(response.recommendations())
             .extracting(item -> item.score())
-            .containsExactly(96, 74, 74);
+            .containsExactly(96);
     }
 
     @Test
@@ -380,7 +410,7 @@ class RecommendationServiceCandidateFilterTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), eq(withoutRegion))).thenReturn(List.of(candidate));
         when(scorer.score(any(TagProfile.class), eq(List.of(candidate)), eq(withoutRegion)))
             .thenReturn(List.of(scored(candidate, 90)));
-        when(localModelClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         RecommendationResponse response = service.recommend(request("fast", filters));
 
@@ -403,7 +433,7 @@ class RecommendationServiceCandidateFilterTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(List.of(candidate));
         when(scorer.score(any(TagProfile.class), eq(List.of(candidate)), eq(null)))
             .thenReturn(List.of(scored(candidate, 90)));
-        when(localModelClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         RecommendationResponse response = service.recommend(request("fast", filters));
 
@@ -423,7 +453,7 @@ class RecommendationServiceCandidateFilterTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), eq(relaxedFilters))).thenReturn(List.of(candidate));
         when(scorer.score(any(TagProfile.class), eq(List.of(candidate)), eq(relaxedFilters)))
             .thenReturn(List.of(scored(candidate, 90)));
-        when(localModelClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         RecommendationResponse response = service.recommend(request("fast", expiredFilters));
 
@@ -444,15 +474,11 @@ class RecommendationServiceCandidateFilterTests {
             .thenReturn(Optional.of(new RecommendationProfile("anon_test", Map.of())));
         when(profileBuilder.build(any(), any(), any())).thenReturn(new TagProfile());
         RecommendationProperties properties = new RecommendationProperties(
-            null,
-            null,
-            null,
             minStartBufferMinutes,
             fastAiCandidateLimit,
             preciseAiCandidateLimit,
-            280,
-            320,
-            72,
+            900,
+            1700,
             List.of("http://localhost:5173")
         );
         return new RecommendationService(
@@ -460,7 +486,7 @@ class RecommendationServiceCandidateFilterTests {
             posterSeedService,
             profileBuilder,
             scorer,
-            localModelClient,
+            codexClient,
             profileRepository,
             showtimeRepository
         );

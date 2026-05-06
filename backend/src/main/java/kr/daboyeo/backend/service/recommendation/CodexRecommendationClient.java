@@ -18,30 +18,24 @@ import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiProviderS
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiResult;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.RecommendationMode;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.ScoredCandidate;
+import kr.daboyeo.backend.domain.recommendation.RecommendationModels.ShowtimeCandidate;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.TagProfile;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 @Component
-public class LocalModelRecommendationClient {
+public class CodexRecommendationClient {
 
-    private static final Logger log = LoggerFactory.getLogger(LocalModelRecommendationClient.class);
-    private static final int CONNECT_TIMEOUT_MS = 5_000;
-    private static final int FAST_READ_TIMEOUT_MS = 45_000;
-    private static final int PRECISE_READ_TIMEOUT_MS = 90_000;
-    private static final int STATUS_TIMEOUT_MS = 1_500;
+    private static final Logger log = LoggerFactory.getLogger(CodexRecommendationClient.class);
+
     private final RecommendationProperties properties;
     private final ObjectMapper objectMapper;
     private final AiBridgeJobService bridgeJobService;
 
     @Autowired
-    public LocalModelRecommendationClient(
+    public CodexRecommendationClient(
         RecommendationProperties properties,
         ObjectMapper objectMapper,
         AiBridgeJobService bridgeJobService
@@ -51,7 +45,7 @@ public class LocalModelRecommendationClient {
         this.bridgeJobService = bridgeJobService;
     }
 
-    public LocalModelRecommendationClient(RecommendationProperties properties, ObjectMapper objectMapper) {
+    CodexRecommendationClient(RecommendationProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.bridgeJobService = null;
@@ -62,7 +56,7 @@ public class LocalModelRecommendationClient {
         TagProfile profile,
         List<ScoredCandidate> candidates
     ) {
-        return rankAndExplain(AiProvider.LOCAL, mode, profile, candidates);
+        return rankAndExplain(AiProvider.CODEX, mode, profile, candidates);
     }
 
     public Optional<AiResult> rankAndExplain(
@@ -71,195 +65,56 @@ public class LocalModelRecommendationClient {
         TagProfile profile,
         List<ScoredCandidate> candidates
     ) {
-        if (candidates.isEmpty()) {
+        if (candidates == null || candidates.isEmpty()) {
             return Optional.empty();
         }
-        String model = properties.modelFor(provider, mode);
-        if (model.isBlank()) {
+        String model = properties.modelFor(AiProvider.CODEX, mode);
+        if (model.isBlank() || bridgeJobService == null) {
             return Optional.empty();
         }
 
+        Map<String, Object> request;
         try {
-            if (provider == AiProvider.CODEX) {
-                return callBridge(provider, mode, profile, candidates, model);
-            }
-            if (provider == AiProvider.LOCAL) {
-                Optional<AiResult> bridgeResult = callBridge(provider, mode, profile, candidates, model);
-                if (bridgeResult.isPresent()) {
-                    return bridgeResult;
-                }
-            }
-            RestClient restClient = RestClient.builder()
-                .baseUrl(properties.baseUrlFor(provider))
-                .requestFactory(requestFactory(mode))
-                .build();
-            return callOpenAiCompatible(restClient, provider, mode, profile, candidates, model);
-        } catch (RestClientException | JsonProcessingException e) {
-            log.warn(
-                "Recommendation model call failed. provider={}, mode={}, model={}, cause={}",
-                provider.wireValue(),
-                mode.wireValue(),
-                model,
-                e.toString()
-            );
+            request = openAiCompatibleRequest(mode, profile, candidates, model);
+        } catch (JsonProcessingException exception) {
+            log.warn("Codex recommendation prompt build failed. mode={}, cause={}", mode.wireValue(), exception.toString());
             return Optional.empty();
         }
-    }
 
-    public AiProviderStatus providerStatus(AiProvider provider) {
-        List<String> expectedModels = expectedModels(provider);
-        if (provider == AiProvider.CODEX) {
-            return bridgeJobService == null
-                ? new AiProviderStatus(
-                    provider.wireValue(),
-                    properties.providerLabel(provider),
-                    expectedModels,
-                    false,
-                    "not_configured",
-                    "AI bridge is not available in this runtime."
-                )
-                : bridgeJobService.bridgeStatus(provider);
-        }
-        if (provider == AiProvider.LOCAL && bridgeJobService != null) {
-            AiProviderStatus bridgeStatus = bridgeJobService.bridgeStatus(provider);
-            if (bridgeStatus.available()) {
-                return bridgeStatus;
-            }
-        }
-        if (properties.baseUrlFor(provider).isBlank() || expectedModels.isEmpty()) {
-            return new AiProviderStatus(
-                provider.wireValue(),
-                properties.providerLabel(provider),
-                expectedModels,
-                false,
-                "not_configured",
-                "모델 라우팅 설정이 비어 있어."
-            );
-        }
-
-        try {
-            JsonNode response = RestClient.builder()
-                .baseUrl(properties.baseUrlFor(provider))
-                .requestFactory(statusRequestFactory())
-                .build()
-                .get()
-                .uri("/models")
-                .retrieve()
-                .body(JsonNode.class);
-            List<String> actualModels = modelIds(response);
-            List<String> missingModels = expectedModels.stream()
-                .filter(model -> !actualModels.contains(model))
-                .toList();
-            if (!missingModels.isEmpty()) {
-                return new AiProviderStatus(
-                    provider.wireValue(),
-                    properties.providerLabel(provider),
-                    expectedModels,
-                    false,
-                    "model_missing",
-                    "서버는 켜져 있지만 필요한 모델이 로드되지 않았어."
-                );
-            }
-            return new AiProviderStatus(
-                provider.wireValue(),
-                properties.providerLabel(provider),
-                expectedModels,
-                true,
-                "ready",
-                "모델 서버가 응답 중이야."
-            );
-        } catch (RestClientException exception) {
-            return new AiProviderStatus(
-                provider.wireValue(),
-                properties.providerLabel(provider),
-                expectedModels,
-                false,
-                "offline",
-                "모델 서버에 연결할 수 없어. 결과는 코드 점수 기반 fallback으로 나올 수 있어."
-            );
-        }
-    }
-
-    private SimpleClientHttpRequestFactory requestFactory(RecommendationMode mode) {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(CONNECT_TIMEOUT_MS);
-        factory.setReadTimeout(mode == RecommendationMode.FAST ? FAST_READ_TIMEOUT_MS : PRECISE_READ_TIMEOUT_MS);
-        return factory;
-    }
-
-    private SimpleClientHttpRequestFactory statusRequestFactory() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(STATUS_TIMEOUT_MS);
-        factory.setReadTimeout(STATUS_TIMEOUT_MS);
-        return factory;
-    }
-
-    private List<String> expectedModels(AiProvider provider) {
-        if (provider == AiProvider.CODEX) {
-            return List.of(properties.modelFor(provider, RecommendationMode.FAST)).stream()
-                .filter(model -> model != null && !model.isBlank())
-                .distinct()
-                .toList();
-        }
-        if (provider == AiProvider.GPT) {
-            return List.of(properties.modelFor(provider, RecommendationMode.FAST)).stream()
-                .filter(model -> model != null && !model.isBlank())
-                .distinct()
-                .toList();
-        }
-        return List.of(
-                properties.modelFor(AiProvider.LOCAL, RecommendationMode.FAST),
-                properties.modelFor(AiProvider.LOCAL, RecommendationMode.PRECISE)
-            ).stream()
-            .filter(model -> model != null && !model.isBlank())
-            .distinct()
-            .toList();
-    }
-
-    private List<String> modelIds(JsonNode response) {
-        List<String> ids = new ArrayList<>();
-        JsonNode data = response == null ? null : response.path("data");
-        if (data != null && data.isArray()) {
-            for (JsonNode item : data) {
-                String id = item.path("id").asText("");
-                if (!id.isBlank()) {
-                    ids.add(id);
-                }
-            }
-        }
-        return ids;
-    }
-
-    private Optional<AiResult> callBridge(
-        AiProvider provider,
-        RecommendationMode mode,
-        TagProfile profile,
-        List<ScoredCandidate> candidates,
-        String model
-    ) throws JsonProcessingException {
-        if (bridgeJobService == null) {
-            return Optional.empty();
-        }
-        Map<String, Object> request = openAiCompatibleRequest(provider, mode, profile, candidates, model);
-        return bridgeJobService.submitAndAwait(provider, mode, model, request)
+        return bridgeJobService.submitAndAwait(AiProvider.CODEX, mode, model, request)
             .flatMap(rawJson -> {
                 try {
                     return parseResult(rawJson, model);
                 } catch (JsonProcessingException exception) {
-                    log.warn(
-                        "AI bridge result parsing failed. provider={}, mode={}, model={}, cause={}",
-                        provider.wireValue(),
-                        mode.wireValue(),
-                        model,
-                        exception.toString()
-                    );
+                    log.warn("Codex bridge result parsing failed. mode={}, model={}, cause={}", mode.wireValue(), model, exception.toString());
                     return Optional.empty();
                 }
             });
     }
 
+    public AiProviderStatus providerStatus(AiProvider provider) {
+        List<String> expectedModels = expectedModels();
+        if (bridgeJobService == null) {
+            return new AiProviderStatus(
+                AiProvider.CODEX.wireValue(),
+                properties.providerLabel(AiProvider.CODEX),
+                expectedModels,
+                false,
+                "not_configured",
+                "AI bridge is not available in this runtime."
+            );
+        }
+        return bridgeJobService.bridgeStatus(AiProvider.CODEX);
+    }
+
+    private List<String> expectedModels() {
+        return List.of(properties.modelFor(AiProvider.CODEX, RecommendationMode.FAST)).stream()
+            .filter(model -> model != null && !model.isBlank())
+            .distinct()
+            .toList();
+    }
+
     private Map<String, Object> openAiCompatibleRequest(
-        AiProvider provider,
         RecommendationMode mode,
         TagProfile profile,
         List<ScoredCandidate> candidates,
@@ -270,71 +125,34 @@ public class LocalModelRecommendationClient {
         request.put("stream", false);
         request.put("temperature", mode == RecommendationMode.FAST ? 0.0 : 0.05);
         request.put("top_p", 0.85);
-        request.put("max_tokens", properties.maxTokensFor(provider, mode));
-        request.put("messages", messages(provider, mode, profile, candidates));
+        request.put("max_tokens", properties.maxTokensFor(AiProvider.CODEX, mode));
+        request.put("messages", messages(mode, profile, candidates));
         request.put(
             "response_format",
             recommendationResponseFormat(
-                provider,
                 mode,
-                properties.responseTextMaxLengthFor(provider, mode),
+                properties.responseTextMaxLengthFor(AiProvider.CODEX, mode),
                 candidates.size()
             )
         );
-
-        String reasoningEffort = properties.reasoningEffortFor(provider, mode);
-        if (!reasoningEffort.isBlank()) {
-            request.put("reasoning_effort", reasoningEffort);
-        }
         return request;
     }
 
-    private Optional<AiResult> callOpenAiCompatible(
-        RestClient restClient,
-        AiProvider provider,
-        RecommendationMode mode,
-        TagProfile profile,
-        List<ScoredCandidate> candidates,
-        String model
-    ) throws JsonProcessingException {
-        Map<String, Object> request = openAiCompatibleRequest(provider, mode, profile, candidates, model);
-
-        JsonNode response = restClient.post()
-            .uri("/chat/completions")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(request)
-            .retrieve()
-            .body(JsonNode.class);
-        String content = response == null
-            ? ""
-            : response.path("choices").path(0).path("message").path("content").asText("");
-        return parseResult(content, model);
-    }
-
     private List<Map<String, String>> messages(
-        AiProvider provider,
         RecommendationMode mode,
         TagProfile profile,
         List<ScoredCandidate> candidates
     ) throws JsonProcessingException {
         return List.of(
-            Map.of(
-                "role", "system",
-                "content", systemPrompt(provider, mode)
-            ),
-            Map.of("role", "user", "content", buildPrompt(provider, mode, profile, candidates))
+            Map.of("role", "system", "content", systemPrompt(mode)),
+            Map.of("role", "user", "content", buildPrompt(mode, profile, candidates))
         );
     }
 
-    private String systemPrompt(AiProvider provider, RecommendationMode mode) {
-        if (provider == AiProvider.GPT || provider == AiProvider.CODEX) {
-            return mode == RecommendationMode.PRECISE
-                ? "You are a careful Korean movie recommendation analyst. Use only the supplied candidates. Do deep comparative reasoning across selected genres, poster taste, avoided elements, practical showtime value, and tradeoffs between close candidates. Lead with concrete positive evidence, then mention limits only when they matter. Return JSON only. Do not invent movies, theaters, prices, scores, ids, seats, runtimes, or hidden fields."
-                : "You are a concise Korean movie recommendation analyst. Use only the supplied candidates. Compare the supplied evidence more intelligently than a local tag ranker, with concrete fit reasons rather than defensive absence-of-evidence phrasing. Return JSON only. Do not invent movies, theaters, prices, scores, ids, seats, runtimes, or hidden fields.";
-        }
+    private String systemPrompt(RecommendationMode mode) {
         return mode == RecommendationMode.PRECISE
-            ? "Rerank only given showtimes and write one Korean hashtag analysis. Return JSON only. No prose, invention, scores, or raw tokens."
-            : "Rank only given showtimes. Return JSON only. why/v are Korean hashtags from b/vp. No prose, invention, scores, or raw tokens.";
+            ? "You are a careful Korean movie recommendation analyst. Use only the supplied candidates. Do deep comparative reasoning across selected genres, poster taste, avoided elements, practical showtime value, and tradeoffs between close candidates. Lead with concrete positive evidence, then mention limits only when they matter. Return JSON only. Do not invent movies, theaters, prices, scores, ids, seats, runtimes, or hidden fields."
+            : "You are a concise Korean movie recommendation analyst. Use only the supplied candidates. Compare the supplied evidence with concrete fit reasons instead of generic caution-first wording. Return JSON only. Do not invent movies, theaters, prices, scores, ids, seats, runtimes, or hidden fields.";
     }
 
     Optional<AiResult> parseResult(String content, String model) throws JsonProcessingException {
@@ -386,7 +204,7 @@ public class LocalModelRecommendationClient {
     }
 
     String buildPrompt(RecommendationMode mode, TagProfile profile, List<ScoredCandidate> candidates) {
-        return buildPrompt(AiProvider.LOCAL, mode, profile, candidates);
+        return buildPrompt(AiProvider.CODEX, mode, profile, candidates);
     }
 
     String buildPrompt(
@@ -398,95 +216,56 @@ public class LocalModelRecommendationClient {
         TagProfile safeProfile = profile == null ? new TagProfile() : profile;
         try {
             String candidateJson = objectMapper.writeValueAsString(candidates.stream()
-                .map(scored -> provider == AiProvider.GPT || provider == AiProvider.CODEX ? candidateForGptPrompt(scored, safeProfile, mode) : candidateForPrompt(scored))
+                .map(scored -> candidateForPrompt(scored, safeProfile, mode))
                 .toList());
-            if (provider == AiProvider.GPT || provider == AiProvider.CODEX) {
-                String pickInstruction = mode == RecommendationMode.PRECISE && candidates.size() >= 3
-                    ? "Pick exactly 3 objects from candidates."
-                    : "Pick 1 to " + Math.min(3, candidates.size()) + " objects from candidates.";
-                String depth = mode == RecommendationMode.PRECISE
-                    ? "Decision style: GPT_PRECISE. Evaluate every supplied candidate before choosing. Compare selected genre intent, poster taste, avoid risks, showtime practicality, and why each selected candidate beats a nearby alternative."
-                    : "Decision style: GPT_FAST. Make a single-pass but evidence-based comparison across the supplied candidates. Prioritize the strongest concrete fit and avoid generic caution-first wording.";
-                String itemContract = mode == RecommendationMode.PRECISE
-                    ? "s=integer 0-100 final recommendation score; why=2 Korean sentences naming the decisive content fit and practical fit; a=2-3 Korean sentences covering selected genre/poster profile, avoid-risk handling, and tradeoff versus another candidate; v=one Korean sentence about practical showtime/theater value; c=short Korean caution or empty string."
-                    : "s=integer 0-100 final recommendation score; why=1-2 Korean sentences naming the decisive content fit and practical fit; a=1-2 Korean sentences about selected genre/poster profile or context; v=one Korean sentence about practical showtime/theater value; c=short Korean caution or empty string.";
-                String comparisonFields = mode == RecommendationMode.PRECISE
-                    ? "- watchRisks/tradeoffHints: reasons to be careful or compare against nearby options"
-                    : "- watchRisks: reasons to be careful";
-                return """
-                    User profile:
-                    - audience=%s
-                    - mood=%s
-                    - avoid=%s
-                    - preference_genre_hints=%s
-
-                    Candidates:
-                    %s
-
-                    Use these candidate fields:
-                    - tasteMatch: direct candidate-user selected/poster genre overlap only
-                    - fitHints: direct fit signals
-                    - scheduleFit/practicalValue: booking-time and theater practicality
-                    %s
-
-                    Method:
-                    %s
-                    %s
-                    Treat preference_genre_hints as user-level context only. Claim direct genre/poster match only when candidate tasteMatch is non-empty.
-                    Score candidates yourself from the supplied evidence before ranking: direct selected-genre/tasteMatch fit can be 90-100, strong concrete fit without tasteMatch is a reserve and should usually be 55-74, and any empty-tasteMatch reserve must stay at or below 74.
-                    If tasteMatch is empty, still explain concrete fit from fitHints, scheduleFit, and practicalValue instead of leading with "direct evidence is missing". Mention the missing match only if it changes the ranking.
-                    Return only {"r":[{"id":1,"s":92,"why":"...","a":"...","v":"...","c":"..."}]}.
-                    %s
-                    Do not write scores, raw tags, JSON field names, or unavailable facts inside why/a/v/c text.
-                    Never invent movies, theaters, prices, seats, runtimes, showtimes, or booking availability.
-                    """.formatted(
-                    safeProfile.audience(),
-                    safeProfile.mood(),
-                    safeProfile.avoid(),
-                    analysisHints(safeProfile),
-                    candidateJson,
-                    comparisonFields,
-                    depth,
-                    pickInstruction,
-                    itemContract
-                );
-            }
-            if (mode == RecommendationMode.PRECISE) {
-                String pickInstruction = candidates.size() >= 3
-                    ? "Pick exactly 3 objects from JSON."
-                    : "Pick all " + candidates.size() + " objects from JSON.";
-                return """
-                    C aud=%s mood=%s avoid=%s liked=%s
-                    %s
-
-                    Return only {"r":[{"id":1,"a":"#SF취향"}]}.
-                    %s Use b first, vp as tie-break.
-                    a=copy one hashtag from liked when liked is not empty; otherwise one short hashtag from b.
-                    No underscores, combined tags, title, prose, field names, raw tokens, or score. Max %d chars.
-                    """.formatted(
-                    safeProfile.audience(),
-                    safeProfile.mood(),
-                    safeProfile.avoid(),
-                    analysisHints(safeProfile),
-                    candidateJson,
-                    pickInstruction,
-                    properties.responseTextMaxLength()
-                );
-            }
+            String pickInstruction = mode == RecommendationMode.PRECISE && candidates.size() >= 3
+                ? "Pick exactly 3 objects from candidates."
+                : "Pick 1 to " + Math.min(3, candidates.size()) + " objects from candidates.";
+            String depth = mode == RecommendationMode.PRECISE
+                ? "Decision style: CODEX_PRECISE. Evaluate every supplied candidate before choosing. Compare selected genre intent, poster taste, avoid risks, showtime practicality, and why each selected candidate beats a nearby alternative."
+                : "Decision style: CODEX_FAST. Make a single-pass but evidence-based comparison across the supplied candidates. Prioritize the strongest concrete fit and avoid generic caution-first wording.";
+            String itemContract = mode == RecommendationMode.PRECISE
+                ? "s=integer 0-100 final recommendation score; why=2 Korean sentences naming the decisive content fit and practical fit; a=2-3 Korean sentences covering selected genre/poster profile, avoid-risk handling, and tradeoff versus another candidate; v=one Korean sentence about practical showtime/theater value; c=short Korean caution or empty string."
+                : "s=integer 0-100 final recommendation score; why=1-2 Korean sentences naming the decisive content fit and practical fit; a=1-2 Korean sentences about selected genre/poster profile or context; v=one Korean sentence about practical showtime/theater value; c=short Korean caution or empty string.";
+            String comparisonFields = mode == RecommendationMode.PRECISE
+                ? "- watchRisks/tradeoffHints: reasons to be careful or compare against nearby options"
+                : "- watchRisks: reasons to be careful";
             return """
-                C aud=%s mood=%s avoid=%s mode=%s
+                User profile:
+                - audience=%s
+                - mood=%s
+                - avoid=%s
+                - preference_genre_hints=%s
+
+                Candidates:
                 %s
 
-                Return only {"r":[{"id":1,"why":"#가볍게 #친구랑","v":"#17:00상영 #좌석여유"}]}.
-                Pick max 3 ids from JSON. why=b tags only. v=vp tags only.
-                Korean hashtags only, max %d chars each. No title, prose, field names, raw tokens, or score.
+                Use these candidate fields:
+                - tasteMatch: direct candidate-user selected/poster genre overlap only
+                - fitHints: direct fit signals
+                - scheduleFit/practicalValue: booking-time and theater practicality
+                %s
+
+                Method:
+                %s
+                %s
+                Treat preference_genre_hints as user-level context only. Claim direct genre/poster match only when candidate tasteMatch is non-empty.
+                Score candidates yourself from the supplied evidence before ranking: direct selected-genre/tasteMatch fit can be 90-100, strong concrete fit without tasteMatch is a reserve and should usually be 55-68, and any empty-tasteMatch reserve must stay at or below 68.
+                If tasteMatch is empty, still explain concrete fit from fitHints, scheduleFit, and practicalValue instead of leading with "direct evidence is missing". Mention the missing match only if it changes the ranking.
+                Return only {"r":[{"id":1,"s":92,"why":"...","a":"...","v":"...","c":"..."}]}.
+                %s
+                Do not write scores, raw tags, JSON field names, or unavailable facts inside why/a/v/c text.
+                Never invent movies, theaters, prices, seats, runtimes, showtimes, or booking availability.
                 """.formatted(
                 safeProfile.audience(),
                 safeProfile.mood(),
                 safeProfile.avoid(),
-                mode.wireValue(),
+                analysisHints(safeProfile),
                 candidateJson,
-                properties.responseTextMaxLength()
+                comparisonFields,
+                depth,
+                pickInstruction,
+                itemContract
             );
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to build recommendation prompt.", e);
@@ -494,7 +273,6 @@ public class LocalModelRecommendationClient {
     }
 
     private Map<String, Object> recommendationResponseFormat(
-        AiProvider provider,
         RecommendationMode mode,
         int maxTextLength,
         int candidateCount
@@ -504,20 +282,17 @@ public class LocalModelRecommendationClient {
             "json_schema", Map.of(
                 "name", "daboyeo_recommendation_response",
                 "strict", true,
-                "schema", recommendationResponseSchema(provider, mode, maxTextLength, candidateCount)
+                "schema", recommendationResponseSchema(mode, maxTextLength, candidateCount)
             )
         );
     }
 
     private Map<String, Object> recommendationResponseSchema(
-        AiProvider provider,
         RecommendationMode mode,
         int maxTextLength,
         int candidateCount
     ) {
-        int minItems = provider == AiProvider.GPT || provider == AiProvider.CODEX
-            ? mode == RecommendationMode.PRECISE ? Math.min(3, Math.max(1, candidateCount)) : 1
-            : mode == RecommendationMode.PRECISE ? Math.min(3, Math.max(1, candidateCount)) : 0;
+        int minItems = mode == RecommendationMode.PRECISE ? Math.min(3, Math.max(1, candidateCount)) : 1;
         return Map.of(
             "type", "object",
             "additionalProperties", false,
@@ -527,17 +302,13 @@ public class LocalModelRecommendationClient {
                     "type", "array",
                     "minItems", minItems,
                     "maxItems", 3,
-                    "items", provider == AiProvider.GPT || provider == AiProvider.CODEX
-                        ? gptRecommendationItemSchema(mode, maxTextLength)
-                        : mode == RecommendationMode.PRECISE
-                        ? preciseRecommendationItemSchema(maxTextLength)
-                        : recommendationItemSchema(maxTextLength)
+                    "items", recommendationItemSchema(mode, maxTextLength)
                 )
             )
         );
     }
 
-    private Map<String, Object> gptRecommendationItemSchema(RecommendationMode mode, int maxTextLength) {
+    private Map<String, Object> recommendationItemSchema(RecommendationMode mode, int maxTextLength) {
         int analysisMax = mode == RecommendationMode.PRECISE ? maxTextLength : Math.min(maxTextLength, 220);
         int reasonMax = mode == RecommendationMode.PRECISE ? Math.min(maxTextLength, 240) : Math.min(maxTextLength, 180);
         int valueMax = mode == RecommendationMode.PRECISE ? Math.min(maxTextLength, 180) : Math.min(maxTextLength, 150);
@@ -557,43 +328,8 @@ public class LocalModelRecommendationClient {
         );
     }
 
-    private Map<String, Object> preciseRecommendationItemSchema(int maxTextLength) {
-        return Map.of(
-            "type", "object",
-            "additionalProperties", false,
-            "required", List.of("id", "a"),
-            "properties", Map.of(
-                "id", Map.of("type", "integer"),
-                "a", Map.of("type", "string", "maxLength", Math.min(maxTextLength, 18))
-            )
-        );
-    }
-
-    private Map<String, Object> recommendationItemSchema(int maxTextLength) {
-        return Map.of(
-            "type", "object",
-            "additionalProperties", false,
-            "required", List.of("id", "why", "v"),
-            "properties", Map.of(
-                "id", Map.of("type", "integer"),
-                "why", Map.of("type", "string", "maxLength", maxTextLength),
-                "v", Map.of("type", "string", "maxLength", maxTextLength)
-            )
-        );
-    }
-
-    private Map<String, Object> candidateForPrompt(ScoredCandidate scored) {
-        var candidate = scored.candidate();
-        Map<String, Object> value = new LinkedHashMap<>();
-        value.put("id", candidate.showtimeId());
-        value.put("t", candidate.title());
-        value.put("b", reasonHints(scored));
-        value.put("vp", valueHints(candidate));
-        return value;
-    }
-
-    private Map<String, Object> candidateForGptPrompt(ScoredCandidate scored, TagProfile profile, RecommendationMode mode) {
-        var candidate = scored.candidate();
+    private Map<String, Object> candidateForPrompt(ScoredCandidate scored, TagProfile profile, RecommendationMode mode) {
+        ShowtimeCandidate candidate = scored.candidate();
         Map<String, Object> value = new LinkedHashMap<>();
         value.put("id", candidate.showtimeId());
         value.put("title", candidate.title());
@@ -630,7 +366,7 @@ public class LocalModelRecommendationClient {
             return List.of();
         }
         List<String> hints = new ArrayList<>();
-        var likedGenres = tasteAnchorGenres(profile);
+        Set<String> likedGenres = tasteAnchorGenres(profile);
         scored.candidate().allTags().stream()
             .map(tag -> tag == null ? "" : tag.trim().toLowerCase(Locale.ROOT))
             .filter(tag -> tag.startsWith("genre:") && likedGenres.contains(tag))
@@ -640,7 +376,7 @@ public class LocalModelRecommendationClient {
         return hints.stream().distinct().limit(4).toList();
     }
 
-    private String scheduleFit(kr.daboyeo.backend.domain.recommendation.RecommendationModels.ShowtimeCandidate candidate) {
+    private String scheduleFit(ShowtimeCandidate candidate) {
         List<String> parts = new ArrayList<>();
         if (candidate.startsAt() != null) {
             parts.add(DateTimeFormatter.ofPattern("MM-dd HH:mm").format(candidate.startsAt()));
@@ -659,7 +395,7 @@ public class LocalModelRecommendationClient {
     }
 
     private List<String> tradeoffHints(ScoredCandidate scored, TagProfile profile) {
-        var candidate = scored.candidate();
+        ShowtimeCandidate candidate = scored.candidate();
         List<String> hints = new ArrayList<>();
         List<String> risks = cautionHints(scored);
         if (!risks.isEmpty()) {
@@ -735,7 +471,7 @@ public class LocalModelRecommendationClient {
     }
 
     private List<String> reasonHints(ScoredCandidate scored) {
-        var candidate = scored.candidate();
+        ShowtimeCandidate candidate = scored.candidate();
         List<String> hints = new ArrayList<>();
         scored.matchedTags().stream()
             .filter(this::isReasonSourceTag)
@@ -763,7 +499,7 @@ public class LocalModelRecommendationClient {
     }
 
     private List<String> cautionHints(ScoredCandidate scored) {
-        var candidate = scored.candidate();
+        ShowtimeCandidate candidate = scored.candidate();
         List<String> hints = new ArrayList<>();
         scored.penalties().stream()
             .map(this::tagPhrase)
@@ -784,7 +520,7 @@ public class LocalModelRecommendationClient {
         return tag != null && !tag.trim().toLowerCase(Locale.ROOT).startsWith("content:");
     }
 
-    private List<String> valueHints(kr.daboyeo.backend.domain.recommendation.RecommendationModels.ShowtimeCandidate candidate) {
+    private List<String> valueHints(ShowtimeCandidate candidate) {
         List<String> hints = new ArrayList<>();
         if (candidate.startsAt() != null) {
             hints.add("#" + DateTimeFormatter.ofPattern("HH:mm").format(candidate.startsAt()) + "상영");
@@ -827,12 +563,13 @@ public class LocalModelRecommendationClient {
             case "mood:visual" -> "#시각적재미";
             case "pace:easy" -> "#이해쉬움";
             case "pace:fast" -> "#빠른전개";
-            case "pace:slow" -> "#천천히몰입";
-            case "content:too_long" -> "#긴영화주의";
-            case "content:complex" -> "#난도주의";
-            case "content:violence" -> "#잔인함주의";
-            case "content:sad_ending" -> "#슬픈결말주의";
-            case "content:loud" -> "#큰소리주의";
+            case "pace:slow" -> "#천천히보는";
+            case "content:too_long", "too_long" -> "#긴러닝타임주의";
+            case "content:complex", "complex" -> "#난도주의";
+            case "content:violence", "violence" -> "#폭력성주의";
+            case "content:sad_ending", "sad_ending" -> "#먹먹한결말주의";
+            case "content:loud", "loud" -> "#큰소리주의";
+            case "taste_mismatch" -> "#취향직접매칭약함";
             default -> {
                 if (normalized.startsWith("genre:")) {
                     yield "#" + normalized.substring("genre:".length()).replace('_', '-');

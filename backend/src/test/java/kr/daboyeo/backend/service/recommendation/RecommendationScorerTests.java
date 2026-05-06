@@ -18,7 +18,7 @@ class RecommendationScorerTests {
         TagProfile profile = new TagProfile();
         profile.setAudience("child");
 
-        assertThat(scorer.scoreOne(profile, candidate("15세", 100, Set.of("genre:animation")))).isEmpty();
+        assertThat(scorer.scoreOne(profile, candidate("15", 100, Set.of("genre:animation")))).isEmpty();
     }
 
     @Test
@@ -26,7 +26,7 @@ class RecommendationScorerTests {
         TagProfile profile = new TagProfile();
         profile.setAudience("child");
 
-        assertThat(scorer.scoreOne(profile, candidate("12세", 100, Set.of("content:violence")))).isEmpty();
+        assertThat(scorer.scoreOne(profile, candidate("12", 100, Set.of("content:violence")))).isEmpty();
     }
 
     @Test
@@ -34,7 +34,7 @@ class RecommendationScorerTests {
         TagProfile profile = new TagProfile();
         profile.addAvoid(Set.of("too_long"));
 
-        var scored = scorer.scoreOne(profile, candidate("12세", 165, Set.of("mood:immersive")));
+        var scored = scorer.scoreOne(profile, candidate("12", 165, Set.of("mood:immersive")));
 
         assertThat(scored).isPresent();
         assertThat(scored.orElseThrow().penalties()).contains("too_long");
@@ -46,14 +46,14 @@ class RecommendationScorerTests {
         profile.addWeight("genre:action", 4);
         profile.addWeight("mood:exciting", 3);
 
-        var scored = scorer.scoreOne(profile, candidate("12세", 105, Set.of("genre:action", "mood:exciting")));
+        var scored = scorer.scoreOne(profile, candidate("12", 105, Set.of("genre:action", "mood:exciting")));
 
         assertThat(scored).isPresent();
         assertThat(scored.orElseThrow().score()).isGreaterThan(70);
     }
 
     @Test
-    void providerDerivedAnimationTagsBoostChildAndFamilyCandidates() {
+    void explicitAnimationTagsBoostChildAndFamilyCandidates() {
         TagProfile profile = new TagProfile();
         profile.setAudience("child");
         profile.addWeight("audience:child", 4);
@@ -61,10 +61,10 @@ class RecommendationScorerTests {
         profile.addWeight("mood:light", 3);
 
         var scored = scorer.scoreOne(profile, candidate(
-            "슈퍼 마리오 갤럭시",
-            "전체",
+            "Super Mario Galaxy",
+            "all",
             100,
-            Set.of("genre:일반콘텐트", "age_rating:all")
+            Set.of("genre:animation", "age_rating:all")
         ));
 
         assertThat(scored).isPresent();
@@ -73,22 +73,22 @@ class RecommendationScorerTests {
     }
 
     @Test
-    void providerDerivedHorrorTagsBlockChildAudience() {
+    void explicitHorrorTagsBlockChildAudience() {
         TagProfile profile = new TagProfile();
         profile.setAudience("child");
 
         var scored = scorer.scoreOne(profile, candidate(
-            "살목지",
+            "Horror Sample",
             "12",
             100,
-            Set.of("genre:일반콘텐트", "age_rating:12")
+            Set.of("genre:horror", "age_rating:12")
         ));
 
         assertThat(scored).isEmpty();
     }
 
     @Test
-    void providerDerivedTenseTagsFavorTenseProfiles() {
+    void explicitTenseTagsFavorTenseProfiles() {
         TagProfile profile = new TagProfile();
         profile.setAudience("friends");
         profile.setMood("tense");
@@ -96,8 +96,18 @@ class RecommendationScorerTests {
         profile.addWeight("mood:tense", 4);
         profile.addWeight("genre:thriller", 2);
 
-        var horror = scorer.scoreOne(profile, candidate("살목지", "15", 100, Set.of("genre:일반콘텐트", "age_rating:15")));
-        var animation = scorer.scoreOne(profile, candidate("슈퍼 마리오 갤럭시", "전체", 100, Set.of("genre:일반콘텐트", "age_rating:all")));
+        var horror = scorer.scoreOne(profile, candidate(
+            "Horror Sample",
+            "15",
+            100,
+            Set.of("audience:friends", "genre:thriller", "mood:tense", "age_rating:15")
+        ));
+        var animation = scorer.scoreOne(profile, candidate(
+            "Super Mario Galaxy",
+            "all",
+            100,
+            Set.of("genre:animation", "age_rating:all")
+        ));
 
         assertThat(horror).isPresent();
         assertThat(animation).isPresent();
@@ -106,25 +116,53 @@ class RecommendationScorerTests {
     }
 
     @Test
-    void currentReleaseTitleAliasesExposeSelectedGenreTags() {
+    void titleOnlyAliasesDoNotExposeSelectedGenreTags() {
         TagProfile sfProfile = new TagProfile();
         sfProfile.addWeight("genre:sf", 6);
         sfProfile.addWeight("genre:adventure", 4);
 
-        var project = scorer.scoreOne(sfProfile, candidate("프로젝트 헤일메리", "12", 120, Set.of()));
+        var project = scorer.scoreOne(sfProfile, candidate("Project Hail Mary", "12", 120, Set.of()));
 
         assertThat(project).isPresent();
-        assertThat(project.orElseThrow().matchedTags()).contains("genre:sf", "genre:adventure");
+        assertThat(project.orElseThrow().matchedTags()).doesNotContain("genre:sf", "genre:adventure");
 
         TagProfile actionProfile = new TagProfile();
         actionProfile.addWeight("genre:action", 6);
         actionProfile.addWeight("genre:animation", 3);
 
-        var demonSlayer = scorer.scoreOne(actionProfile, candidate("극장판 귀멸의 칼날: 무한성편", "15", 110, Set.of()));
+        var demonSlayer = scorer.scoreOne(actionProfile, candidate("Demon Slayer: Infinity Castle", "15", 110, Set.of()));
 
         assertThat(demonSlayer).isPresent();
-        assertThat(demonSlayer.orElseThrow().matchedTags()).contains("genre:action", "genre:animation");
-        assertThat(demonSlayer.orElseThrow().candidate().allTags()).contains("content:violence", "genre:thriller");
+        assertThat(demonSlayer.orElseThrow().matchedTags()).doesNotContain("genre:action", "genre:animation");
+        assertThat(demonSlayer.orElseThrow().candidate().allTags()).doesNotContain("content:violence", "genre:thriller");
+    }
+
+    @Test
+    void titleOnlyAnimeLikeNameDoesNotCountAsDirectAnimationMatch() {
+        TagProfile profile = new TagProfile();
+        profile.addWeight("genre:animation", 6);
+        profile.addPreferredGenre("animation");
+
+        var titleOnly = scorer.scoreOne(profile, candidate(
+            "Super Mario Galaxy",
+            "all",
+            100,
+            Set.of("age_rating:all")
+        ));
+        var explicitAnimation = scorer.scoreOne(profile, candidate(
+            "Tagged Animation",
+            "all",
+            100,
+            Set.of("genre:animation", "age_rating:all")
+        ));
+
+        assertThat(titleOnly).isPresent();
+        assertThat(explicitAnimation).isPresent();
+        assertThat(titleOnly.orElseThrow().matchedTags()).doesNotContain("genre:animation");
+        assertThat(titleOnly.orElseThrow().penalties()).contains("taste_mismatch");
+        assertThat(titleOnly.orElseThrow().score()).isLessThanOrEqualTo(68);
+        assertThat(explicitAnimation.orElseThrow().matchedTags()).contains("genre:animation");
+        assertThat(explicitAnimation.orElseThrow().score()).isGreaterThan(titleOnly.orElseThrow().score());
     }
 
     @Test
@@ -144,20 +182,30 @@ class RecommendationScorerTests {
         profile.addLikedGenre("drama");
         profile.addLikedGenre("comedy");
 
-        var genericFit = scorer.scoreOne(profile, candidate("악마는 프라다를 입는다 2", "12", 105, Set.of())).orElseThrow();
-        var directFit = scorer.scoreOne(profile, candidate("프로젝트 헤일메리", "12", 120, Set.of())).orElseThrow();
+        var genericFit = scorer.scoreOne(profile, candidate(
+            "Soft Comedy",
+            "12",
+            105,
+            Set.of("genre:drama", "genre:comedy", "mood:light", "mood:funny")
+        )).orElseThrow();
+        var directFit = scorer.scoreOne(profile, candidate(
+            "Tagged SF",
+            "12",
+            120,
+            Set.of("genre:sf", "genre:adventure")
+        )).orElseThrow();
 
         assertThat(genericFit.matchedTags()).contains("audience:friends", "mood:light", "mood:funny", "genre:drama", "genre:comedy");
         assertThat(genericFit.matchedTags()).doesNotContain("genre:action", "genre:sf");
         assertThat(genericFit.penalties()).contains("taste_mismatch");
         assertThat(genericFit.score()).isLessThan(100);
-        assertThat(genericFit.score()).isLessThanOrEqualTo(74);
+        assertThat(genericFit.score()).isLessThanOrEqualTo(68);
         assertThat(directFit.matchedTags()).contains("genre:sf");
         assertThat(directFit.score()).isGreaterThan(genericFit.score());
     }
 
     private ShowtimeCandidate candidate(String ageRating, Integer runtimeMinutes, Set<String> tags) {
-        return candidate("테스트 영화", ageRating, runtimeMinutes, tags);
+        return candidate("Test Movie", ageRating, runtimeMinutes, tags);
     }
 
     private ShowtimeCandidate candidate(String title, String ageRating, Integer runtimeMinutes, Set<String> tags) {
@@ -167,9 +215,9 @@ class RecommendationScorerTests {
             title,
             "CGV",
             "movie-1",
-            "테스트 극장",
-            "서울",
-            "1관",
+            "Test Theater",
+            "Seoul",
+            "Screen 1",
             "2D",
             "2D",
             LocalDate.now(),

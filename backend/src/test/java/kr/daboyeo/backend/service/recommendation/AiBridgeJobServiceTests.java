@@ -71,17 +71,6 @@ class AiBridgeJobServiceTests {
 
     private RecommendationProperties properties(String bridgeToken) {
         return new RecommendationProperties(
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
             "codex",
             8,
             12,
@@ -92,11 +81,6 @@ class AiBridgeJobServiceTests {
             30,
             60,
             20,
-            5,
-            5,
-            280,
-            160,
-            56,
             List.of("http://localhost:5173")
         );
     }

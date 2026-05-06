@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.SearchFilters;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.ShowtimeCandidate;
@@ -71,5 +72,28 @@ class ShowtimeRecommendationRepositoryTests {
         assertThat(sql.getValue()).contains("s.starts_at < ?");
         assertThat(sql.getValue()).contains("s.remaining_seat_count IS NULL OR s.remaining_seat_count >= ?");
         assertThat(sql.getValue()).doesNotContain("s.show_date = ?");
+    }
+
+    @Test
+    void findUpcomingCandidatesCanPrefilterByCanonicalGenreTags() {
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        ShowtimeRecommendationRepository repository = new ShowtimeRecommendationRepository(jdbcTemplate);
+        LocalDateTime cutoff = LocalDateTime.of(2026, 5, 6, 16, 10);
+
+        repository.findUpcomingCandidates(20, cutoff, null, new LinkedHashSet<>(List.of("genre:family", "music")));
+
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        verify(jdbcTemplate).query(
+            sql.capture(),
+            org.mockito.ArgumentMatchers.<ResultSetExtractor<List<ShowtimeCandidate>>>any(),
+            eq("family"),
+            eq("music"),
+            eq(Timestamp.valueOf(cutoff)),
+            eq(20)
+        );
+        assertThat(sql.getValue()).contains("JOIN movie_tags mt_filter");
+        assertThat(sql.getValue()).contains("mt_filter.tag_type = 'genre'");
+        assertThat(sql.getValue()).contains("mt_filter.tag_value IN (");
+        assertThat(sql.getValue()).contains("?, ?");
     }
 }

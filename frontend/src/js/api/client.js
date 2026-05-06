@@ -67,12 +67,15 @@ export async function deleteRecommendationSession(anonymousId) {
 export async function getPosterSeed(limit = 16, genres = []) {
   const query = new URLSearchParams();
   query.set("limit", String(limit));
+  query.set("_", String(Date.now()));
   (Array.isArray(genres) ? genres : [])
     .map((genre) => String(genre || "").trim().toLowerCase())
     .filter(Boolean)
     .forEach((genre) => query.append("genres", genre));
 
-  return requestJson(`/api/recommendation/poster-seed?${query.toString()}`);
+  return requestJson(`/api/recommendation/poster-seed?${query.toString()}`, {
+    cache: "no-store",
+  });
 }
 
 export async function getRecommendationProviderHealth() {

@@ -29,14 +29,14 @@ class PreferenceProfileBuilderTests {
         assertThat(profile.audience()).isEqualTo("friends");
         assertThat(profile.mood()).isEqualTo("exciting");
         assertThat(profile.avoids("too_long")).isTrue();
-        assertThat(profile.weight("genre:action")).isEqualTo(9);
+        assertThat(profile.weight("genre:action")).isEqualTo(14);
         assertThat(profile.weight("genre:popular")).isZero();
         assertThat(profile.weight("genre:history")).isEqualTo(5);
         assertThat(profile.weight("genre:comedy")).isEqualTo(5);
         assertThat(profile.weight("genre:fantasy")).isEqualTo(5);
         assertThat(profile.weight("audience:friends")).isEqualTo(10);
         assertThat(profile.weight("audience:family")).isEqualTo(4);
-        assertThat(profile.weight("mood:visual")).isEqualTo(5);
+        assertThat(profile.weight("mood:visual")).isEqualTo(15);
         assertThat(profile.likedGenres()).doesNotContain("genre:popular");
         assertThat(profile.likedGenres()).contains("genre:history", "genre:comedy", "genre:fantasy");
     }
@@ -46,8 +46,8 @@ class PreferenceProfileBuilderTests {
         var seed = posterSeedService.findById("20182530").orElseThrow();
 
         assertThat(seed.title()).isEqualTo("극한직업");
-        assertThat(seed.genres()).containsExactly("comedy");
-        assertThat(seed.moods()).containsExactly("funny", "light", "exciting");
+        assertThat(seed.genres()).contains("comedy", "action", "crime");
+        assertThat(seed.moods()).contains("funny", "light", "exciting");
         assertThat(seed.pace()).isEqualTo("fast");
         assertThat(seed.audiences()).containsExactly("friends", "family");
         assertThat(seed.ageRating()).isEqualTo("15");
@@ -119,6 +119,6 @@ class PreferenceProfileBuilderTests {
             Map.of()
         );
 
-        assertThat(profile.weight("mood:dark")).isZero();
+        assertThat(profile.weight("genre:sf")).isZero();
     }
 }
