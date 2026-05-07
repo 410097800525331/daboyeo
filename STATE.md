@@ -2,32 +2,177 @@
 
 ## Current Task
 
-- task: `Investigate provider genre crawl availability`
-- phase: `investigation`
-- scope: `Determine whether CGV/Lotte/Megabox pages or APIs expose real movie genre metadata that the crawler can collect for recommendation tags, before adding any fallback enrichment.`
-- verification_target: `Inspect existing collector fields, live/raw provider payload samples, and DB raw_json/provider_meta evidence to decide which provider can supply canonical-ish genre source data and which still needs external metadata fallback.`
-- classification: `score_total=6; single-session; orchestration_value=low; agent_budget=0; evaluation_need=full`
-- score_breakdown: `provider API/page evidence 2; data fidelity risk 2; no write mutation 1; recommendation contract impact 1`
-- hard_triggers: `data_fidelity_risk; external_source_dependency; implementation_depends_on_discovery_result`
-- selected_rules: `read-only investigation; no DB/code mutation except STATE.md; preserve raw provider characteristics; do not infer tags from title-only evidence; no secret output`
+- task: `Fix polluted genre tags and sparse romance recommendations`
+- phase: `completed`
+- scope: `Remove noncanonical provider category values from recommendation-visible genre tags, let provider detail enrichment add missing canonical genres even when a movie already has one genre, and make selected-genre recommendation fall back to honest reserve candidates instead of empty results when live DB has no direct genre rows.`
+- verification_target: `Compile changed ingest/backend code, clean live noncanonical genre rows, run bounded provider-detail enrichment, audit future genre coverage, and smoke the romance recommendation path.`
+- classification: `score_total=8; single-session; orchestration_value=low; agent_budget=0; evaluation_need=full`
+- score_breakdown: `DB tag integrity 2; recommendation no-candidate behavior 2; live DB mutation 2; provider detail enrichment contract 1; regression tests/runtime smoke 1`
+- hard_triggers: `data_fidelity_risk; live database mutation; recommendation response quality semantics; external provider metadata dependency`
+- selected_rules: `no title-only genre inference; canonical genres only in movie_tags.tag_type=genre; provider category labels are ignored/cleaned; selected genre can relax to reserve candidates with lower scores; no frontend redesign`
 - selected_skills: `repo-local verification`
 - execution_topology: `single-session`
 - orchestration_value: `low`
 - agent_budget: `0`
-- spawn_decision: `no spawn; the task is a sequential read-only audit plus live timing loop with no disjoint write set.`
-- reason: `User clarified the likely root cause is crawler-side missing genre metadata and said provider pages visibly show genre data. Correct next step is evidence-gathering against current collectors/provider responses before any enrichment implementation.`
-- write_sets: `STATE.md; ERROR_LOG.md only if material runtime errors occur`
-- contract_freeze: `Do not edit collectors, ingest, backend, or DB in this phase. Verify whether provider movie list/detail/showtime endpoints contain real genre fields, identify currently ignored fields, and separate provider-crawlable tags from external-metadata-only gaps.`
-- evaluation_need: `full; the decision changes whether recommendation tags should come from provider crawling or external enrichment.`
-- project_invariants: `No secrets in code or output, no arbitrary title-only genre inference, preserve provider raw data, keep recommendation strict gate honest, avoid new heavy external dependency unless optional and env-gated.`
-- task_acceptance: `provider genre normalization maps meaningful Korean/English provider genres to canonical keys; generic provider buckets like 일반콘텐트 do not become recommendation genres; enrichment is invoked by collect_all_to_tidb.py after writes; current live movie_tags get canonical tags for at least several non-animation selected genres where reliable metadata exists; API no longer returns empty for every non-animation genre with tagged current movies.`
-- non_goals: `Do not redesign the AI page, do not make fake genre tags, do not require local Codex desktop on deployed server, do not hardcode secrets, do not change DB schema unless a blocking need appears.`
-- hard_checks: `python -m py_compile scripts/ingest/collect_all_to_tidb.py scripts/ingest/enrich_movie_tags.py; enrichment validate-only/dry-run; focused live recommendation API smoke for genre choices; git diff --check`
-- llm_review_rubric: `Check that new tags are evidence-backed, generic provider category values stay excluded, server execution does not depend on local-only files/tools, and strict selected-genre filtering remains honest.`
-- evidence_required: `Collector field inventory, provider raw payload samples, DB raw_json/provider_meta evidence, crawlability verdict per provider, and minimal implementation recommendation.`
+- spawn_decision: `no spawn; tag normalization, cleanup, enrichment, and recommendation fallback share one tightly coupled acceptance path.`
+- reason: `Live audit showed future movie_tags contains no romance rows and includes polluted genre values such as 일반콘텐트, 스페셜콘텐트, mega only, and title-like provider labels. The enrichment loop also skipped provider detail calls whenever any genre already existed, leaving missing secondary genres unresolved.`
+- write_sets: `STATE.md; scripts/ingest/genre_tagging.py; scripts/ingest/enrich_movie_tags.py; scripts/ingest/cleanup_movie_genre_tags.py; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; configured TiDB movie_tags through cleanup/enrichment scripts; ERROR_LOG.md only for material failures`
+- contract_freeze: `Do not fake romance tags from titles or posters. Persist genre tags only when normalized into the canonical genre set. Delete current noncanonical genre rows from movie_tags. Provider detail enrichment must add missing canonical genres for current/future movies even if they already have drama/action/etc. If a selected UI genre has zero live rows, RecommendationService must say conditions were widened and return lower-score reserve recommendations rather than a hard empty state.`
+- evaluation_need: `full; the fix mutates live recommendation-visible tags and changes user-facing fallback semantics.`
+- project_invariants: `No hardcoded secrets, no title-only genre inference, no fake future dates, no collection slowdown in default crawl, preserve provider row-date validation, and keep reserve recommendations visibly lower-confidence.`
+- task_acceptance: `Noncanonical genre values are gone from live movie_tags, provider-detail enrichment can add secondary canonical genres on already-tagged movies, and romance-selected recommendation no longer returns an empty candidate list solely because direct romance rows are absent.`
+- non_goals: `No schema migration, no frontend redesign, no CGV signed API repair, no full 14-day crawl, no provider price expansion, no fake curated romance overrides.`
+- hard_checks: `py_compile changed Python files; cleanup dry-run/write audit; bounded provider-detail enrichment; focused Gradle recommendation tests; bootJar/restart if backend changed; romance API smoke; git diff --check; WORKSPACE_CONTEXT verification commands`
+- llm_review_rubric: `Check that genre cleanup is canonical-set based, provider detail enrichment remains bounded, recommendation fallback does not overclaim direct genre matches, and no title/poster-only inference returns as metadata.`
+- evidence_required: `pre/post DB genre audit, cleanup result JSON, enrichment result JSON, focused test/build output, and romance runtime smoke result.`
+- genre_cleanup_fallback_evidence: `2026-05-07 live audit confirmed the tag issue: movie_tags had 79 noncanonical tag_type=genre rows, including 일반콘텐트=54, mega only=6, 스페셜콘텐트=4, 공연실황=3, and a title-like 킬 빌 &#40;2026&#41; row; future showtime genres had no romance rows. Added scripts/ingest/cleanup_movie_genre_tags.py and deleted only noncanonical genre rows; post-cleanup noncanonical genre rows=0. Provider detail enrichment now checks already-tagged current/future movies too; live run checked 44 movies, planned/upserted 0 new tags, and skipped 3 no-canonical genre detail pages, proving the remaining romance gap is not a fakeable tag bug. Future canonical genre audit after cleanup: drama=19 movies, animation=10, action=4, music=4, history=3, horror=3, sf=3, adventure=2, fantasy=2, comedy=1, family=1, romance=0. RecommendationService now relaxes selected-genre hard filtering when no direct selected genre rows exist and returns low-score reserve recommendations instead of no_selected_genre_candidates. Focused RecommendationServiceCandidateFilterTests passed, bootJar passed, Spring restarted on localhost:5500 as PID 20428 after resolving local Path/PATH restart errors, /api/health returned ok, and a live romance fast smoke returned status=ok, model=gpt-5.4-mini, count=3, message='선택한 장르와 직접 일치하는 상영이 없어 조건을 넓혀 예비 추천했어.', scores 66/63/60. git diff --check and WORKSPACE_CONTEXT checks passed with CRLF warnings only.`
+- bounded_enrichment_evidence: `2026-05-07 added opt-in bounded enrichment after lightweight collection. scripts/ingest/enrich_movie_tags.py now supports --include-provider-details with --provider-detail-limit and fetches provider movie detail only for current/future movies still missing genre tags. Megabox detail lookup now uses representative_movie_id before external_movie_id because movieNo variants such as 26022302 do not expose reliable genre detail while rpstMovieNo 26022300 does. Live tag run checked 12 untagged movies, matched 11, and upserted 12 provider_detail genre tags; the only skipped row was a Seventeen live-viewing item with no canonical provider genre. Added scripts/ingest/enrich_showtime_prices.py for current/future showtimes with missing min_price_amount; live run --provider all --limit 50 checked 50 showtimes in about 42s, priced 48, upserted 321 showtime_prices, and had 0 fetch errors. Post-write audit: current/future genre coverage LOTTE_CINEMA 9/10, MEGABOX 56/56; provider_detail genre rows by value action=1, animation=3, drama=6, sf=1, thriller=1; future price coverage LOTTE_CINEMA 361/6595 and MEGABOX 113/5644; showtime_price rows LOTTE_CINEMA 2172 rows/361 showtimes, MEGABOX 870 rows/113 showtimes. Verification passed: py_compile changed ingest/collector files, override validate-only, CLI assertions, WORKSPACE_CONTEXT checks, git status --short, and git diff --check returned CRLF warnings only.`
+- collect_all_enrichment_wiring_evidence: `scripts/ingest/collect_all_to_tidb.py keeps default collection lightweight, but can now opt into post-crawl enrichment with --include-metadata-tags --include-provider-detail-tags --provider-detail-tag-limit N for missing genre tags and --enrich-missing-prices --missing-price-limit N for missing current/future showtime prices. CLI assertion confirmed defaults remain skip_metadata_tags=true, include_provider_detail_tags=false, enrich_missing_prices=false, include_provider_details=false, and missing_price_limit=100.`
+- fourteen_day_ingest_evidence: `2026-05-07 attempted 14-day provider-separated ingest with price hydration capped at 25 showtimes per date. The initial broad Lotte loop timed out after committing through 2026-05-14, and 2026-05-15 first retry lost the TiDB connection after long provider lookup; collectors/common/repository.py now pings/reconnects before DB execute. Lotte then completed 2026-05-15 through 2026-05-20 as date-specific writes. Current audit: LOTTE_CINEMA total_showtimes=6904, future_showtimes=6595, max_starts_at=2026-05-20 22:55, priced_showtimes=350, price_rows=2115. Megabox completed write checks for 20260507, 20260508, and 20260509, plus the earlier 20260514 single-showtime price probe. Current audit: MEGABOX total_showtimes=2998, future_showtimes=2208, max_starts_at=2026-05-14 16:30, priced_showtimes=76, price_rows=606. Long-running full 14-day continuation was stopped after the user asked to just confirm collection works because Lotte schedule discovery is combination-heavy and price hydration adds extra seat/price endpoint calls.`
+- megabox_to_20260520_evidence: `2026-05-07 filled Megabox showtime coverage through 2026-05-20. First 20260510 run without price still took about 236s, proving the main latency was provider movie-detail page fetches, not price. Added --skip-provider-details so Megabox collection-confirmation runs skip mobile movie detail pages inside build_movie_records/build_schedule_records. Then ran 20260511 through 20260520 with --skip-provider-details, --skip-metadata-tags, no --include-prices, and limit_schedules=500. All runs completed with price_fetch_errors=0 and schedule_date_mismatches=0. Final DB audit for MEGABOX 2026-05-07..2026-05-20 has rows for every date: 2026-05-07=901, 05-08=806, 05-09=500, 05-10=500, 05-11=500, 05-12=500, 05-13=500, 05-14=307, 05-15=301, 05-16=251, 05-17=231, 05-18=145, 05-19=150, 05-20=52. Provider summary: total_showtimes=6434, future_showtimes=5644, max_starts_at=2026-05-20 22:30, priced_showtimes=76 from earlier price runs. Verification passed: py_compile collectors/megabox/collector.py scripts/ingest/collect_all_to_tidb.py collectors/common/repository.py; WORKSPACE_CONTEXT section checks; git diff --check returned CRLF warnings only.`
+- lightweight_collection_evidence: `2026-05-07 made routine collection lightweight by default. collect_all_to_tidb.py now defaults provider movie-detail pages off, post-crawl metadata enrichment off, price off, seat snapshots off, and eager master movie/theater upserts off. --include-provider-details restores provider detail hydration, --include-metadata-tags restores post-crawl enrichment, --eager-master-upserts restores pre-upserting all discovered movies/theaters, and --lotte-schedule-strategy movie-theater preserves the old Lotte scan style. Lotte build_schedule_records now accepts include_details=false, and Lotte default schedule scan uses theater-wide blank-movie queries that the live API probe confirmed return all movies for one theater/date; blank cinema does not work. On-demand upsert now writes only movies/theaters referenced by schedules. Verification: py_compile collectors/lotte/collector.py collectors/megabox/collector.py scripts/ingest/collect_all_to_tidb.py collectors/common/repository.py passed; CLI assertions confirmed default details=false, skip_metadata_tags=true, eager_master_upserts=false, lotte_schedule_strategy=theater, and full enrichment flags still work. Lotte small write smoke for 2026-05-20 limit_schedules=20 went from the earlier 61.72s broad-default path to 14.11s with movies_upserted=2, theaters_upserted=3, schedule_queries=45, price rows=0, seats=0. Megabox small write smoke for 20260520 limit_schedules=20 completed in 11.47s with schedule_queries=2, movies_upserted=2, theaters_upserted=5, price rows=0, seats=0, mismatches=0. WORKSPACE_CONTEXT checks passed and git diff --check returned CRLF warnings only.`
+- price_ingest_evidence: `2026-05-07 implemented bounded price ingestion for Lotte and Megabox in scripts/ingest/collect_all_to_tidb.py. Price rows are extracted from Lotte Fees.Items and Megabox seatTicketAmtList/seatPolicyList, upserted into showtime_prices by provider_code + external_showtime_key + price_key, and mirrored into showtimes.min_price_amount only from real provider amounts. showtime upsert no longer overwrites an existing min_price_amount with NULL during no-price refreshes. Added --include-prices and --max-price-showtimes so normal crawls can keep price endpoint cost bounded and avoid seat snapshot writes. Megabox API retry was strengthened with browser-like headers, a cookie session, and non-JSON retry/reset handling. Bounded live writes passed: Lotte 2026-05-09 with limit_schedules=1 checked 1 showtime, priced 1, upserted 4 price rows, errors 0; the same Lotte command rerun kept total showtime_prices at 4 rows for 1 Lotte showtime, proving no duplicate growth. Megabox 20260514 with limit_schedules=1 checked 1 showtime, priced 1, upserted 8 price rows, errors 0, date mismatches 0. Final DB price summary: LOTTE_CINEMA rows=4 distinct_showtimes=1 min=5000 max=15000; MEGABOX rows=8 distinct_showtimes=1 min=49000 max=49000. db/SCHEMA_CONTRACT.md now marks showtime_prices active via bounded ingest and documents that movie/theater price aggregates must not be persisted separately. Verification passed: py_compile scripts/ingest/collect_all_to_tidb.py collectors/megabox/api.py; inline Lotte/Megabox extraction assertions; WORKSPACE_CONTEXT section checks; git diff --check returned CRLF warnings only.`
+- megabox_collection_scope_evidence: `2026-05-07 read-only Megabox investigation found the provider JSON path is still viable. Official booking/timetable HTML contains the selectPlayTimeMasterList.do reference, but the static HTML does not reliably include actual schedule rows. Live probes showed selectPlayTimeMasterList.do returns JSON for playDe 20260514/20260520/20260603 when requests use browser-like Accept/Accept-Language/Origin/Referer and retry with a fresh session after transient non-JSON Workload is so high responses. schedulePage.do returned movieFormList rows with playDe matching requested dates, including 20260514, 20260520, and 20260603. Existing collector still fails because _post_json raises immediately on JSONDecodeError and does not classify/retry provider non-JSON bodies. Seat endpoint selectSeatList.do returned seatTicketAmtList and seat rows for one sampled showtime after several transient Workload responses; therefore price/seat data exists but is expensive and should not be bulk-fetched by default. Dynamic HTML fallback via scripts/megabox_timetable_probe.py is lower priority because scrapling is not installed and JS rendering is heavier than the JSON API. Current DB has MEGABOX theaters=116 with coordinates=0 and future MEGABOX showtimes usable_nearby=0, so theater coordinates must be enriched once per branch via a cached theater master/Kakao geocode path rather than per-showtime crawling. Minimal default ingest should persist only scheduled movie/theater/screen/showtime rows, provider genre tags for scheduled movies, and a small raw debug subset; seat snapshots and price rows should be on-demand or bounded optional fetches.`
+- refresh_ingest_evidence: `2026-05-07 reran showtime ingest after DB audit showed max starts_at=2026-05-08 22:20. All-provider dry-run failed when Megabox fetch_master returned non-JSON; Megabox explicit playDe=20260507 dry-run failed the same way, so ERROR_LOG.md keeps that blocker open and no Megabox write was attempted. Lotte dry-run succeeded with provider_play_dates=28 and selectable dates 2026-05-07 through 2026-06-03. First Lotte all-provider write used max_provider_dates=14 and upserted 1000 showtimes but did not advance max because the global schedule limit filled on early dates. Follow-up explicit Lotte writes succeeded: 2026-05-09 upserted 500 showtimes, then 2026-05-10 through 2026-05-14 upserted 350/350/350/350/343 showtimes. Final DB aggregate: total showtimes=5181, current_future=4082, overall max_starts_at=2026-05-14 23:35:00. Provider max: LOTTE_CINEMA=2026-05-14 23:35:00 with 3589 total and 3280 current/future rows; MEGABOX remains 2026-05-08 22:20:00 with 1592 total and 802 current/future rows due provider non-JSON blocker.`
+- kakao_key_mirror_evidence: `2026-05-07 copied the root Kakao Maps SDK appkey from frontend/index.html to backend/src/main/resources/static/index.html. Initial backend/build/resources/main/static/index.html was stale, so gradle -p backend processResources was run; it failed inside sandbox with the known native-platform.dll issue and passed outside sandbox with approval. Final Select-String comparison showed frontendIndexAppkey, backendSourceAppkey, and backendBuildAppkey all equal. A broad --no-ignore rg saw only the new key in frontend root index, backend source static index, and backend build static index before hitting known access-denied paths under backend/build/tmp. Follow-up user-requested rebuild ran gradle -p backend bootJar outside sandbox and produced daboyeo-backend-0.1.0-SNAPSHOT.jar with BOOT-INF/classes/static/index.html containing the expected Kakao appkey. git diff --check returned CRLF warnings only.`
+- selfdex_megabox_split_evidence: `2026-05-07 Selfdex selected scripts/ingest/collect_all_to_tidb.py responsibility separation as the broad next task. Frozen /goal kept the write boundary to collect_all_to_tidb.py plus STATE.md and forbade DB write crawls. Implemented init_megabox_result, register_megabox_movie, register_megabox_branch, matching_megabox_schedules_for_query, and ingest_megabox_schedule so ingest_megabox now orchestrates play dates, movie/branch discovery, area queries, date-filtered schedules, and per-row persistence. The existing Megabox row-date guard remains before upsert_showtime, and movie id mapping, theater fallback, tag counters, showtime/screen counters, and optional seat snapshots stay in the same order. Verification passed: python -m py_compile scripts/ingest/collect_all_to_tidb.py; python -m compileall -q scripts/ingest; inline Megabox date assertion kept 20260509/2026-05-09 and rejected 20260507; static helper usage search found the new helper calls and upsert_showtime only inside Lotte and the Megabox schedule helper; WORKSPACE_CONTEXT section checks passed; git diff --check returned CRLF warnings only.`
 - verification_evidence: `2026-05-06 read-only crawlability investigation found provider detail genre data is available for Lotte and Megabox but current ingest mostly reads shallow ticketing/master lists. Lotte ticketing list rows expose MovieGenreNameKR fields but current samples are null; Lotte movie detail endpoint /LCWS/Movie/MovieData.aspx MethodName=GetMovieDetailTOBE by representationMovieCode returned genres for sampled current movies: 왕과 사는 남자=사극/드라마, 살목지=공포(호러), 프로젝트 헤일메리=SF, 슈퍼 마리오 갤럭시=애니메이션, 악마는 프라다를 입는다 2=드라마, 마녀배달부 키키=애니메이션/드라마/가족. Megabox master list rows lack genre, but mobile detail HTML https://m.megabox.co.kr/movie-detail?rpstMovieNo={movieNo} contains <span>장르</span>; sampled current movies returned 마이클=드라마, 악마는 프라다를 입는다 2=드라마, 군체=스릴러/액션, 살목지=공포(호러), 리마인더스 오브 힘=드라마/로맨스, 슈퍼 마리오 갤럭시=애니메이션, 프로젝트 헤일메리=SF, 걸즈 밴드 크라이=애니메이션, 피어스=드라마/스릴러. CGV collector could not be tested because CGV_API_SECRET is not configured in this environment; public mobile CGV detail pages historically include genre text, but current repo CGV signed API path remains blocked without secret. Verdict: for Lotte/Megabox this is not an impossible external enrichment problem; it is a crawler depth problem. Minimal next implementation should add provider detail fetch + canonical normalization after movie list discovery, cache/throttle detail calls, store raw detail in raw_json or provider_meta_json, and feed canonical_genres_from_provider_row with MovieGenreNameKR1/2/3 and Megabox parsed genre.`
+- implementation_evidence: `2026-05-07 implemented Lotte GetMovieDetailTOBE detail fetch and Megabox mobile movie-detail genre parsing, cached detail calls, merged detail genres into movie and schedule rows, expanded canonical provider-row genre extraction, and kept dry-run movie discovery lightweight. Bounded live ingest wrote provider-backed tags: Lotte movie_tags_upserted=62, Megabox movie_tags_upserted=136. Current/future DB audit found candidates for action, animation, horror, sf, adventure, drama, fantasy, history, music, and family; thriller/comedy/romance/crime remained honest no-candidate genres because current/future canonical tag count was 0. Follow-up split Codex mode config: fast now uses the Codex bridge with gpt-5.4-mini, default reasoning, 3 distinct candidates, 420 max tokens, and shorter prompt/output; precise uses gpt-5.5, reasoning_effort=xhigh, 20 candidates, and 1700 max tokens. Provider health reports expectedModels=[gpt-5.4-mini,gpt-5.5], and the bridge worker forwards per-job --model plus -c model_reasoning_effort only when the request includes reasoning. Spring restarted on localhost:5500 and bridge restarted with workspace-local codex.exe. Previous benchmark before this split: drama fast 3-run avg=0.77s while scorer-only, precise 3-run avg=22.48s. Final all-genre fast benchmark returned candidates for 10/14 UI genres and no_selected_genre_candidates for the 4 DB-empty genres. Price audit found priced current/future recommendations=0 because min_price_amount is not collected by current provider ingest. Verification: py_compile scripts/ai_bridge_agent.py, Python bridge command-construction check, focused Gradle recommendation tests outside sandbox, bootJar outside sandbox, /api/health ok, /api/recommendation/providers/health ready with both expected models, WORKSPACE_CONTEXT checks, and git diff --check passed with CRLF warnings only.`
+- megabox_date_validation_evidence: `2026-05-07 Socratic review concluded Megabox master rows and generated playDe lists are not enough; the only reliable ingest gate is row-level equality between requested playDe and returned schedule.play_date after db_date normalization. Implemented megabox_schedule_date_matches and megabox_schedules_for_requested_date in scripts/ingest/collect_all_to_tidb.py, and ingest_megabox now filters raw_schedules before any theater/screen/showtime/tag upsert. Result JSON tracks schedule_date_mismatches, bounded schedule_date_mismatch_dates, and schedule_queries_with_only_date_mismatches. Verification passed: python -m py_compile scripts/ingest/collect_all_to_tidb.py; inline helper assertion kept 20260509/2026-05-09 rows and rejected 20260507 for requested 20260509; bounded Megabox dry-run selected 20260507-20260509; git diff --check passed with CRLF warnings only. A no-write live mismatch probe for 20260611 was attempted after earlier successful probes, but Megabox returned non-JSON, so it was logged and not used as acceptance evidence.`
 
 ## Retrospective
+
+- task: `Fix polluted genre tags and sparse romance recommendations`
+- score_total: `8`
+- evaluation_fit: `full fit; the fix required live DB cleanup, provider-detail re-enrichment, backend fallback semantics, tests, rebuild, and runtime smoke evidence`
+- orchestration_fit: `single-session fit; tag normalization, cleanup, enrichment, and recommendation fallback were one coupled acceptance path with no useful disjoint write lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the task moved from suspecting missing romance tags to proving both genre-tag pollution and strict selected-genre empty-state behavior; Spring restart also needed a local Path/PATH environment repair`
+- reviewer_findings: `noncanonical provider category labels are no longer recommendation-visible genres, existing-genre movies are no longer skipped by provider detail enrichment, and romance fallback returns honest low-score reserves without pretending direct romance metadata exists`
+- verification_outcome: `py_compile passed; cleanup deleted 79 noncanonical genre rows and post-audit found 0 remaining; detail enrichment checked 44 current/future movies; future genre audit is canonical-only with romance still 0; focused Gradle tests and bootJar passed; localhost:5500 health ok; live romance smoke returned 3 reserve recommendations`
+- next_gate_adjustment: `selected-genre UX should distinguish metadata absence from recommendation absence; future collection should clean canonical genre tags after ingest and use provider detail enrichment as a bounded quality pass, not a default crawl cost`
+
+- task: `Bounded genre/tag and price enrichment after lightweight collection`
+- score_total: `8`
+- evaluation_fit: `full fit; provider detail ID correctness, live DB mutation, and price endpoint behavior all needed evidence`
+- orchestration_fit: `single-session fit; tag enrichment and price enrichment share the same lightweight-ingest contract and were cheaper to keep in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `first Megabox tag run produced no genres because it used external movieNo variants; current_movies now carries representative_movie_id and provider detail lookup uses it first`
+- reviewer_findings: `default collection remains lightweight; genre detail and showtime price hydration are opt-in, bounded, current/future scoped, and idempotent`
+- verification_outcome: `live tag enrichment added 12 genre tags for 11 movies, live price enrichment added 321 price rows for 48 of 50 checked showtimes, aggregate DB audit matched expectations, and local static checks passed`
+- next_gate_adjustment: `routine refresh should run lightweight schedule ingest first, then small provider-detail and price enrichment batches instead of re-enabling full detail/price crawling by default`
+
+- task: `Make default provider collection lightweight`
+- score_total: `8`
+- evaluation_fit: `full fit; runtime behavior, CLI defaults, opt-in enrichment, and live small-write timing all needed evidence`
+- orchestration_fit: `single-session fit; Lotte and Megabox shared one ingest CLI contract and one schedule/detail toggle`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `after skip-provider-details helped Megabox but Lotte still took 62s for 20 showtimes, the task expanded to remove eager master upserts and switch Lotte's default scan to theater-wide schedule queries`
+- reviewer_findings: `routine collection no longer fetches provider detail pages, prices, seat snapshots, post-crawl metadata enrichment, or all master rows by default; richer tag/metadata runs remain explicit opt-in`
+- verification_outcome: `compile and CLI assertions passed; Lotte 20-showtime smoke dropped to 14.11s and Megabox 20-showtime smoke completed in 11.47s; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `next Lotte optimization should prioritize theaters from recent DB activity or provider availability hints to reduce empty theater queries on sparse future dates`
+
+- task: `Fill Megabox showtime coverage through 2026-05-20`
+- score_total: `8`
+- evaluation_fit: `full fit; the user needed live DB write evidence and exact date coverage after earlier partial Megabox collection`
+- orchestration_fit: `single-session fit; one provider/date sequence plus a small skip-detail option was cheaper than delegating`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `after the first no-price Megabox date was still slow, the task narrowed from enriched collection to collection-confirmation and skipped provider detail pages`
+- reviewer_findings: `Megabox rows now exist for every date through 2026-05-20; the final report must not imply full price coverage for the later dates because --include-prices was intentionally omitted`
+- verification_outcome: `Megabox DB audit shows total_showtimes=6434, future_showtimes=5644, max_starts_at=2026-05-20 22:30, and per-date rows from 2026-05-07 through 2026-05-20; compile and git diff checks passed`
+- next_gate_adjustment: `use --skip-provider-details for fast coverage checks, then run separate bounded detail/tag enrichment only where recommendation quality needs it`
+
+- task: `Bounded showtime price ingestion`
+- score_total: `8`
+- evaluation_fit: `full fit; DB price correctness, provider endpoint behavior, idempotent duplicate prevention, and recommendation-visible min_price_amount all needed evidence`
+- orchestration_fit: `single-session fit; the extractor, upsert contract, Megabox retry, and bounded live writes were one tightly coupled ingest path`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `user flagged duplicate risk, so the contract was pinned around showtime-level keys rather than separate movie-price or theater-price aggregates`
+- reviewer_findings: `price rows are real provider amounts only, keyed by provider/showtime/price_key, normal showtime refreshes no longer null out collected prices, and price endpoint calls remain opt-in and capped`
+- verification_outcome: `local compile and extraction assertions passed; bounded Lotte and Megabox live writes populated showtime_prices and min_price_amount; Lotte rerun did not grow duplicate rows; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when collecting expensive per-showtime details, keep default discovery rows lean and make detail hydration bounded by explicit CLI caps`
+
+- task: `Refresh live Lotte and Megabox showtime ingest`
+- score_total: `8`
+- evaluation_fit: `full fit; live DB contents, provider dry-run behavior, write result JSON, and post-write aggregates were all needed`
+- orchestration_fit: `single-session fit; the run was sequential and provider-specific failures determined the next command`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `all-provider write was split after Megabox dry-run failed with non-JSON; Lotte all-date write was followed by explicit future-date writes after the global limit filled on early dates`
+- reviewer_findings: `Lotte data refreshed through 2026-05-14; Megabox was not written because its master API response was not JSON; the blocker is logged instead of pretending full refresh succeeded`
+- verification_outcome: `post-write DB aggregate shows total=5181, current_future=4082, LOTTE max=2026-05-14 23:35:00, MEGABOX max=2026-05-08 22:20:00`
+- next_gate_adjustment: `future multi-date refreshes should run provider/date-specific batches instead of one global limit when the goal is extending max date coverage`
+
+- task: `Mirror frontend Kakao Maps SDK key into backend static index`
+- score_total: `2`
+- evaluation_fit: `light fit; exact appkey comparison covered source and build resources`
+- orchestration_fit: `single-session fit; one static mirror edit and one resource-copy command`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `build resources were stale after the source edit, so processResources was added as verification/runtime prep`
+- reviewer_findings: `only backend/src/main/resources/static/index.html root SDK appkey changed; price comparison page SDK keys were left untouched`
+- verification_outcome: `frontend, backend source, backend build resources, and rebuilt bootJar appkeys match; processResources and bootJar passed outside sandbox; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `for Spring-served frontend mirrors, compare frontend source, backend static source, and backend build resources when the running page may be served from build output`
+
+- task: `Selfdex selected collect_all_to_tidb Megabox responsibility split`
+- score_total: `6`
+- evaluation_fit: `light fit; this was a behavior-preserving ingest refactor with deterministic compile/static checks`
+- orchestration_fit: `single-session fit; one script owned the full Megabox write path and delegation would have added handoff cost`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `none; the Selfdex candidate stayed valid after checking STATE.md and the Megabox ingest surface`
+- reviewer_findings: `ingest_megabox is now orchestration-focused, mismatched Megabox schedule rows still cannot reach upsert_showtime, and result counters remain bounded`
+- verification_outcome: `py_compile, compileall, inline date assertion, static helper usage search, WORKSPACE_CONTEXT section checks, git status, and git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `future collect_all_to_tidb.py work can now target provider detail fetch, date selection, or schedule persistence helpers independently instead of editing one large nested loop`
+
+- task: `Megabox schedule date validation before ingest`
+- score_total: `6`
+- evaluation_fit: `light fit; deterministic row-date filtering is the source of truth, while external Megabox probes can be flaky`
+- orchestration_fit: `single-session fit; one ingest script owns the validation path`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `previous broad future-date probes showed false positives because some schedule responses returned 20260507 for much later requested playDe values`
+- reviewer_findings: `mismatched Megabox schedule rows cannot reach upsert_showtime after the filter, and mismatch evidence is bounded in result JSON`
+- verification_outcome: `py_compile, inline helper assertion, bounded Megabox dry-run, and git diff --check passed; a later external probe returned non-JSON and was excluded from acceptance`
+- next_gate_adjustment: `for provider-generated future dates, prove row-level requested-date equality before claiming a maximum collectible date`
+
+- task: `Split Codex recommendation models by fast and precise modes`
+- score_total: `7`
+- evaluation_fit: `full fit; request construction, bridge command behavior, provider health, and focused recommendation tests all needed evidence`
+- orchestration_fit: `single-session fit; the model split touched one sequential server-bridge contract and no disjoint write lane was worth the handoff`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `bridge option check caught that fast jobs without reasoning would inherit DABOYEO_CODEX_REASONING_EFFORT, so the worker now treats a per-job model request with no reasoning as true default reasoning`
+- reviewer_findings: `fast and precise no longer collapse to one codex-model default; fast is lighter by candidate count, token budget, and absent reasoning override; precise alone carries xhigh reasoning`
+- verification_outcome: `py_compile and bridge option check passed; focused Gradle tests and bootJar passed outside sandbox after native-platform.dll sandbox failure; Spring PID 23132 and bridge are running; provider health is ready with gpt-5.4-mini and gpt-5.5; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when changing model routing, test both server request fields and worker CLI options because env fallbacks can silently override a mode-specific default`
+
+- task: `Provider-detail genre ingestion and fast recommendation split`
+- score_total: `9`
+- evaluation_fit: `full fit; collector depth, live DB mutation, bridge runtime, fast/precise timing, and all-genre behavior all needed direct evidence`
+- orchestration_fit: `single-session fit; Lotte/Megabox detail fetch, tag normalization, recommendation mode split, and bridge restart were sequential and tightly coupled`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `initial live benchmark showed fast still used Codex and averaged about 20s, so the frozen contract expanded to make fast scorer-only while keeping precise on the bridge; bridge restart also exposed a transient server-restart crash and the agent now retries polling`
+- reviewer_findings: `provider tags are sourced from provider detail metadata, generic buckets remain excluded, no title-only genre inference was introduced, price is not fabricated when min_price_amount is absent, and no-candidate genres stay explicit when live canonical tags are absent`
+- verification_outcome: `changed Python files compiled; focused RecommendationService tests passed; bootJar passed; Spring and bridge are running; provider health is ready; live all-genre fast benchmark passed with honest empty genres; fast/precise 3-run benchmark passed; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when fast UX is expected to be quick, benchmark with bridge healthy before deciding the mode contract; otherwise a broken bridge can accidentally hide latency by falling back`
 
 - task: `Server-safe automatic recommendation genre tagging`
 - score_total: `9`
@@ -155,10 +300,29 @@
 
 ## Next Task
 
-- task: `none`
-- status: `not queued`
-- scope: `Current request owns the active poster asset/tag cleanup until verification finishes.`
-- non_goal: `No new poster scraping, DB write, recommendation scoring rewrite, or UI redesign beyond existing 18-poster page indicator work.`
+- task: `Poster-only fallback scoring when selected genre has no direct candidates`
+- status: `queued; planning only, not implemented on this machine`
+- scope: `When a user selects a genre but the live DB has zero direct candidates for that genre, keep the user-facing fallback honest: drop the selected genre from the scoring/AI-analysis profile, rank candidates from poster-derived taste tags and other non-genre survey signals only, then cap or penalize final scores because the selected genre did not match.`
+- reason: `The current sparse-genre fallback already returns reserve recommendations, but the next refinement should make the analysis basis explicitly poster-only when selected-genre rows are absent instead of letting the missing selected genre remain inside the scorer/AI taste profile.`
+- proposed_contract:
+  - `Do not create fake genre tags and do not infer genre from titles/posters.`
+  - `Direct selected-genre candidates, when present, still win and keep the current genre-first path.`
+  - `Only when the selected genre hard query returns no rows, build a scoring profile that excludes profile.preferredGenres and keeps poster-derived likedGenres plus audience/mood/avoid signals.`
+  - `Return a clear message such as 선택한 장르와 직접 일치하는 상영이 없어 포스터 취향만으로 예비 추천했어.`
+  - `Keep final recommendation scores capped below direct-match results, e.g. <=68, and keep reasons/cautions saying the genre is not a direct match.`
+  - `Codex fast/precise should receive the poster-only candidate list in this fallback path, not a profile that still asks it to satisfy the unavailable selected genre.`
+- suggested_write_set: `STATE.md; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; possibly RecommendationModels.TagProfile only if a lightweight copy helper is cleaner`
+- suggested_implementation_steps:
+  - `Extend CandidateSearchResult with a boolean such as selectedGenreRelaxed or selectedGenreMissed.`
+  - `When selectedGenreMissed is true, derive an analysis/scoring TagProfile that removes preferredGenres while preserving poster-liked genres and other survey-derived weights.`
+  - `Use the poster-only profile for scorer.score(...), rankTasteAwareCandidates(...), Codex rankAndExplain(...), fallbackItem/validatedModelScore if needed, but keep the original profile available for display and score cap decisions.`
+  - `Apply the genre-mismatch score cap using the original selected genre profile so reserve scores stay visibly lower.`
+  - `Update/add tests: selected genre missing + poster-liked drama/comedy should rank drama/comedy candidates, call Codex with no preferredGenres, return 3 items, cap scores <=68, and include the widened/poster-only message.`
+- suggested_verification:
+  - `gradle -p backend test --tests kr.daboyeo.backend.service.recommendation.RecommendationServiceCandidateFilterTests`
+  - `gradle -p backend bootJar`
+  - `Restart Spring 5500 if implementing locally, then POST /api/recommendations with preferredGenres=['romance'] and posterChoices 3+ to confirm 3 poster-based reserve results.`
+- non_goal: `No DB mutation, no crawler/tag enrichment change, no frontend redesign, no fake romance metadata, no score inflation for genre-mismatched reserves.`
 
 ## Orchestration Profile
 
@@ -231,6 +395,12 @@
 - reviewer_focus: `Confirm the patch solves missing provider genres without title-only inference, keeps normal crawl writes deterministic/offline, and preserves explicit selected-genre gating.`
 
 ## Last Update
+
+- timestamp: `2026-05-07 17:55:00 +09:00`
+- note: `Planning-only handoff saved for the next computer: implement poster-only fallback scoring when a selected genre has no direct candidates. No implementation, tests, DB writes, or server restart were performed for this follow-up.`
+
+- timestamp: `2026-05-07 17:50:00 +09:00`
+- note: `Completed the genre tag cleanup and sparse selected-genre fallback fix. Live DB cleanup removed 79 noncanonical genre tags and left 0 noncanonical rows. Provider detail enrichment checked 44 current/future movies and found no additional canonical romance rows, so the runtime now returns honest low-score reserve recommendations when romance has no direct live candidates. Focused backend tests, bootJar, Spring restart, health check, and live romance smoke passed.`
 
 - timestamp: `2026-05-06 14:47:24 +09:00`
 - note: `Verified the score_total=8 single-session /goal. The final fix is exact provider/external_movie_id metadata tag enrichment plus a selected-genre candidate fetch-depth repair so popular repeated showtimes cannot crowd out later tagged movies before genre filtering. Focused tests, bootJar, script validation, collect_all integration, DB tag assertions, and localhost Codex animation smoke passed; sandbox Gradle/native and bridge CLI argument mismatches were recorded or handled as resolved runtime issues.`

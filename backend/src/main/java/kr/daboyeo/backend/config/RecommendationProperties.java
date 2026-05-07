@@ -9,6 +9,10 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding;
 @ConfigurationProperties(prefix = "daboyeo.recommendation")
 public record RecommendationProperties(
     String codexModel,
+    String codexFastModel,
+    String codexPreciseModel,
+    String codexFastReasoningEffort,
+    String codexPreciseReasoningEffort,
     Integer codexFastAiCandidateLimit,
     Integer codexPreciseAiCandidateLimit,
     Integer codexFastMaxTokens,
@@ -31,6 +35,10 @@ public record RecommendationProperties(
     ) {
         this(
             null,
+            null,
+            null,
+            null,
+            null,
             codexFastAiCandidateLimit,
             codexPreciseAiCandidateLimit,
             codexFastMaxTokens,
@@ -46,10 +54,14 @@ public record RecommendationProperties(
 
     @ConstructorBinding
     public RecommendationProperties {
-        codexModel = defaultString(codexModel, "codex");
-        codexFastAiCandidateLimit = clamp(codexFastAiCandidateLimit, 6, 3, 24);
+        codexModel = defaultString(codexModel, "");
+        codexFastModel = defaultString(codexFastModel, codexModel.isBlank() ? "gpt-5.4-mini" : codexModel);
+        codexPreciseModel = defaultString(codexPreciseModel, codexModel.isBlank() ? "gpt-5.5" : codexModel);
+        codexFastReasoningEffort = normalizeReasoningEffort(codexFastReasoningEffort, "");
+        codexPreciseReasoningEffort = normalizeReasoningEffort(codexPreciseReasoningEffort, "xhigh");
+        codexFastAiCandidateLimit = clamp(codexFastAiCandidateLimit, 3, 3, 24);
         codexPreciseAiCandidateLimit = clamp(codexPreciseAiCandidateLimit, 20, 3, 30);
-        codexFastMaxTokens = clamp(codexFastMaxTokens, 650, 420, 1400);
+        codexFastMaxTokens = clamp(codexFastMaxTokens, 420, 320, 1400);
         codexPreciseMaxTokens = clamp(codexPreciseMaxTokens, 1700, 1000, 2400);
         bridgeToken = defaultString(bridgeToken, "");
         bridgeResultTimeoutSeconds = clamp(bridgeResultTimeoutSeconds, 90, 5, 300);
@@ -62,11 +74,29 @@ public record RecommendationProperties(
     }
 
     public String modelFor(RecommendationMode mode) {
-        return codexModel;
+        return mode == RecommendationMode.FAST ? codexFastModel : codexPreciseModel;
     }
 
     public String modelFor(AiProvider provider, RecommendationMode mode) {
-        return codexModel;
+        return modelFor(mode);
+    }
+
+    public String reasoningEffortFor(RecommendationMode mode) {
+        return mode == RecommendationMode.FAST ? codexFastReasoningEffort : codexPreciseReasoningEffort;
+    }
+
+    public String reasoningEffortFor(AiProvider provider, RecommendationMode mode) {
+        return reasoningEffortFor(mode);
+    }
+
+    public List<String> expectedModelsFor(AiProvider provider) {
+        return List.of(
+                modelFor(provider, RecommendationMode.FAST),
+                modelFor(provider, RecommendationMode.PRECISE)
+            ).stream()
+            .filter(model -> model != null && !model.isBlank())
+            .distinct()
+            .toList();
     }
 
     public String providerLabel(AiProvider provider) {
@@ -95,6 +125,15 @@ public record RecommendationProperties(
 
     private static String defaultString(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private static String normalizeReasoningEffort(String value, String fallback) {
+        String resolved = defaultString(value, fallback).toLowerCase();
+        return switch (resolved) {
+            case "", "none", "default" -> "";
+            case "minimal", "low", "medium", "high", "xhigh" -> resolved;
+            default -> fallback == null ? "" : fallback;
+        };
     }
 
     private static int clamp(Integer value, int fallback, int min, int max) {

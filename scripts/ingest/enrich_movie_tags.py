@@ -18,6 +18,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from collectors.common.repository import upsert_dict
 from collectors.common.tidb import connect_tidb, load_tidb_config, parse_env_file
+from collectors.lotte import LotteCinemaCollector
+from collectors.megabox import MegaboxCollector
 from scripts.ingest.genre_tagging import (
     canonical_genres_from_provider_row,
     canonical_genres_from_values,
@@ -29,9 +31,12 @@ DEFAULT_OVERRIDES_PATH = Path(__file__).with_name("current_movie_tag_overrides.j
 TAG_VALUE_RE = re.compile(r"^[a-z0-9_]+$")
 ALLOWED_TAG_TYPES = {"genre", "age_rating", "mood", "audience", "content", "pace", "format"}
 SOURCE_PROVIDER_METADATA = "provider_metadata"
+SOURCE_PROVIDER_DETAIL = "provider_detail"
 SOURCE_KOBIS_METADATA = "kobis_metadata"
 KOBIS_MOVIE_LIST_URL = "https://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json"
 KOBIS_USER_AGENT = "daboyeo-metadata-enrichment/1.0"
+LOTTE = "LOTTE_CINEMA"
+MEGABOX = "MEGABOX"
 
 
 @dataclass(frozen=True)
@@ -217,6 +222,7 @@ def current_movies(cursor: Any, *, current_only: bool = True) -> list[dict[str, 
           m.id,
           m.provider_code,
           m.external_movie_id,
+          m.representative_movie_id,
           m.title_ko,
           m.title_en,
           m.release_date,
@@ -231,7 +237,7 @@ def current_movies(cursor: Any, *, current_only: bool = True) -> list[dict[str, 
           ON mt.provider_code = m.provider_code
          AND mt.external_movie_id = m.external_movie_id
          AND mt.tag_type = 'genre'
-        GROUP BY m.id, m.provider_code, m.external_movie_id, m.title_ko, m.title_en, m.release_date, m.raw_json
+        GROUP BY m.id, m.provider_code, m.external_movie_id, m.representative_movie_id, m.title_ko, m.title_en, m.release_date, m.raw_json
         HAVING future_showtime_count > 0 OR %s = 0
         ORDER BY future_showtime_count DESC, m.id ASC
         """,
@@ -239,13 +245,25 @@ def current_movies(cursor: Any, *, current_only: bool = True) -> list[dict[str, 
     )
     rows: list[dict[str, Any]] = []
     for row in cursor.fetchall():
-        movie_id, provider_code, external_movie_id, title_ko, title_en, release_date, raw_json, future_count, genre_values = row
+        (
+            movie_id,
+            provider_code,
+            external_movie_id,
+            representative_movie_id,
+            title_ko,
+            title_en,
+            release_date,
+            raw_json,
+            future_count,
+            genre_values,
+        ) = row
         existing = {safe_text(value).lower() for value in split_concat_values(genre_values)}
         rows.append(
             {
                 "movie_id": int(movie_id),
                 "provider_code": provider_code,
                 "external_movie_id": external_movie_id,
+                "representative_movie_id": representative_movie_id,
                 "title_ko": title_ko,
                 "title_en": title_en,
                 "release_date": release_date,
@@ -274,6 +292,44 @@ def provider_auto_genres(movie: dict[str, Any]) -> list[str]:
         if genre not in genres:
             genres.append(genre)
     return genres
+
+
+def provider_detail_collectors() -> dict[str, Any]:
+    return {
+        LOTTE: LotteCinemaCollector(),
+        MEGABOX: MegaboxCollector(),
+    }
+
+
+def provider_detail_search(
+    movie: dict[str, Any],
+    collectors: dict[str, Any],
+) -> dict[str, Any]:
+    provider = safe_text(movie.get("provider_code")).upper()
+    external_movie_id = safe_text(movie.get("external_movie_id"))
+    if not external_movie_id:
+        return {"status": "skipped", "reason": "missing_external_movie_id", "genres": []}
+
+    if provider == LOTTE:
+        detail_movie_id = safe_text(movie.get("representative_movie_id")) or external_movie_id
+        detail = collectors[LOTTE].fetch_movie_detail(detail_movie_id)
+        genres = canonical_genres_from_values(
+            [
+                detail.get("MovieGenreNameKR"),
+                detail.get("MovieGenreNameKR2"),
+                detail.get("MovieGenreNameKR3"),
+            ]
+        )
+    elif provider == MEGABOX:
+        detail_movie_id = safe_text(movie.get("representative_movie_id")) or external_movie_id
+        detail = collectors[MEGABOX].fetch_movie_detail(detail_movie_id)
+        genres = canonical_genres_from_values([detail.get("genre_name")])
+    else:
+        return {"status": "skipped", "reason": "unsupported_provider", "genres": []}
+
+    if not genres:
+        return {"status": "skipped", "reason": "no_canonical_genre", "genres": []}
+    return {"status": "matched", "genres": genres}
 
 
 def kobis_api_key() -> str:
@@ -373,6 +429,8 @@ def enrich_movie_tags(
     current_only: bool = True,
     dry_run: bool = False,
     provider_auto_tags: bool = True,
+    provider_detail_metadata: bool = False,
+    provider_detail_limit: int = 40,
     kobis_metadata: bool = True,
     kobis_limit: int = 60,
 ) -> dict[str, Any]:
@@ -390,6 +448,16 @@ def enrich_movie_tags(
             "tags_planned": 0,
             "tags_upserted": 0,
             "movies": [],
+        },
+        "provider_detail_metadata": {
+            "enabled": provider_detail_metadata,
+            "limit": provider_detail_limit,
+            "checked_movie_count": 0,
+            "matched_movie_count": 0,
+            "tags_planned": 0,
+            "tags_upserted": 0,
+            "movies": [],
+            "skipped": [],
         },
         "kobis_metadata": {
             "enabled": False,
@@ -432,6 +500,58 @@ def enrich_movie_tags(
             for genre in planned:
                 upsert_movie_tag(cursor, movie, "genre", genre, SOURCE_PROVIDER_METADATA, provider_confidence)
                 result["provider_auto_tagging"]["tags_upserted"] += 1
+
+    if provider_detail_metadata:
+        detail_confidence = Decimal("0.9600")
+        detail_collectors = provider_detail_collectors()
+        for movie in movies:
+            if provider_detail_limit >= 0 and result["provider_detail_metadata"]["checked_movie_count"] >= provider_detail_limit:
+                break
+
+            result["provider_detail_metadata"]["checked_movie_count"] += 1
+            try:
+                lookup = provider_detail_search(movie, detail_collectors)
+            except Exception as exc:  # noqa: BLE001 - provider detail calls are best-effort.
+                result["provider_detail_metadata"]["skipped"].append(
+                    {
+                        "providerCode": movie["provider_code"],
+                        "externalMovieId": movie["external_movie_id"],
+                        "titleKo": movie["title_ko"],
+                        "reason": "provider_detail_error",
+                        "error": exc.__class__.__name__,
+                    }
+                )
+                continue
+            if lookup["status"] != "matched":
+                result["provider_detail_metadata"]["skipped"].append(
+                    {
+                        "providerCode": movie["provider_code"],
+                        "externalMovieId": movie["external_movie_id"],
+                        "titleKo": movie["title_ko"],
+                        "reason": lookup.get("reason", "not_matched"),
+                    }
+                )
+                continue
+
+            planned = missing_genres(movie, lookup["genres"])
+            if not planned:
+                continue
+            result["provider_detail_metadata"]["matched_movie_count"] += 1
+            result["provider_detail_metadata"]["tags_planned"] += len(planned)
+            result["provider_detail_metadata"]["movies"].append(
+                {
+                    "providerCode": movie["provider_code"],
+                    "externalMovieId": movie["external_movie_id"],
+                    "titleKo": movie["title_ko"],
+                    "futureShowtimeCount": movie["future_showtime_count"],
+                    "tags": [f"genre:{genre}" for genre in planned],
+                }
+            )
+            if dry_run:
+                continue
+            for genre in planned:
+                upsert_movie_tag(cursor, movie, "genre", genre, SOURCE_PROVIDER_DETAIL, detail_confidence)
+                result["provider_detail_metadata"]["tags_upserted"] += 1
 
     key = kobis_api_key()
     if kobis_metadata and key:
@@ -547,6 +667,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true", help="Read DB and report planned tag writes without mutating movie_tags.")
     parser.add_argument("--validate-only", action="store_true", help="Validate the override catalog without connecting to TiDB.")
     parser.add_argument("--skip-provider-auto-tags", action="store_true", help="Skip canonical genre normalization from provider metadata.")
+    parser.add_argument("--include-provider-details", action="store_true", help="Fetch provider movie detail pages for current/future movies and add any missing canonical genre tags.")
+    parser.add_argument("--provider-detail-limit", type=int, default=40, help="Maximum movies to check through provider detail pages; 0 checks none.")
     parser.add_argument("--skip-kobis-metadata", action="store_true", help="Skip optional KOBIS metadata enrichment even when an API key exists.")
     parser.add_argument("--kobis-metadata-limit", type=int, default=60, help="Maximum current/future movies to check through optional KOBIS metadata enrichment.")
     return parser.parse_args(argv)
@@ -581,6 +703,8 @@ def run(argv: list[str] | None = None) -> int:
                 current_only=not args.all_movies,
                 dry_run=args.dry_run,
                 provider_auto_tags=not args.skip_provider_auto_tags,
+                provider_detail_metadata=args.include_provider_details,
+                provider_detail_limit=args.provider_detail_limit,
                 kobis_metadata=not args.skip_kobis_metadata,
                 kobis_limit=args.kobis_metadata_limit,
             )

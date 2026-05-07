@@ -27,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--codex-command", default=os.getenv("DABOYEO_CODEX_COMMAND", "codex"))
     parser.add_argument("--codex-cwd", default=os.getenv("DABOYEO_CODEX_CWD", str(Path.cwd())))
     parser.add_argument("--codex-model", default=os.getenv("DABOYEO_CODEX_MODEL", ""))
+    parser.add_argument("--codex-reasoning-effort", default=os.getenv("DABOYEO_CODEX_REASONING_EFFORT", ""))
     parser.add_argument("--poll-interval", type=float, default=float(os.getenv("DABOYEO_BRIDGE_POLL_INTERVAL", "2")))
     parser.add_argument("--timeout", type=int, default=int(os.getenv("DABOYEO_BRIDGE_WORKER_TIMEOUT", "180")))
     parser.add_argument("--once", action="store_true")
@@ -50,6 +51,8 @@ def api_json(server: str, token: str, method: str, path: str, body: Any | None =
             return 204, None
         detail = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"HTTP {exc.code} from {path}: {detail}") from exc
+    except error.URLError as exc:
+        raise RuntimeError(f"request failed for {path}: {exc.reason}") from exc
 
 
 def heartbeat(args: argparse.Namespace, bridge_id: str, providers: list[str]) -> None:
@@ -136,8 +139,9 @@ def run_codex(args: argparse.Namespace, job: dict[str, Any]) -> str:
             str(output_path),
             "-",
         ]
-        if args.codex_model:
-            command[3:3] = ["--model", args.codex_model]
+        codex_global_options = codex_exec_global_options(args, job)
+        if codex_global_options:
+            command[3:3] = codex_global_options
         completed = subprocess.run(
             command,
             input=prompt,
@@ -160,6 +164,22 @@ def run_codex(args: argparse.Namespace, job: dict[str, Any]) -> str:
         return output
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def codex_exec_global_options(args: argparse.Namespace, job: dict[str, Any]) -> list[str]:
+    request_body = job.get("request") or {}
+    codex_model = str(request_body.get("model") or job.get("model") or args.codex_model or "").strip()
+    if str(request_body.get("model") or "").strip():
+        reasoning_source = request_body.get("reasoning_effort") or ""
+    else:
+        reasoning_source = request_body.get("reasoning_effort") or args.codex_reasoning_effort or ""
+    reasoning_effort = str(reasoning_source).strip().lower()
+    options: list[str] = []
+    if codex_model:
+        options.extend(["--model", codex_model])
+    if reasoning_effort:
+        options.extend(["-c", f'model_reasoning_effort="{reasoning_effort}"'])
+    return options
 
 
 def extract_output_schema(request_body: dict[str, Any]) -> dict[str, Any]:
@@ -207,7 +227,10 @@ def process_job(args: argparse.Namespace, job: dict[str, Any]) -> None:
         complete_job(args, job_id, raw_json=raw_json)
         print(f"completed {provider} job {job_id}")
     except Exception as exc:  # noqa: BLE001
-        complete_job(args, job_id, error_message=str(exc))
+        try:
+            complete_job(args, job_id, error_message=str(exc))
+        except Exception as report_exc:  # noqa: BLE001
+            print(f"failed to report {provider} job {job_id}: {report_exc}", file=sys.stderr)
         print(f"failed {provider} job {job_id}: {exc}", file=sys.stderr)
 
 
@@ -223,14 +246,21 @@ def main() -> int:
     bridge_id = "bridge_" + uuid.uuid4().hex[:12]
     print(f"AI bridge started: server={args.server} providers={','.join(providers)} bridgeId={bridge_id}")
     while True:
-        live_providers = active_providers(args, providers)
-        heartbeat(args, bridge_id, live_providers)
-        did_work = False
-        for provider in live_providers:
-            job = claim_job(args, provider, bridge_id)
-            if job:
-                did_work = True
-                process_job(args, job)
+        try:
+            live_providers = active_providers(args, providers)
+            heartbeat(args, bridge_id, live_providers)
+            did_work = False
+            for provider in live_providers:
+                job = claim_job(args, provider, bridge_id)
+                if job:
+                    did_work = True
+                    process_job(args, job)
+        except Exception as exc:  # noqa: BLE001
+            print(f"bridge poll failed: {exc}", file=sys.stderr)
+            if args.once:
+                return 1
+            time.sleep(max(args.poll_interval, 5))
+            continue
         if args.once:
             return 0
         if not did_work:

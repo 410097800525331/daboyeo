@@ -72,7 +72,7 @@ class CodexRecommendationClientTests {
             "User profile:",
             "Candidates:",
             "Decision style: CODEX_FAST",
-            "single-pass but evidence-based comparison",
+            "small candidate set",
             "avoid generic caution-first wording",
             "\"why\"",
             "\"s\"",
@@ -158,6 +158,38 @@ class CodexRecommendationClientTests {
     }
 
     @Test
+    void modeSpecificModelDefaultsAndReasoningAreSeparated() throws Exception {
+        RecommendationProperties properties = properties();
+        CodexRecommendationClient client = new CodexRecommendationClient(properties, new ObjectMapper());
+
+        assertThat(properties.modelFor(AiProvider.CODEX, RecommendationMode.FAST)).isEqualTo("gpt-5.4-mini");
+        assertThat(properties.reasoningEffortFor(AiProvider.CODEX, RecommendationMode.FAST)).isBlank();
+        assertThat(properties.modelFor(AiProvider.CODEX, RecommendationMode.PRECISE)).isEqualTo("gpt-5.5");
+        assertThat(properties.reasoningEffortFor(AiProvider.CODEX, RecommendationMode.PRECISE)).isEqualTo("xhigh");
+        assertThat(properties.expectedModelsFor(AiProvider.CODEX)).containsExactly("gpt-5.4-mini", "gpt-5.5");
+
+        var fastRequest = client.openAiCompatibleRequest(
+            RecommendationMode.FAST,
+            new TagProfile(),
+            List.of(scoredCandidate()),
+            properties.modelFor(AiProvider.CODEX, RecommendationMode.FAST)
+        );
+        var preciseRequest = client.openAiCompatibleRequest(
+            RecommendationMode.PRECISE,
+            new TagProfile(),
+            List.of(scoredCandidate()),
+            properties.modelFor(AiProvider.CODEX, RecommendationMode.PRECISE)
+        );
+
+        assertThat(fastRequest).containsEntry("model", "gpt-5.4-mini");
+        assertThat(fastRequest).doesNotContainKey("reasoning_effort");
+        assertThat(fastRequest).containsEntry("max_tokens", 420);
+        assertThat(preciseRequest).containsEntry("model", "gpt-5.5");
+        assertThat(preciseRequest).containsEntry("reasoning_effort", "xhigh");
+        assertThat(preciseRequest).containsEntry("max_tokens", 1700);
+    }
+
+    @Test
     void compactAiResponseIsMappedToExistingAiPickShape() throws Exception {
         String json = "{\"r\":[{\"id\":1,\"why\":\"#가볍게 #친구랑\",\"v\":\"#17:00상영 #좌석여유\"}]}";
 
@@ -217,9 +249,9 @@ class CodexRecommendationClientTests {
     private RecommendationProperties properties() {
         return new RecommendationProperties(
             20,
-            12,
+            3,
             20,
-            900,
+            420,
             1700,
             List.of("http://localhost:5173")
         );

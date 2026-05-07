@@ -70,10 +70,7 @@ public class AiBridgeJobService {
     public AiProviderStatus bridgeStatus(AiProvider provider) {
         String wireValue = provider.wireValue();
         String label = properties.providerLabel(provider);
-        List<String> expectedModels = List.of(properties.modelFor(provider, RecommendationMode.FAST)).stream()
-            .filter(model -> model != null && !model.isBlank())
-            .distinct()
-            .toList();
+        List<String> expectedModels = properties.expectedModelsFor(provider);
         if (!tokenConfigured()) {
             return new AiProviderStatus(
                 wireValue,

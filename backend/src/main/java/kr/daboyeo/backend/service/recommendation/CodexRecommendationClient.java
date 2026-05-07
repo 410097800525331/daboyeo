@@ -108,13 +108,10 @@ public class CodexRecommendationClient {
     }
 
     private List<String> expectedModels() {
-        return List.of(properties.modelFor(AiProvider.CODEX, RecommendationMode.FAST)).stream()
-            .filter(model -> model != null && !model.isBlank())
-            .distinct()
-            .toList();
+        return properties.expectedModelsFor(AiProvider.CODEX);
     }
 
-    private Map<String, Object> openAiCompatibleRequest(
+    Map<String, Object> openAiCompatibleRequest(
         RecommendationMode mode,
         TagProfile profile,
         List<ScoredCandidate> candidates,
@@ -126,6 +123,10 @@ public class CodexRecommendationClient {
         request.put("temperature", mode == RecommendationMode.FAST ? 0.0 : 0.05);
         request.put("top_p", 0.85);
         request.put("max_tokens", properties.maxTokensFor(AiProvider.CODEX, mode));
+        String reasoningEffort = properties.reasoningEffortFor(AiProvider.CODEX, mode);
+        if (reasoningEffort != null && !reasoningEffort.isBlank()) {
+            request.put("reasoning_effort", reasoningEffort);
+        }
         request.put("messages", messages(mode, profile, candidates));
         request.put(
             "response_format",
@@ -223,10 +224,10 @@ public class CodexRecommendationClient {
                 : "Pick 1 to " + Math.min(3, candidates.size()) + " objects from candidates.";
             String depth = mode == RecommendationMode.PRECISE
                 ? "Decision style: CODEX_PRECISE. Evaluate every supplied candidate before choosing. Compare selected genre intent, poster taste, avoid risks, showtime practicality, and why each selected candidate beats a nearby alternative."
-                : "Decision style: CODEX_FAST. Make a single-pass but evidence-based comparison across the supplied candidates. Prioritize the strongest concrete fit and avoid generic caution-first wording.";
+                : "Decision style: CODEX_FAST. Use the small candidate set as-is, make one ranking pass, and keep the answer short. Prioritize the strongest concrete fit and avoid generic caution-first wording.";
             String itemContract = mode == RecommendationMode.PRECISE
                 ? "s=integer 0-100 final recommendation score; why=2 Korean sentences naming the decisive content fit and practical fit; a=2-3 Korean sentences covering selected genre/poster profile, avoid-risk handling, and tradeoff versus another candidate; v=one Korean sentence about practical showtime/theater value; c=short Korean caution or empty string."
-                : "s=integer 0-100 final recommendation score; why=1-2 Korean sentences naming the decisive content fit and practical fit; a=1-2 Korean sentences about selected genre/poster profile or context; v=one Korean sentence about practical showtime/theater value; c=short Korean caution or empty string.";
+                : "s=integer 0-100 final recommendation score; why=1 Korean sentence naming the decisive content and practical fit; a=1 short Korean sentence about selected genre/poster profile or context; v=one short Korean sentence about showtime/theater value; c=short Korean caution or empty string.";
             String comparisonFields = mode == RecommendationMode.PRECISE
                 ? "- watchRisks/tradeoffHints: reasons to be careful or compare against nearby options"
                 : "- watchRisks: reasons to be careful";

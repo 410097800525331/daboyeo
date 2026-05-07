@@ -48,6 +48,26 @@ FORMAT_TAG_PATTERNS: list[tuple[str, str]] = [
     ("vip", "vip"),
     ("boutique", "boutique"),
 ]
+MEGABOX_PRICE_AMOUNT_FIELDS: list[tuple[str, str]] = [
+    ("zoneGernAmt", "zone_general"),
+    ("zoneEconAmt", "zone_economy"),
+    ("zonePrimAmt", "zone_prime"),
+    ("clsGernAmt", "class_general"),
+    ("clsDisabledAmt", "class_disabled"),
+    ("clsKidsAmt", "class_kids"),
+    ("clsTableAmt", "class_table"),
+    ("cls2pAmt", "class_2p"),
+    ("cls4pAmt", "class_4p"),
+    ("clsSweetAmt", "class_sweet"),
+    ("clsCoupleAmt", "class_couple"),
+    ("clsBalconyAmt", "class_balcony"),
+    ("clsBalcony2Amt", "class_balcony_2"),
+    ("clsBalcony3pAmt", "class_balcony_3p"),
+    ("clsBalcony2pAmt", "class_balcony_2p"),
+    ("clsRoyalAmt", "class_royal"),
+    ("clsSpecialAmt", "class_special"),
+    ("clsReclineAmt", "class_recliner"),
+]
 
 
 def now_db() -> str:
@@ -192,7 +212,18 @@ def provider_ingest_result(provider: str, play_dates: list[str]) -> dict[str, An
         "showtime_location_links_repaired": 0,
         "seat_snapshots_inserted": 0,
         "seat_items_inserted": 0,
+        "price_showtimes_checked": 0,
+        "price_showtimes_priced": 0,
+        "price_rows_upserted": 0,
+        "price_fetch_errors": 0,
+        "price_fetch_error_samples": [],
     }
+
+
+def append_bounded_unique(items: list[str], value: Any, limit: int = 12) -> None:
+    text = safe_text(value)
+    if text and text not in items and len(items) < limit:
+        items.append(text)
 
 
 def _clean_tag_value(value: Any) -> str:
@@ -738,6 +769,7 @@ def upsert_showtime(
         "showtimes",
         payload,
         {"provider_code": provider, "external_showtime_key": payload["external_showtime_key"]},
+        update_columns=[column for column in payload if column not in {"min_price_amount"}],
     )
 
 
@@ -865,6 +897,397 @@ def insert_seat_snapshot(
     return snapshot_id, insert_many_dicts(cursor, "seat_snapshot_items", item_rows)
 
 
+def list_items(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    if isinstance(value, dict):
+        for key in ("Items", "items", "SeatPolicyList", "seatPolicyList"):
+            nested = value.get(key)
+            if isinstance(nested, list):
+                return nested
+        return [value]
+    return []
+
+
+def field_value(row: Any, *keys: str) -> Any:
+    if not isinstance(row, dict):
+        return None
+    for key in keys:
+        if key in row:
+            return row[key]
+    normalized = {str(key).lower(): value for key, value in row.items()}
+    for key in keys:
+        value = normalized.get(key.lower())
+        if value is not None:
+            return value
+    return None
+
+
+def money_amount(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    text = str(value).strip().replace(",", "")
+    if not text:
+        return None
+    try:
+        return int(Decimal(text))
+    except Exception:
+        return None
+
+
+def positive_money_amount(value: Any) -> int | None:
+    amount = money_amount(value)
+    return amount if amount is not None and amount > 0 else None
+
+
+def normalized_price_key(*parts: Any) -> str:
+    tokens = []
+    for part in parts:
+        text = safe_text(part)
+        if text:
+            tokens.append(text.replace(" ", "_").replace("|", "_").replace(":", "_"))
+    return ":".join(tokens)[:128] or "default"
+
+
+def lotte_customer_division_names(seat_summary: dict[str, Any]) -> dict[str, str]:
+    names: dict[str, str] = {}
+    for item in list_items(seat_summary.get("customer_divisions")):
+        code = safe_text(
+            field_value(
+                item,
+                "CustomerDivisionCode",
+                "customerDivisionCode",
+                "Code",
+                "code",
+            )
+        )
+        name = safe_text(
+            field_value(
+                item,
+                "CustomerDivisionNameKR",
+                "customerDivisionNameKR",
+                "NameKR",
+                "Name",
+                "name",
+            )
+        )
+        if code and name:
+            names[code] = name
+    return names
+
+
+def lotte_price_rows_from_summary(
+    seat_summary: dict[str, Any],
+    schedule: dict[str, Any],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    customer_names = lotte_customer_division_names(seat_summary)
+    for index, fee in enumerate(list_items(seat_summary.get("fee_items")), start=1):
+        customer_code = safe_text(
+            field_value(fee, "CustomerDivisionCode", "customerDivisionCode", "customerCode")
+        )
+        ticket_code = safe_text(field_value(fee, "TicketCode", "ticketCode"))
+        seat_block_code = safe_text(field_value(fee, "SeatBlockCode", "seatBlockCode"))
+        movie_fee = money_amount(field_value(fee, "MovieFee", "movieFee", "basePrice", "BasePrice"))
+        service_fee = money_amount(field_value(fee, "ServiceFee", "serviceFee"))
+        total_price = money_amount(
+            field_value(
+                fee,
+                "TotalPrice",
+                "totalPrice",
+                "TotalAmt",
+                "totalAmt",
+                "TicketAmt",
+                "ticketAmt",
+                "Price",
+                "price",
+            )
+        )
+        if total_price is None and (movie_fee is not None or service_fee is not None):
+            total_price = (movie_fee or 0) + (service_fee or 0)
+        total_price = positive_money_amount(total_price)
+        if total_price is None:
+            continue
+
+        audience_type = safe_text(
+            field_value(
+                fee,
+                "CustomerDivisionNameKR",
+                "customerDivisionNameKR",
+                "TicketName",
+                "ticketName",
+            )
+        )
+        if not audience_type:
+            audience_type = customer_names.get(customer_code) or ticket_code or customer_code or "default"
+        price_key = normalized_price_key(
+            "lotte",
+            "customer",
+            customer_code or index,
+            "ticket",
+            ticket_code or index,
+            "seat",
+            seat_block_code or "default",
+        )
+        rows.append(
+            {
+                "price_key": price_key,
+                "audience_type": audience_type,
+                "seat_type": seat_block_code or None,
+                "screen_type": blank_to_none(
+                    schedule.get("screen_division_name") or schedule.get("screen_type") or schedule.get("film_name")
+                ),
+                "base_price_amount": movie_fee if movie_fee is not None else total_price,
+                "service_fee_amount": service_fee,
+                "total_price_amount": total_price,
+                "raw_json": {"source": "Fees.Items", "fee": fee},
+            }
+        )
+    return rows
+
+
+def megabox_actual_seat_class_codes(seat_summary: dict[str, Any]) -> set[str]:
+    codes: set[str] = set()
+    for item in list_items(seat_summary.get("seat_class_codes")):
+        code = field_value(item, "seatClassCd", "seatClassCode", "seat_class_code") if isinstance(item, dict) else item
+        text = safe_text(code)
+        if text:
+            codes.add(text)
+    return codes
+
+
+def megabox_price_policies_by_field(seat_summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    actual_codes = megabox_actual_seat_class_codes(seat_summary)
+    policies_by_field: dict[str, dict[str, Any]] = {}
+    for policy in list_items(seat_summary.get("seat_policy_list")):
+        if not isinstance(policy, dict):
+            continue
+        price_field = safe_text(field_value(policy, "pcNm", "priceColumnName", "price_field"))
+        if not price_field:
+            continue
+        seat_class_code = safe_text(field_value(policy, "seatClassCd", "seatClassCode", "seat_class_code"))
+        if actual_codes and seat_class_code and seat_class_code not in actual_codes:
+            continue
+        seat_type = safe_text(
+            field_value(
+                policy,
+                "seatClassNm",
+                "seatClassName",
+                "seatClassNameKr",
+                "seatNm",
+                "seatName",
+            )
+        )
+        policies_by_field[price_field] = {
+            "seat_type": seat_type or seat_class_code or price_field,
+            "policy": policy,
+        }
+    return policies_by_field
+
+
+def megabox_price_rows_from_summary(
+    seat_summary: dict[str, Any],
+    schedule: dict[str, Any],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    policies_by_field = megabox_price_policies_by_field(seat_summary)
+    allowed_fields = set(policies_by_field) if policies_by_field else set()
+    seen_keys: set[str] = set()
+    for ticket in list_items(seat_summary.get("seat_ticket_amounts")):
+        ticket_kind = safe_text(field_value(ticket, "ticketKindCd", "ticketKindCode", "ticket_kind_code"))
+        audience_type = safe_text(
+            field_value(ticket, "ticketTypeName", "ticketKindNm", "ticketKindName", "ticket_type_name")
+        )
+        if not audience_type:
+            audience_type = ticket_kind or "default"
+
+        for price_field, fallback_seat_type in MEGABOX_PRICE_AMOUNT_FIELDS:
+            if allowed_fields and price_field not in allowed_fields:
+                continue
+            amount = positive_money_amount(field_value(ticket, price_field))
+            if amount is None:
+                continue
+            policy = policies_by_field.get(price_field) or {}
+            seat_type = safe_text(policy.get("seat_type"), fallback_seat_type)
+            price_key = normalized_price_key("megabox", "ticket", ticket_kind or audience_type, "field", price_field)
+            if price_key in seen_keys:
+                continue
+            seen_keys.add(price_key)
+            rows.append(
+                {
+                    "price_key": price_key,
+                    "audience_type": audience_type,
+                    "seat_type": seat_type,
+                    "screen_type": blank_to_none(schedule.get("screen_type") or schedule.get("screen_name")),
+                    "base_price_amount": amount,
+                    "service_fee_amount": None,
+                    "total_price_amount": amount,
+                    "raw_json": {
+                        "source": "seatTicketAmtList",
+                        "price_field": price_field,
+                        "ticket_amount": ticket,
+                        "policy": policy.get("policy"),
+                    },
+                }
+            )
+    return rows
+
+
+def upsert_showtime_price_rows(
+    cursor: Any,
+    provider: str,
+    showtime_id: int,
+    external_showtime_key: str,
+    price_rows: list[dict[str, Any]],
+    collected_at: str,
+) -> tuple[int, int | None]:
+    upserted = 0
+    totals: list[int] = []
+    for price_row in price_rows:
+        total_price = positive_money_amount(price_row.get("total_price_amount"))
+        if total_price is None:
+            continue
+        payload = {
+            "showtime_id": showtime_id,
+            "provider_code": provider,
+            "external_showtime_key": external_showtime_key,
+            "price_key": price_row["price_key"],
+            "audience_type": blank_to_none(price_row.get("audience_type")),
+            "seat_type": blank_to_none(price_row.get("seat_type")),
+            "screen_type": blank_to_none(price_row.get("screen_type")),
+            "currency_code": "KRW",
+            "base_price_amount": money_amount(price_row.get("base_price_amount")),
+            "service_fee_amount": money_amount(price_row.get("service_fee_amount")),
+            "total_price_amount": total_price,
+            "raw_json": json_for_db(price_row.get("raw_json") or price_row),
+            "last_collected_at": collected_at,
+        }
+        upsert_dict(
+            cursor,
+            "showtime_prices",
+            payload,
+            update_columns=[
+                "showtime_id",
+                "audience_type",
+                "seat_type",
+                "screen_type",
+                "currency_code",
+                "base_price_amount",
+                "service_fee_amount",
+                "total_price_amount",
+                "raw_json",
+                "last_collected_at",
+            ],
+        )
+        upserted += 1
+        totals.append(total_price)
+
+    min_price = min(totals) if totals else None
+    if min_price is not None:
+        cursor.execute(
+            """
+            UPDATE showtimes
+            SET min_price_amount = %s,
+                currency_code = 'KRW',
+                last_collected_at = %s
+            WHERE id = %s
+            """,
+            [min_price, collected_at, showtime_id],
+        )
+    return upserted, min_price
+
+
+def should_collect_price(args: argparse.Namespace, result: dict[str, Any]) -> bool:
+    if not args.include_prices:
+        return False
+    return args.max_price_showtimes <= 0 or result["price_showtimes_checked"] < args.max_price_showtimes
+
+
+def record_price_fetch_error(result: dict[str, Any], external_showtime_key: str, exc: Exception) -> None:
+    result["price_fetch_errors"] += 1
+    sample = f"{external_showtime_key}: {type(exc).__name__}: {safe_text(exc)}"
+    append_bounded_unique(result["price_fetch_error_samples"], sample[:240], limit=8)
+
+
+def ingest_lotte_showtime_prices(
+    cursor: Any,
+    collector: LotteCinemaCollector,
+    schedule: dict[str, Any],
+    showtime_id: int,
+    collected_at: str,
+    result: dict[str, Any],
+    args: argparse.Namespace,
+) -> None:
+    if not should_collect_price(args, result):
+        return
+    external_showtime_key = lotte_showtime_key(schedule)
+    result["price_showtimes_checked"] += 1
+    try:
+        booking_key = schedule.get("booking_key") or {}
+        cinema_id = to_int(booking_key.get("cinema_id"))
+        screen_id = to_int(booking_key.get("screen_id"))
+        play_sequence = to_int(booking_key.get("play_sequence"))
+        screen_division_code = to_int(booking_key.get("screen_division_code"))
+        play_date = safe_text(booking_key.get("play_date"))
+        if cinema_id is None or screen_id is None or play_sequence is None or screen_division_code is None:
+            raise ValueError("Lotte booking key is incomplete for price fetch")
+        seat_summary = collector.summarize_seat_map(
+            cinema_id=cinema_id,
+            screen_id=screen_id,
+            play_date=play_date,
+            play_sequence=play_sequence,
+            screen_division_code=screen_division_code,
+        )
+        price_rows = lotte_price_rows_from_summary(seat_summary, schedule)
+        upserted, min_price = upsert_showtime_price_rows(
+            cursor,
+            LOTTE,
+            showtime_id,
+            external_showtime_key,
+            price_rows,
+            collected_at,
+        )
+        result["price_rows_upserted"] += upserted
+        if min_price is not None:
+            result["price_showtimes_priced"] += 1
+    except Exception as exc:
+        record_price_fetch_error(result, external_showtime_key, exc)
+
+
+def ingest_megabox_showtime_prices(
+    cursor: Any,
+    collector: MegaboxCollector,
+    schedule: dict[str, Any],
+    showtime_id: int,
+    collected_at: str,
+    result: dict[str, Any],
+    args: argparse.Namespace,
+) -> None:
+    if not should_collect_price(args, result):
+        return
+    external_showtime_key = megabox_showtime_key(schedule)
+    result["price_showtimes_checked"] += 1
+    try:
+        seat_summary = collector.summarize_seat_map(
+            play_schdl_no=safe_text(schedule.get("play_schedule_no")),
+            brch_no=safe_text(schedule.get("branch_no")),
+        )
+        price_rows = megabox_price_rows_from_summary(seat_summary, schedule)
+        upserted, min_price = upsert_showtime_price_rows(
+            cursor,
+            MEGABOX,
+            showtime_id,
+            external_showtime_key,
+            price_rows,
+            collected_at,
+        )
+        result["price_rows_upserted"] += upserted
+        if min_price is not None:
+            result["price_showtimes_priced"] += 1
+    except Exception as exc:
+        record_price_fetch_error(result, external_showtime_key, exc)
+
+
 def choose_lotte_play_date(rows: list[dict[str, Any]], explicit: str | None) -> str:
     if explicit:
         return explicit
@@ -891,41 +1314,175 @@ def choose_lotte_play_dates(rows: list[dict[str, Any]], args: argparse.Namespace
     return dates or [choose_lotte_play_date(rows, None)]
 
 
+def ingest_lotte_schedule(
+    cursor: Any,
+    collector: LotteCinemaCollector,
+    schedule: dict[str, Any],
+    fallback_theater: dict[str, Any] | None,
+    collected_at: str,
+    movie_ids: dict[str, int],
+    theater_ids: dict[str, int],
+    theater_by_id: dict[str, dict[str, Any]],
+    movie_tag_keys: set[tuple[str, str, str, str]],
+    selected_movie_keys: set[str] | None,
+    result: dict[str, Any],
+    args: argparse.Namespace,
+) -> None:
+    schedule_movie_no = safe_text(schedule.get("movie_no"))
+    if not schedule_movie_no:
+        return
+
+    if selected_movie_keys is not None and schedule_movie_no not in selected_movie_keys:
+        return
+
+    theater_key = safe_text(schedule.get("cinema_id"))
+    fallback_theater_key = safe_text((fallback_theater or {}).get("cinema_id"))
+    theater_id = theater_ids.get(theater_key) or theater_ids.get(fallback_theater_key)
+    if theater_id is None:
+        theater_row = fallback_theater or {
+            "provider": LOTTE,
+            "cinema_id": schedule.get("cinema_id"),
+            "cinema_name": schedule.get("cinema_name"),
+            "raw": schedule.get("raw") or schedule,
+        }
+        theater_id = upsert_theater(cursor, LOTTE, theater_row, collected_at)
+        theater_ids[theater_key or fallback_theater_key] = theater_id
+        if theater_key:
+            theater_by_id[theater_key] = theater_row
+        result["theaters_upserted"] += 1
+
+    movie_id = movie_ids.get(schedule_movie_no)
+    if movie_id is None:
+        movie_id = upsert_movie_from_schedule(cursor, LOTTE, schedule, collected_at)
+        movie_ids[schedule_movie_no] = movie_id
+        result["movies_upserted"] += 1
+
+    screen_id = upsert_screen(cursor, LOTTE, schedule, theater_id, collected_at)
+    showtime_id = upsert_showtime(
+        cursor,
+        LOTTE,
+        schedule,
+        movie_id,
+        theater_id,
+        screen_id,
+        collected_at,
+        theater_by_id.get(theater_key) or fallback_theater,
+    )
+    result["screens_upserted"] += 1
+    result["showtimes_upserted"] += 1
+    result["movie_tags_upserted"] += upsert_movie_tags(
+        cursor,
+        LOTTE,
+        movie_id,
+        schedule_movie_no,
+        schedule,
+        movie_tag_keys,
+    )
+
+    ingest_lotte_showtime_prices(
+        cursor,
+        collector,
+        schedule,
+        showtime_id,
+        collected_at,
+        result,
+        args,
+    )
+
+    if args.include_seats and result["seat_snapshots_inserted"] < args.max_seat_snapshots:
+        booking_key = schedule.get("booking_key") or {}
+        seats = collector.build_seat_records(
+            cinema_id=to_int(booking_key.get("cinema_id")) or 0,
+            screen_id=to_int(booking_key.get("screen_id")) or 0,
+            play_date=safe_text(booking_key.get("play_date")),
+            play_sequence=to_int(booking_key.get("play_sequence")) or 0,
+            screen_division_code=to_int(booking_key.get("screen_division_code")) or 0,
+        )
+        _, item_count = insert_seat_snapshot(
+            cursor,
+            LOTTE,
+            showtime_id,
+            lotte_showtime_key(schedule),
+            schedule,
+            seats,
+        )
+        result["seat_snapshots_inserted"] += 1
+        result["seat_items_inserted"] += item_count
+
+
 def ingest_lotte(cursor: Any, args: argparse.Namespace) -> dict[str, Any]:
     collector = LotteCinemaCollector()
     collected_at = now_db()
-    movies = limited(collector.build_movie_records(), args.limit_movies)
+    include_details = args.include_provider_details
+    movies = limited(collector.build_movie_records(include_details=include_details), args.limit_movies)
     theaters = limited(collector.build_cinema_records(), args.limit_theaters)
     play_date_rows = collector.build_play_date_records()
     play_dates = choose_lotte_play_dates(play_date_rows, args)
     result: dict[str, Any] = provider_ingest_result(LOTTE, play_dates)
+    result["provider_details_included"] = include_details
+    result["eager_master_upserts"] = args.eager_master_upserts
 
     movie_ids: dict[str, int] = {}
     theater_ids: dict[str, int] = {}
     theater_by_id: dict[str, dict[str, Any]] = {}
     movie_tag_keys: set[tuple[str, str, str, str]] = set()
-    for movie in movies:
-        movie_id = upsert_movie(cursor, LOTTE, movie, collected_at)
-        movie_no = safe_text(movie.get("movie_no"))
-        if movie_no:
-            movie_ids[movie_no] = movie_id
-        result["movie_tags_upserted"] += upsert_movie_tags(
-            cursor,
-            LOTTE,
-            movie_id,
-            movie_no,
-            movie,
-            movie_tag_keys,
-        )
-        result["movies_upserted"] += 1
-    for theater in theaters:
-        theater_id = upsert_theater(cursor, LOTTE, theater, collected_at)
-        theater_key = safe_text(theater.get("cinema_id"))
-        theater_ids[theater_key] = theater_id
-        theater_by_id[theater_key] = theater
-        result["theaters_upserted"] += 1
+    if args.eager_master_upserts:
+        for movie in movies:
+            movie_id = upsert_movie(cursor, LOTTE, movie, collected_at)
+            movie_no = safe_text(movie.get("movie_no"))
+            if movie_no:
+                movie_ids[movie_no] = movie_id
+            result["movie_tags_upserted"] += upsert_movie_tags(
+                cursor,
+                LOTTE,
+                movie_id,
+                movie_no,
+                movie,
+                movie_tag_keys,
+            )
+            result["movies_upserted"] += 1
+        for theater in theaters:
+            theater_id = upsert_theater(cursor, LOTTE, theater, collected_at)
+            theater_key = safe_text(theater.get("cinema_id"))
+            theater_ids[theater_key] = theater_id
+            theater_by_id[theater_key] = theater
+            result["theaters_upserted"] += 1
+
+    selected_movie_keys = {safe_text(movie.get("movie_no")) for movie in movies if safe_text(movie.get("movie_no"))}
+    filter_movie_keys = selected_movie_keys if args.limit_movies and args.limit_movies > 0 else None
+    result["lotte_schedule_strategy"] = args.lotte_schedule_strategy
 
     for play_date in play_dates:
+        if args.lotte_schedule_strategy == "theater":
+            for theater in theaters:
+                if args.limit_schedules and result["showtimes_upserted"] >= args.limit_schedules:
+                    break
+                schedules = collector.build_schedule_records(
+                    play_date,
+                    collector.build_cinema_selector(theater.get("raw") or {}),
+                    "",
+                    include_details=include_details,
+                )
+                result["schedule_queries"] += 1
+                for schedule in schedules:
+                    if args.limit_schedules and result["showtimes_upserted"] >= args.limit_schedules:
+                        break
+                    ingest_lotte_schedule(
+                        cursor,
+                        collector,
+                        schedule,
+                        theater,
+                        collected_at,
+                        movie_ids,
+                        theater_ids,
+                        theater_by_id,
+                        movie_tag_keys,
+                        filter_movie_keys,
+                        result,
+                        args,
+                    )
+            continue
+
         for movie in movies:
             if args.limit_schedules and result["showtimes_upserted"] >= args.limit_schedules:
                 break
@@ -939,57 +1496,26 @@ def ingest_lotte(cursor: Any, args: argparse.Namespace) -> dict[str, Any]:
                     play_date,
                     collector.build_cinema_selector(theater.get("raw") or {}),
                     movie_no,
+                    include_details=include_details,
                 )
                 result["schedule_queries"] += 1
                 for schedule in schedules:
                     if args.limit_schedules and result["showtimes_upserted"] >= args.limit_schedules:
                         break
-                    theater_key = safe_text(schedule.get("cinema_id"))
-                    theater_id = theater_ids.get(theater_key) or theater_ids[safe_text(theater.get("cinema_id"))]
-                    movie_id = movie_ids.get(safe_text(schedule.get("movie_no"))) or movie_ids[movie_no]
-                    screen_id = upsert_screen(cursor, LOTTE, schedule, theater_id, collected_at)
-                    showtime_id = upsert_showtime(
+                    ingest_lotte_schedule(
                         cursor,
-                        LOTTE,
+                        collector,
                         schedule,
-                        movie_id,
-                        theater_id,
-                        screen_id,
+                        theater,
                         collected_at,
-                        theater_by_id.get(theater_key) or theater,
+                        movie_ids,
+                        theater_ids,
+                        theater_by_id,
+                        movie_tag_keys,
+                        None,
+                        result,
+                        args,
                     )
-                    result["screens_upserted"] += 1
-                    result["showtimes_upserted"] += 1
-                    schedule_movie_no = safe_text(schedule.get("movie_no")) or movie_no
-                    if schedule_movie_no:
-                        result["movie_tags_upserted"] += upsert_movie_tags(
-                            cursor,
-                            LOTTE,
-                            movie_id,
-                            schedule_movie_no,
-                            schedule,
-                            movie_tag_keys,
-                        )
-
-                    if args.include_seats and result["seat_snapshots_inserted"] < args.max_seat_snapshots:
-                        booking_key = schedule.get("booking_key") or {}
-                        seats = collector.build_seat_records(
-                            cinema_id=to_int(booking_key.get("cinema_id")) or 0,
-                            screen_id=to_int(booking_key.get("screen_id")) or 0,
-                            play_date=safe_text(booking_key.get("play_date")),
-                            play_sequence=to_int(booking_key.get("play_sequence")) or 0,
-                            screen_division_code=to_int(booking_key.get("screen_division_code")) or 0,
-                        )
-                        _, item_count = insert_seat_snapshot(
-                            cursor,
-                            LOTTE,
-                            showtime_id,
-                            lotte_showtime_key(schedule),
-                            schedule,
-                            seats,
-                        )
-                        result["seat_snapshots_inserted"] += 1
-                        result["seat_items_inserted"] += item_count
     return finalize_provider_ingest(cursor, LOTTE, collected_at, movie_tag_keys, result)
 
 
@@ -1000,6 +1526,26 @@ def area_codes_from_branches(branches: list[dict[str, Any]]) -> list[str]:
         if code and code not in codes:
             codes.append(code)
     return codes
+
+
+def megabox_schedule_date_matches(schedule: dict[str, Any], requested_play_de: str) -> bool:
+    return db_date(schedule.get("play_date")) == db_date(requested_play_de)
+
+
+def megabox_schedules_for_requested_date(
+    schedules: list[dict[str, Any]],
+    requested_play_de: str,
+) -> tuple[list[dict[str, Any]], int, list[str]]:
+    matching: list[dict[str, Any]] = []
+    mismatch_dates: list[str] = []
+    mismatch_count = 0
+    for schedule in schedules:
+        if megabox_schedule_date_matches(schedule, requested_play_de):
+            matching.append(schedule)
+            continue
+        mismatch_count += 1
+        append_bounded_unique(mismatch_dates, schedule.get("play_date"))
+    return matching, mismatch_count, mismatch_dates
 
 
 def choose_megabox_play_dates(args: argparse.Namespace) -> list[str]:
@@ -1029,42 +1575,166 @@ def megabox_theater_from_schedule(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def init_megabox_result(play_dates: list[str]) -> dict[str, Any]:
+    result: dict[str, Any] = provider_ingest_result(MEGABOX, play_dates)
+    result["schedule_date_mismatches"] = 0
+    result["schedule_date_mismatch_dates"] = []
+    result["schedule_queries_with_only_date_mismatches"] = 0
+    return result
+
+
+def register_megabox_movie(
+    cursor: Any,
+    movie: dict[str, Any],
+    collected_at: str,
+    movie_ids: dict[str, int],
+    movie_tag_keys: set[tuple[str, str, str, str]],
+    result: dict[str, Any],
+) -> None:
+    movie_id = upsert_movie(cursor, MEGABOX, movie, collected_at)
+    movie_no = safe_text(movie.get("movie_no"))
+    representative_movie_no = safe_text(movie.get("representative_movie_no"))
+    if movie_no:
+        movie_ids[movie_no] = movie_id
+    if representative_movie_no:
+        movie_ids[representative_movie_no] = movie_id
+    result["movie_tags_upserted"] += upsert_movie_tags(
+        cursor,
+        MEGABOX,
+        movie_id,
+        movie_no,
+        movie,
+        movie_tag_keys,
+    )
+    result["movies_upserted"] += 1
+
+
+def register_megabox_branch(
+    cursor: Any,
+    branch: dict[str, Any],
+    collected_at: str,
+    theater_ids: dict[str, int],
+    result: dict[str, Any],
+) -> None:
+    theater_key = safe_text(branch.get("branch_no"))
+    if theater_key in theater_ids:
+        return
+    theater_id = upsert_theater(cursor, MEGABOX, branch, collected_at)
+    theater_ids[theater_key] = theater_id
+    result["theaters_upserted"] += 1
+
+
+def matching_megabox_schedules_for_query(
+    collector: MegaboxCollector,
+    movie_no: str,
+    play_de: str,
+    area_code: str,
+    result: dict[str, Any],
+    include_details: bool = True,
+) -> list[dict[str, Any]]:
+    raw_schedules = collector.build_schedule_records(
+        movie_no=movie_no,
+        play_de=play_de,
+        area_cd=area_code,
+        include_details=include_details,
+    )
+    result["schedule_queries"] += 1
+    schedules, mismatch_count, mismatch_dates = megabox_schedules_for_requested_date(raw_schedules, play_de)
+    result["schedule_date_mismatches"] += mismatch_count
+    for mismatch_date in mismatch_dates:
+        append_bounded_unique(result["schedule_date_mismatch_dates"], mismatch_date)
+    if raw_schedules and not schedules:
+        result["schedule_queries_with_only_date_mismatches"] += 1
+    return schedules
+
+
+def ingest_megabox_schedule(
+    cursor: Any,
+    collector: MegaboxCollector,
+    schedule: dict[str, Any],
+    collected_at: str,
+    movie_ids: dict[str, int],
+    theater_ids: dict[str, int],
+    movie_tag_keys: set[tuple[str, str, str, str]],
+    result: dict[str, Any],
+    args: argparse.Namespace,
+) -> None:
+    theater_key = safe_text(schedule.get("branch_no"))
+    theater_id = theater_ids.get(theater_key)
+    if theater_id is None:
+        theater_id = upsert_theater(cursor, MEGABOX, megabox_theater_from_schedule(schedule), collected_at)
+        theater_ids[theater_key] = theater_id
+        result["theaters_upserted"] += 1
+
+    movie_id, movie_key, movie_created = resolve_megabox_movie_id(cursor, schedule, movie_ids, collected_at)
+    if movie_id is None:
+        return
+    if movie_created:
+        result["movies_upserted"] += 1
+
+    screen_id = upsert_screen(cursor, MEGABOX, schedule, theater_id, collected_at)
+    showtime_id = upsert_showtime(cursor, MEGABOX, schedule, movie_id, theater_id, screen_id, collected_at)
+    result["screens_upserted"] += 1
+    result["showtimes_upserted"] += 1
+    if movie_key:
+        result["movie_tags_upserted"] += upsert_movie_tags(
+            cursor,
+            MEGABOX,
+            movie_id,
+            movie_key,
+            schedule,
+            movie_tag_keys,
+        )
+
+    ingest_megabox_showtime_prices(
+        cursor,
+        collector,
+        schedule,
+        showtime_id,
+        collected_at,
+        result,
+        args,
+    )
+
+    if args.include_seats and result["seat_snapshots_inserted"] < args.max_seat_snapshots:
+        seats = collector.build_seat_records(
+            play_schdl_no=safe_text(schedule.get("play_schedule_no")),
+            brch_no=safe_text(schedule.get("branch_no")),
+        )
+        _, item_count = insert_seat_snapshot(
+            cursor,
+            MEGABOX,
+            showtime_id,
+            megabox_showtime_key(schedule),
+            schedule,
+            seats,
+        )
+        result["seat_snapshots_inserted"] += 1
+        result["seat_items_inserted"] += item_count
+
+
 def ingest_megabox(cursor: Any, args: argparse.Namespace) -> dict[str, Any]:
     collector = MegaboxCollector()
     collected_at = now_db()
     play_dates = choose_megabox_play_dates(args)
-    result: dict[str, Any] = provider_ingest_result(MEGABOX, play_dates)
+    result = init_megabox_result(play_dates)
+    result["provider_details_included"] = args.include_provider_details
+    result["eager_master_upserts"] = args.eager_master_upserts
 
     movie_ids: dict[str, int] = {}
     theater_ids: dict[str, int] = {}
     movie_tag_keys: set[tuple[str, str, str, str]] = set()
     for play_de in play_dates:
-        movies = limited(collector.build_movie_records(play_de), args.limit_movies)
+        movies = limited(
+            collector.build_movie_records(play_de, include_details=args.include_provider_details),
+            args.limit_movies,
+        )
         branches = limited(collector.build_area_records(play_de), args.limit_theaters)
-        for movie in movies:
-            movie_id = upsert_movie(cursor, MEGABOX, movie, collected_at)
-            movie_no = safe_text(movie.get("movie_no"))
-            representative_movie_no = safe_text(movie.get("representative_movie_no"))
-            if movie_no:
-                movie_ids[movie_no] = movie_id
-            if representative_movie_no:
-                movie_ids[representative_movie_no] = movie_id
-            result["movie_tags_upserted"] += upsert_movie_tags(
-                cursor,
-                MEGABOX,
-                movie_id,
-                movie_no,
-                movie,
-                movie_tag_keys,
-            )
-            result["movies_upserted"] += 1
-        for branch in branches:
-            theater_key = safe_text(branch.get("branch_no"))
-            if theater_key in theater_ids:
-                continue
-            theater_id = upsert_theater(cursor, MEGABOX, branch, collected_at)
-            theater_ids[theater_key] = theater_id
-            result["theaters_upserted"] += 1
+        if args.eager_master_upserts:
+            for movie in movies:
+                register_megabox_movie(cursor, movie, collected_at, movie_ids, movie_tag_keys, result)
+            for branch in branches:
+                register_megabox_branch(cursor, branch, collected_at, theater_ids, result)
 
         for movie in movies:
             if args.limit_schedules and result["showtimes_upserted"] >= args.limit_schedules:
@@ -1075,51 +1745,28 @@ def ingest_megabox(cursor: Any, args: argparse.Namespace) -> dict[str, Any]:
             for area_code in area_codes_from_branches(branches):
                 if args.limit_schedules and result["showtimes_upserted"] >= args.limit_schedules:
                     break
-                schedules = collector.build_schedule_records(movie_no=movie_no, play_de=play_de, area_cd=area_code)
-                result["schedule_queries"] += 1
+                schedules = matching_megabox_schedules_for_query(
+                    collector,
+                    movie_no,
+                    play_de,
+                    area_code,
+                    result,
+                    include_details=args.include_provider_details,
+                )
                 for schedule in schedules:
                     if args.limit_schedules and result["showtimes_upserted"] >= args.limit_schedules:
                         break
-                    theater_key = safe_text(schedule.get("branch_no"))
-                    theater_id = theater_ids.get(theater_key)
-                    if theater_id is None:
-                        theater_id = upsert_theater(cursor, MEGABOX, megabox_theater_from_schedule(schedule), collected_at)
-                        theater_ids[theater_key] = theater_id
-                        result["theaters_upserted"] += 1
-                    movie_id, movie_key, movie_created = resolve_megabox_movie_id(cursor, schedule, movie_ids, collected_at)
-                    if movie_id is None:
-                        continue
-                    if movie_created:
-                        result["movies_upserted"] += 1
-                    screen_id = upsert_screen(cursor, MEGABOX, schedule, theater_id, collected_at)
-                    showtime_id = upsert_showtime(cursor, MEGABOX, schedule, movie_id, theater_id, screen_id, collected_at)
-                    result["screens_upserted"] += 1
-                    result["showtimes_upserted"] += 1
-                    if movie_key:
-                        result["movie_tags_upserted"] += upsert_movie_tags(
-                            cursor,
-                            MEGABOX,
-                            movie_id,
-                            movie_key,
-                            schedule,
-                            movie_tag_keys,
-                        )
-
-                    if args.include_seats and result["seat_snapshots_inserted"] < args.max_seat_snapshots:
-                        seats = collector.build_seat_records(
-                            play_schdl_no=safe_text(schedule.get("play_schedule_no")),
-                            brch_no=safe_text(schedule.get("branch_no")),
-                        )
-                        _, item_count = insert_seat_snapshot(
-                            cursor,
-                            MEGABOX,
-                            showtime_id,
-                            megabox_showtime_key(schedule),
-                            schedule,
-                            seats,
-                        )
-                        result["seat_snapshots_inserted"] += 1
-                        result["seat_items_inserted"] += item_count
+                    ingest_megabox_schedule(
+                        cursor,
+                        collector,
+                        schedule,
+                        collected_at,
+                        movie_ids,
+                        theater_ids,
+                        movie_tag_keys,
+                        result,
+                        args,
+                    )
     return finalize_provider_ingest(cursor, MEGABOX, collected_at, movie_tag_keys, result)
 
 
@@ -1129,8 +1776,9 @@ def collect_dry_run(args: argparse.Namespace) -> dict[str, Any]:
         lotte = LotteCinemaCollector()
         play_date_rows = lotte.build_play_date_records()
         play_dates = choose_lotte_play_dates(play_date_rows, args)
+        movies = limited(lotte.build_movie_records(include_details=False), args.limit_movies)
         result["lotte"] = {
-            "movies": len(lotte.build_movie_records()),
+            "movies": len(movies),
             "theaters": len(lotte.build_cinema_records()),
             "provider_play_dates": len(play_date_rows),
             "selected_play_dates": play_dates,
@@ -1140,10 +1788,11 @@ def collect_dry_run(args: argparse.Namespace) -> dict[str, Any]:
         play_dates = choose_megabox_play_dates(args)
         play_de = play_dates[0]
         megabox = MegaboxCollector()
+        movies = limited(megabox.build_movie_records(play_de, include_details=False), args.limit_movies)
         result["megabox"] = {
             "selected_play_dates": play_dates,
             "selected_play_date_count": len(play_dates),
-            "movies": len(megabox.build_movie_records(play_de)),
+            "movies": len(movies),
             "area_branches": len(megabox.build_area_records(play_de)),
         }
     return result
@@ -1158,8 +1807,22 @@ def enrich_metadata_tags(cursor: Any, args: argparse.Namespace) -> dict[str, Any
         current_only=True,
         dry_run=False,
         provider_auto_tags=not args.skip_provider_auto_tags,
+        provider_detail_metadata=args.include_provider_detail_tags,
+        provider_detail_limit=args.provider_detail_tag_limit,
         kobis_metadata=not args.skip_kobis_metadata,
         kobis_limit=args.kobis_metadata_limit,
+    )
+
+
+def enrich_missing_prices(cursor: Any, args: argparse.Namespace) -> dict[str, Any]:
+    from scripts.ingest.enrich_showtime_prices import enrich_showtime_prices
+
+    return enrich_showtime_prices(
+        cursor,
+        provider=args.provider,
+        limit=args.missing_price_limit,
+        include_priced=False,
+        dry_run=False,
     )
 
 
@@ -1170,19 +1833,70 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-provider-dates", type=int, default=0, help="Optional cap for selected provider dates; 0 means no cap for provider-listed dates.")
     parser.add_argument("--megabox-date-days", type=int, default=14, help="Future day range for Megabox when --all-provider-dates is used.")
     parser.add_argument("--lotte-play-date", help="Lotte play date, for example 2026-04-14")
+    parser.add_argument(
+        "--lotte-schedule-strategy",
+        choices=["theater", "movie-theater"],
+        default="theater",
+        help="Lotte schedule scan strategy. theater is lighter because it asks each theater for all movies.",
+    )
     parser.add_argument("--megabox-play-de", help="Megabox playDe, for example 20260414")
     parser.add_argument("--limit-movies", type=int, default=10)
     parser.add_argument("--limit-theaters", type=int, default=10)
     parser.add_argument("--limit-schedules", type=int, default=5)
+    parser.add_argument(
+        "--eager-master-upserts",
+        action="store_true",
+        help="Upsert all discovered movies/theaters before schedules; default upserts only rows referenced by schedules.",
+    )
     parser.add_argument("--include-seats", action="store_true")
     parser.add_argument("--max-seat-snapshots", type=int, default=1)
+    parser.add_argument("--include-prices", action="store_true", help="Fetch price options for a bounded number of showtimes without storing seat snapshots.")
+    parser.add_argument("--max-price-showtimes", type=int, default=20, help="Maximum showtimes to check when --include-prices is set; 0 means no cap.")
     parser.add_argument("--metadata-overrides", default=str(DEFAULT_METADATA_OVERRIDES_PATH))
-    parser.add_argument("--skip-metadata-tags", action="store_true", help="Skip post-crawl curated movie_tags enrichment.")
+    parser.set_defaults(skip_metadata_tags=True)
+    parser.add_argument(
+        "--include-metadata-tags",
+        action="store_false",
+        dest="skip_metadata_tags",
+        help="Run post-crawl movie_tags enrichment after collection.",
+    )
+    parser.add_argument("--skip-metadata-tags", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--skip-provider-auto-tags", action="store_true", help="Skip canonical genre normalization from provider metadata during post-crawl enrichment.")
+    parser.add_argument(
+        "--include-provider-detail-tags",
+        action="store_true",
+        help="After collection, fetch provider movie detail pages only for current/future movies still missing genre tags.",
+    )
+    parser.add_argument(
+        "--provider-detail-tag-limit",
+        type=int,
+        default=40,
+        help="Maximum movies to check through post-crawl provider detail tag enrichment.",
+    )
+    parser.add_argument(
+        "--include-provider-details",
+        action="store_true",
+        help="Fetch slower provider movie-detail pages during collection for richer tags.",
+    )
+    parser.add_argument("--skip-provider-details", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--skip-kobis-metadata", action="store_true", help="Skip optional KOBIS metadata enrichment even when a KOBIS API key is configured.")
     parser.add_argument("--kobis-metadata-limit", type=int, default=60, help="Maximum current/future movies to check through optional KOBIS metadata enrichment.")
+    parser.add_argument(
+        "--enrich-missing-prices",
+        action="store_true",
+        help="After collection, fetch bounded provider price options for current/future showtimes still missing min_price_amount.",
+    )
+    parser.add_argument(
+        "--missing-price-limit",
+        type=int,
+        default=100,
+        help="Maximum current/future unpriced showtimes to check during post-crawl price enrichment.",
+    )
     parser.add_argument("--dry-run", action="store_true")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.skip_provider_details:
+        args.include_provider_details = False
+    return args
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1205,6 +1919,8 @@ def run(argv: list[str] | None = None) -> int:
                 result["providers"].append(ingest_megabox(cursor, args))
             if not args.skip_metadata_tags:
                 result["metadata_tag_enrichment"] = enrich_metadata_tags(cursor, args)
+            if args.enrich_missing_prices:
+                result["missing_price_enrichment"] = enrich_missing_prices(cursor, args)
 
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
     return 0

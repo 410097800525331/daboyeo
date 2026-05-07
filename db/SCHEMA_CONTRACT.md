@@ -44,7 +44,7 @@ Provider code는 변경하지 않는다.
 | `theaters` | provider별 극장 기본 정보 | upsert |
 | `screens` | provider별 상영관 정보 | upsert |
 | `showtimes` | 검색/비교의 중심 상영 정보 | upsert |
-| `showtime_prices` | 가격 비교용 상세 가격 | upsert, not active yet |
+| `showtime_prices` | 가격 비교용 상세 가격 | upsert, active via bounded price ingest |
 | `seat_snapshots` | 특정 시점 좌석 요약 | append |
 | `seat_snapshot_items` | 특정 snapshot의 좌석별 상태 | append with snapshot |
 | `movie_tags` | 감정/날씨/추천용 태그 | upsert |
@@ -268,6 +268,8 @@ Migration `005_collection_contract_extensions.sql` freezes the tables that are n
 | `provider_raw_payloads` | raw response or R2 object index | append/index |
 
 `showtime_price_options` is not a separate table name in this schema. Price options use the existing `showtime_prices` table.
+
+Price ingest is showtime-key based. Do not persist separate movie-price or theater-price aggregates; store one row per `(provider_code, external_showtime_key, price_key)` and mirror the collected minimum into `showtimes.min_price_amount` for recommendation/list rendering.
 
 ## Migration 005 Stable Keys
 

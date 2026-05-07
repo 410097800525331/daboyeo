@@ -8,6 +8,13 @@ from typing import Any
 IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
+def ensure_connection(cursor: Any) -> None:
+    connection = getattr(cursor, "connection", None)
+    ping = getattr(connection, "ping", None)
+    if callable(ping):
+        ping(reconnect=True)
+
+
 def quote_identifier(name: str) -> str:
     if not IDENTIFIER_RE.match(name):
         raise ValueError(f"unsafe SQL identifier: {name}")
@@ -44,6 +51,7 @@ def upsert_dict(
         f"VALUES ({placeholders}) "
         f"ON DUPLICATE KEY UPDATE {update_expr}"
     )
+    ensure_connection(cursor)
     cursor.execute(sql, [row[column] for column in columns])
     return cursor.rowcount
 
@@ -64,6 +72,7 @@ def select_id(
         f"WHERE {conditions} "
         "LIMIT 1"
     )
+    ensure_connection(cursor)
     cursor.execute(sql, list(where.values()))
     row = cursor.fetchone()
     return int(row[0]) if row else None
@@ -93,6 +102,7 @@ def insert_dict(cursor: Any, table: str, row: Mapping[str, Any]) -> int:
         f"({', '.join(quote_identifier(column) for column in columns)}) "
         f"VALUES ({', '.join(['%s'] * len(columns))})"
     )
+    ensure_connection(cursor)
     cursor.execute(sql, [row[column] for column in columns])
     return cursor.lastrowid
 
@@ -106,5 +116,6 @@ def insert_many_dicts(cursor: Any, table: str, rows: Sequence[Mapping[str, Any]]
         f"({', '.join(quote_identifier(column) for column in columns)}) "
         f"VALUES ({', '.join(['%s'] * len(columns))})"
     )
+    ensure_connection(cursor)
     cursor.executemany(sql, [[row[column] for column in columns] for row in rows])
     return cursor.rowcount

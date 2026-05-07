@@ -61,7 +61,7 @@ class RecommendationServiceCandidateFilterTests {
             eq(response.runId()),
             eq("anon_test"),
             eq("fast"),
-            eq("codex"),
+            eq("gpt-5.4-mini"),
             any(),
             eq(List.of()),
             eq(null),
@@ -147,8 +147,10 @@ class RecommendationServiceCandidateFilterTests {
         when(scorer.score(any(TagProfile.class), any(), any())).thenReturn(scored);
         when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
-        service.recommend(request());
+        RecommendationResponse response = service.recommend(request());
 
+        assertThat(response.status()).isEqualTo("fallback");
+        assertThat(response.recommendations()).hasSize(3);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
         verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), aiCandidates.capture());
@@ -213,7 +215,7 @@ class RecommendationServiceCandidateFilterTests {
     }
 
     @Test
-    void legacyGptProviderInputStillUsesCodexClient() {
+    void legacyGptFastProviderInputUsesCodexConfiguredCandidatePool() {
         RecommendationService service = service(20, 4, 5);
         ShowtimeCandidate first = candidate(1, "First");
         ShowtimeCandidate second = candidate(2, "Second");
@@ -230,8 +232,10 @@ class RecommendationServiceCandidateFilterTests {
         when(scorer.score(any(TagProfile.class), any(), any())).thenReturn(scored);
         when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
-        service.recommend(request("fast", null, "gpt"));
+        RecommendationResponse response = service.recommend(request("fast", null, "gpt"));
 
+        assertThat(response.status()).isEqualTo("fallback");
+        assertThat(response.recommendations()).hasSize(3);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
         verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), aiCandidates.capture());
@@ -283,7 +287,7 @@ class RecommendationServiceCandidateFilterTests {
     }
 
     @Test
-    void selectedGenreMatchesAreTheOnlyEligibleFallbackCandidates() {
+    void selectedGenreMatchesStayFirstAndReservesCanFillFallbackCandidates() {
         RecommendationService service = service(20, 5, 5);
         TagProfile profile = new TagProfile();
         profile.addPreferredGenre("sf");
@@ -306,17 +310,16 @@ class RecommendationServiceCandidateFilterTests {
         assertThat(response.status()).isEqualTo("fallback");
         assertThat(response.recommendations())
             .extracting(item -> item.title())
-            .containsExactly("Project Hail Mary");
+            .containsExactly("Project Hail Mary", "Devil Wears Prada 2", "Super Mario Galaxy");
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<ScoredCandidate>> aiCandidates = ArgumentCaptor.forClass(List.class);
-        verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), eq(profile), aiCandidates.capture());
-        assertThat(aiCandidates.getValue())
-            .extracting(scored -> scored.candidate().title())
-            .containsExactly("Project Hail Mary");
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), aiCandidates.capture());
+        assertThat(aiCandidates.getValue()).extracting(scored -> scored.candidate().title())
+            .containsExactly("Project Hail Mary", "Devil Wears Prada 2", "Super Mario Galaxy");
     }
 
     @Test
-    void selectedGenreWithoutExplicitCandidateReturnsNoSelectedGenreCandidateStatus() {
+    void selectedGenreWithoutExplicitCandidateReturnsReserveRecommendations() {
         RecommendationService service = service(20, 5, 5);
         TagProfile profile = new TagProfile();
         profile.addPreferredGenre("animation");
@@ -326,6 +329,8 @@ class RecommendationServiceCandidateFilterTests {
         ShowtimeCandidate marioTitleOnly = candidate(2, "Super Mario Galaxy", Set.of("mood:light"));
         when(profileBuilder.build(any(), any(), any())).thenReturn(profile);
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), isNull(), anySet()))
+            .thenReturn(List.of(), List.of());
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
             .thenReturn(List.of(prada, marioTitleOnly));
         when(scorer.score(eq(profile), eq(List.of(prada, marioTitleOnly)), eq(null)))
             .thenReturn(List.of(scored(prada, 68), scored(marioTitleOnly, 68)));
@@ -333,10 +338,15 @@ class RecommendationServiceCandidateFilterTests {
 
         RecommendationResponse response = service.recommend(request());
 
-        assertThat(response.status()).isEqualTo("no_selected_genre_candidates");
-        assertThat(response.recommendations()).isEmpty();
-        assertThat(response.message()).contains("애니메이션", "제목만 보고 장르를 추정하지 않도록");
-        verify(codexClient, never()).rankAndExplain(any(), any(), any());
+        assertThat(response.status()).isEqualTo("fallback");
+        assertThat(response.recommendations())
+            .extracting(item -> item.title())
+            .containsExactly("Devil Wears Prada 2", "Super Mario Galaxy");
+        assertThat(response.recommendations())
+            .extracting(item -> item.score())
+            .allMatch(score -> score <= 68);
+        assertThat(response.message()).contains("\uC870\uAC74\uC744 \uB113\uD600");
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), any());
     }
 
     @Test
@@ -368,10 +378,10 @@ class RecommendationServiceCandidateFilterTests {
 
         assertThat(response.recommendations())
             .extracting(item -> item.title())
-            .containsExactly("Project Hail Mary");
+            .containsExactly("Project Hail Mary", "Devil Wears Prada 2", "Super Mario Galaxy");
         assertThat(response.recommendations())
             .extracting(item -> item.score())
-            .containsExactly(96);
+            .containsExactly(96, 68, 68);
     }
 
     @Test

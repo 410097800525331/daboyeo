@@ -28,10 +28,14 @@ daboyeo:
   demo:
     live-fallback-enabled: ${DABOYEO_DEMO_LIVE_FALLBACK_ENABLED:true}
   recommendation:
-    codex-model: ${DABOYEO_RECOMMEND_CODEX_MODEL:codex}
-    codex-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_FAST_AI_CANDIDATE_LIMIT:6}
+    codex-model: ${DABOYEO_RECOMMEND_CODEX_MODEL:}
+    codex-fast-model: ${DABOYEO_RECOMMEND_CODEX_FAST_MODEL:gpt-5.4-mini}
+    codex-precise-model: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MODEL:gpt-5.5}
+    codex-fast-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_FAST_REASONING_EFFORT:}
+    codex-precise-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_PRECISE_REASONING_EFFORT:xhigh}
+    codex-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_FAST_AI_CANDIDATE_LIMIT:3}
     codex-precise-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_PRECISE_AI_CANDIDATE_LIMIT:20}
-    codex-fast-max-tokens: ${DABOYEO_RECOMMEND_CODEX_FAST_MAX_TOKENS:650}
+    codex-fast-max-tokens: ${DABOYEO_RECOMMEND_CODEX_FAST_MAX_TOKENS:420}
     codex-precise-max-tokens: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MAX_TOKENS:1700}
     bridge-token: ${DABOYEO_AI_BRIDGE_TOKEN:}
     bridge-result-timeout-seconds: ${DABOYEO_AI_BRIDGE_RESULT_TIMEOUT_SECONDS:90}

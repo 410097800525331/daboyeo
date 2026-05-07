@@ -20,6 +20,8 @@ class AiBridgeJobServiceTests {
         AiBridgeJobService service = new AiBridgeJobService(properties("secret"));
 
         assertThat(service.bridgeStatus(AiProvider.CODEX).available()).isFalse();
+        assertThat(service.bridgeStatus(AiProvider.CODEX).expectedModels())
+            .containsExactly("gpt-5.4-mini", "gpt-5.5");
         assertThat(service.submitAndAwait(
             AiProvider.CODEX,
             RecommendationMode.FAST,
@@ -71,7 +73,11 @@ class AiBridgeJobServiceTests {
 
     private RecommendationProperties properties(String bridgeToken) {
         return new RecommendationProperties(
-            "codex",
+            null,
+            "gpt-5.4-mini",
+            "gpt-5.5",
+            "",
+            "xhigh",
             8,
             12,
             720,

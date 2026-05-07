@@ -30,16 +30,29 @@ GENERIC_GENRE_VALUES = {
     "general-content",
     "mega_only",
     "mega-only",
+    "mega only",
     "special_content",
     "special-content",
     "content_c",
     "content-c",
+    "classic_content",
+    "classic-content",
+    "classic_regular",
+    "classic-regular",
+    "concert_live",
+    "concert-live",
+    "live_performance",
+    "live-performance",
     "gv",
-    "일반콘텐트",
-    "스페셜콘텐트",
-    "디즈니시네마",
-    "굿즈패키지",
-    "콘텐트c",
+    "\uc77c\ubc18\ucf58\ud150\ud2b8",
+    "\uc2a4\ud398\uc15c\ucf58\ud150\ud2b8",
+    "\ub514\uc988\ub2c8\uc2dc\ub124\ub9c8",
+    "\uad7f\uc988\ud328\ud0a4\uc9c0",
+    "\ucf58\ud150\ud2b8c",
+    "\uacf5\uc5f0\uc2e4\ud669",
+    "\uc5b4\ub9b0\uc774 \uacf5\uc5f0\uc2e4\ud669",
+    "\ud074\ub798\uc2dd_\uc815\uaddc",
+    "\ud074\ub798\uc2dd\ucf58\ud150\ud2b8",
 }
 
 GENRE_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -53,7 +66,7 @@ GENRE_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("fantasy", ("fantasy", "판타지")),
     ("history", ("history", "historical", "역사", "사극", "시대극")),
     ("horror", ("horror", "공포", "호러")),
-    ("music", ("music", "musical", "뮤직", "음악", "뮤지컬", "공연실황", "콘서트", "라이브", "오페라", "클래식")),
+    ("music", ("music", "musical", "뮤직", "음악", "뮤지컬", "공연", "공연실황", "콘서트", "라이브", "오페라", "클래식", "발레")),
     ("romance", ("romance", "로맨스", "멜로")),
     ("sf", ("sf", "sci-fi", "sci_fi", "science fiction", "science-fiction", "science_fiction", "에스에프")),
     ("thriller", ("thriller", "스릴러")),
@@ -135,20 +148,22 @@ def raw_json_dict(value: Any) -> dict[str, Any]:
 
 def canonical_genres_from_provider_row(row: dict[str, Any]) -> list[str]:
     raw = raw_json_dict(row.get("raw"))
+    movie_detail = raw_json_dict(raw.get("movieDetail"))
     values = [
         row.get("genre_name"),
         row.get("genre"),
         row.get("genre_alt"),
         row.get("rep_genre"),
         raw.get("MovieGenreNameKR"),
+        raw.get("MovieGenreNameKR2"),
+        raw.get("MovieGenreNameKR3"),
+        raw.get("genre_name"),
         raw.get("genreAlt"),
         raw.get("repGenreNm"),
-        raw.get("cttsTyDivCdNm"),
-        raw.get("cttsTyDivCdEngNm"),
-        raw.get("movieCttsNm"),
-        raw.get("screenType"),
-        raw.get("playKindNm"),
-        raw.get("theabExpoNm"),
+        movie_detail.get("MovieGenreNameKR"),
+        movie_detail.get("MovieGenreNameKR2"),
+        movie_detail.get("MovieGenreNameKR3"),
+        movie_detail.get("genre_name"),
     ]
     return canonical_genres_from_values(values)
 

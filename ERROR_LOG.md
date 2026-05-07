@@ -681,6 +681,30 @@ Do not rewrite existing entries; append only.
 - details: `gradle test --tests kr.daboyeo.backend.service.recommendation.RecommendationServiceCandidateFilterTests --tests kr.daboyeo.backend.service.recommendation.CodexRecommendationClientTests failed with native-platform.dll load error inside sandbox. The same focused command passed when rerun outside sandbox with approval.`
 - status: `resolved`
 
+# 2026-05-07 11:50 +09:00
+
+- time: `2026-05-07 11:50 +09:00`
+- location: `collect_all_to_tidb.py dry-run refresh`
+- summary: `All-provider dry-run was blocked by a Megabox non-JSON master response.`
+- details: `The requested refresh started with python scripts/ingest/collect_all_to_tidb.py --provider all --all-provider-dates --max-provider-dates 0 --megabox-date-days 14 --limit-movies 80 --limit-theaters 80 --dry-run. Lotte date discovery ran first, then Megabox build_area_records(fetch_master) raised JSONDecodeError because the provider response body was not JSON. A second Megabox dry-run for playDe=20260507 failed the same way. No Megabox DB write was attempted. Lotte was refreshed separately and DB max starts_at advanced to 2026-05-14 23:35:00.`
+- status: `open; Megabox provider response still needs follow-up`
+
+# 2026-05-07 10:13 +09:00
+
+- time: `2026-05-07 10:13 +09:00`
+- location: `AI bridge restart and live benchmark`
+- summary: `Bridge jobs initially fell back because the worker resolved the WindowsApps Codex executable, then the worker exited during a Spring restart.`
+- details: `ai-bridge.err.log showed WinError 5 access denied when the worker tried to execute the WindowsApps codex.exe path. Restarting the bridge with the workspace-local backend/build/codex-bin/codex.exe restored precise status=ok. During the later Spring restart, the worker exited on a transient ConnectionRefused heartbeat failure, so scripts/ai_bridge_agent.py now catches server polling errors, sleeps, and retries instead of terminating. Tokens were loaded through environment only and were not logged.`
+- status: `resolved`
+
+# 2026-05-07 14:44 +09:00
+
+- time: `2026-05-07 14:44 +09:00`
+- location: `14-day Lotte ingest`
+- summary: `The first broad Lotte 14-day loop hit the shell timeout after committing 2026-05-07 through 2026-05-14, and a follow-up 2026-05-15 batch lost the TiDB connection before showtime rows were written.`
+- details: `Post-timeout DB audit showed Lotte showtimes through 2026-05-14 and 200 Lotte priced showtimes. The 2026-05-15 retry failed with pymysql OperationalError 2013 Lost connection to MySQL server during query, and audit showed no 2026-05-15 through 2026-05-20 Lotte rows yet. The likely cause is a long provider lookup leaving the TiDB connection idle before the first later-date upsert. collectors/common/repository.py now pings/reconnects before repository execute/executemany calls.`
+- status: `resolved; repository DB writes now ping/reconnect before execute, and the 2026-05-15 retry plus later Lotte dates completed.`
+
 # 2026-05-06 15:38 +09:00
 
 - time: `2026-05-06 15:38 +09:00`
@@ -735,4 +759,28 @@ Do not rewrite existing entries; append only.
 - location: `localhost:5500 Spring restart`
 - summary: `PowerShell DB URL interpolation broke the restarted Spring datasource URL.`
 - details: `The first restart script built jdbc:mysql://.../$db?serverTimezone... with PowerShell interpolation, so $db? was parsed incorrectly and Spring tried to connect to an invalid database name. The server was restarted again using explicit string concatenation for the JDBC URL; /api/health, provider health, and live recommendation smokes passed.`
+- status: `resolved`
+
+# 2026-05-07 10:47 +09:00
+
+- time: `2026-05-07 10:47 +09:00`
+- location: `fast/precise Codex model split verification`
+- summary: `Sandbox Gradle native DLL failure and bridge reasoning fallback bug were found during verification.`
+- details: `The focused Gradle recommendation test command again failed inside the sandbox with native-platform.dll initialization, then passed outside sandbox with approval. A script-level bridge option check also caught that a fast job with request.model but no request.reasoning_effort would inherit DABOYEO_CODEX_REASONING_EFFORT; scripts/ai_bridge_agent.py now treats that case as true default reasoning while still allowing legacy env fallback when a job has no model. Tokens were not printed or written.`
+- status: `resolved`
+
+# 2026-05-07 11:17 +09:00
+
+- time: `2026-05-07 11:17 +09:00`
+- location: `Megabox no-write schedule mismatch probe`
+- summary: `A live Megabox verification probe returned non-JSON after earlier successful dry-run/date probes.`
+- details: `After adding the deterministic row-level date filter, a no-write probe for playDe=20260611 attempted to fetch Megabox master/schedule data and failed with JSONDecodeError because the provider returned a non-JSON response. The acceptance check used local helper assertions, script compile, and bounded dry-run instead; no DB write was attempted.`
+- status: `resolved`
+
+# 2026-05-07 17:46 +09:00
+
+- time: `2026-05-07 17:46 +09:00`
+- location: `Spring restart on localhost:5500`
+- summary: `Initial restart attempts failed because this PowerShell process had duplicate Path/PATH environment keys, and a fallback clean environment started Java with an invalid Windows socket state.`
+- details: `Start-Process first failed with a duplicate Path/PATH key error. Starting with UseNewEnvironment avoided that error but Tomcat failed with Windows socket error 10106. cmd start quoting attempts also failed. The resolved restart normalized the process environment to a single Path key, then Start-Process launched the rebuilt jar as PID 20428; /api/health returned ok.`
 - status: `resolved`

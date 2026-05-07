@@ -10,6 +10,7 @@ from .api import LotteCinemaApiClient
 class LotteCinemaCollector:
     api: LotteCinemaApiClient | None = None
     _ticketing_page_cache: dict[str, Any] | None = None
+    _movie_detail_cache: dict[str, dict[str, Any]] | None = None
 
     def __post_init__(self) -> None:
         if self.api is None:
@@ -24,6 +25,17 @@ class LotteCinemaCollector:
         page = self.fetch_ticketing_page()
         return ((page.get("Movies") or {}).get("Movies") or {}).get("Items") or []
 
+    def fetch_movie_detail(self, representation_movie_code: Any) -> dict[str, Any]:
+        code = "" if representation_movie_code is None else str(representation_movie_code).strip()
+        if not code:
+            return {}
+        if self._movie_detail_cache is None:
+            self._movie_detail_cache = {}
+        if code not in self._movie_detail_cache:
+            payload = self.api.fetch_movie_detail(code) if self.api else {}
+            self._movie_detail_cache[code] = payload.get("Movie") or {}
+        return self._movie_detail_cache[code]
+
     def fetch_cinemas(self) -> list[dict[str, Any]]:
         page = self.fetch_ticketing_page()
         return ((page.get("Cinemas") or {}).get("Cinemas") or {}).get("Items") or []
@@ -32,26 +44,31 @@ class LotteCinemaCollector:
         page = self.fetch_ticketing_page()
         return ((page.get("MoviePlayDates") or {}).get("Items") or {}).get("Items") or []
 
-    def build_movie_records(self) -> list[dict[str, Any]]:
+    def build_movie_records(self, include_details: bool = True) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         for row in self.fetch_movies():
+            detail = self.fetch_movie_detail(row.get("RepresentationMovieCode")) if include_details else {}
+            genre_names = self._detail_genre_names(detail, row)
+            raw = {**row, "movieDetail": detail} if detail else row
             records.append(
                 {
                     "provider": "LOTTE_CINEMA",
                     "movie_no": row.get("RepresentationMovieCode"),
-                    "movie_name": row.get("MovieNameKR"),
-                    "movie_name_en": row.get("MovieNameUS"),
-                    "age_rating": row.get("ViewGradeNameKR"),
+                    "movie_name": detail.get("MovieNameKR") or row.get("MovieNameKR"),
+                    "movie_name_en": detail.get("MovieNameUS") or row.get("MovieNameUS"),
+                    "age_rating": detail.get("ViewGradeNameKR") or row.get("ViewGradeNameKR"),
                     "booking_rate": row.get("BookingRate"),
                     "evaluation": row.get("Evaluation"),
-                    "release_date": row.get("ReleaseDate"),
-                    "runtime_minutes": row.get("PlayTime"),
-                    "poster_url": row.get("PosterURL"),
-                    "director_name": row.get("DirectorName"),
-                    "actor_name": row.get("ActorName"),
-                    "genre_name": row.get("MovieGenreNameKR"),
+                    "release_date": detail.get("ReleaseDate") or row.get("ReleaseDate"),
+                    "runtime_minutes": detail.get("PlayTime") or row.get("PlayTime"),
+                    "poster_url": detail.get("PosterURL") or row.get("PosterURL"),
+                    "director_name": detail.get("DirectorName") or row.get("DirectorName"),
+                    "actor_name": detail.get("ActorName") or row.get("ActorName"),
+                    "genre_name": genre_names[0] if genre_names else row.get("MovieGenreNameKR"),
+                    "genre_alt": ", ".join(genre_names[1:]),
+                    "genre_names": genre_names,
                     "special_screen_codes": row.get("SpecialScreenDivisionCode"),
-                    "raw": row,
+                    "raw": raw,
                 }
             )
         return records
@@ -120,6 +137,7 @@ class LotteCinemaCollector:
         play_date: str,
         cinema_selector: str,
         representation_movie_code: str,
+        include_details: bool = True,
     ) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         for row in self.fetch_play_sequences(
@@ -127,13 +145,24 @@ class LotteCinemaCollector:
             cinema_selector=cinema_selector,
             representation_movie_code=representation_movie_code,
         ):
+            detail = (
+                self.fetch_movie_detail(row.get("RepresentationMovieCode") or representation_movie_code)
+                if include_details
+                else {}
+            )
+            genre_names = self._detail_genre_names(detail, row)
+            raw = {**row, "movieDetail": detail} if detail else row
             records.append(
                 {
                     "provider": "LOTTE_CINEMA",
                     "movie_no": row.get("RepresentationMovieCode"),
-                    "movie_name": row.get("MovieNameKR"),
-                    "movie_name_en": row.get("MovieNameUS"),
-                    "age_rating": row.get("ViewGradeNameKR"),
+                    "movie_name": detail.get("MovieNameKR") or row.get("MovieNameKR"),
+                    "movie_name_en": detail.get("MovieNameUS") or row.get("MovieNameUS"),
+                    "age_rating": detail.get("ViewGradeNameKR") or row.get("ViewGradeNameKR"),
+                    "runtime_minutes": detail.get("PlayTime"),
+                    "genre_name": genre_names[0] if genre_names else row.get("MovieGenreNameKR"),
+                    "genre_alt": ", ".join(genre_names[1:]),
+                    "genre_names": genre_names,
                     "cinema_id": row.get("CinemaID"),
                     "cinema_name": row.get("CinemaNameKR"),
                     "screen_id": row.get("ScreenID"),
@@ -157,7 +186,7 @@ class LotteCinemaCollector:
                     "booking_available": row.get("IsBookingYN"),
                     "sequence_group_name": row.get("SequenceNoGroupNameKR"),
                     "screen_floor": row.get("ScreenFloor"),
-                    "poster_url": row.get("PosterURL"),
+                    "poster_url": detail.get("PosterURL") or row.get("PosterURL"),
                     "booking_key": {
                         "cinema_id": row.get("CinemaID"),
                         "screen_id": row.get("ScreenID"),
@@ -165,10 +194,27 @@ class LotteCinemaCollector:
                         "play_sequence": row.get("PlaySequence"),
                         "screen_division_code": row.get("ScreenDivisionCode"),
                     },
-                    "raw": row,
+                    "raw": raw,
                 }
             )
         return records
+
+    @staticmethod
+    def _detail_genre_names(detail: dict[str, Any], row: dict[str, Any]) -> list[str]:
+        values = [
+            detail.get("MovieGenreNameKR"),
+            detail.get("MovieGenreNameKR2"),
+            detail.get("MovieGenreNameKR3"),
+            row.get("MovieGenreNameKR"),
+            row.get("MovieGenreNameKR2"),
+            row.get("MovieGenreNameKR3"),
+        ]
+        genres: list[str] = []
+        for value in values:
+            text = "" if value is None else str(value).strip()
+            if text and text not in genres:
+                genres.append(text)
+        return genres
 
     def fetch_seat_map(
         self,

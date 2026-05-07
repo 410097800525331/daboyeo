@@ -21,6 +21,7 @@ import kr.daboyeo.backend.config.RecommendationProperties;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiPick;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiProvider;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiProviderStatus;
+import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiResult;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.FeedbackAction;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.FeedbackRequest;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.FeedbackResponse;
@@ -54,6 +55,8 @@ public class RecommendationService {
     private static final int RESULT_LIMIT = 3;
     private static final int NO_DIRECT_TASTE_MATCH_CAP = 68;
     private static final String RELAXED_FILTER_MESSAGE = "선택 조건과 정확히 맞는 상영이 없어 조건을 넓혀 추천했어.";
+    private static final String SELECTED_GENRE_RELAXED_MESSAGE =
+        "\uC120\uD0DD\uD55C \uC7A5\uB974\uC640 \uC9C1\uC811 \uC77C\uCE58\uD558\uB294 \uC0C1\uC601\uC774 \uC5C6\uC5B4 \uC870\uAC74\uC744 \uB113\uD600 \uC608\uBE44 \uCD94\uCC9C\uD588\uC5B4.";
     private static final Pattern INTERNAL_TEXT_PATTERN = Pattern.compile(
         "(?i)\\bscore\\s*[:=]?\\s*\\d+\\b|\\bmatchedtags\\b|\\bpenalties\\b|\\b(?:audience|mood|genre|content|pace):[a-z0-9_]+\\b"
     );
@@ -171,18 +174,6 @@ public class RecommendationService {
         String modelName = properties.modelFor(aiProvider, mode);
 
         if (candidates.isEmpty()) {
-            if (hasSelectedGenreAnchor(tagProfile)) {
-                return noCandidateResponse(
-                    startedAt,
-                    runId,
-                    resolvedAnonymousId,
-                    mode,
-                    modelName,
-                    normalizedRequest,
-                    "no_selected_genre_candidates",
-                    selectedGenreNoMatchMessage(tagProfile)
-                );
-            }
             if (searchFilters != null && searchFilters.active()) {
                 return noCandidateResponse(
                     startedAt,
@@ -227,18 +218,6 @@ public class RecommendationService {
         }
 
         List<ScoredCandidate> tasteAwareScored = rankTasteAwareCandidates(scored, tagProfile);
-        if (tasteAwareScored.isEmpty() && hasSelectedGenreAnchor(tagProfile)) {
-            return noCandidateResponse(
-                startedAt,
-                runId,
-                resolvedAnonymousId,
-                mode,
-                modelName,
-                normalizedRequest,
-                "no_selected_genre_candidates",
-                selectedGenreNoMatchMessage(tagProfile)
-            );
-        }
         List<ScoredCandidate> aiCandidates = selectDistinctMovieItems(
             tasteAwareScored,
             properties.aiCandidateLimitFor(aiProvider, mode)
@@ -287,25 +266,31 @@ public class RecommendationService {
         int candidateLimit,
         Set<String> requiredGenreValues
     ) {
+        boolean hasRequiredGenres = requiredGenreValues != null && !requiredGenreValues.isEmpty();
         List<ShowtimeCandidate> exactCandidates = findUpcomingCandidates(
             filters,
             minStartsAt,
             candidateLimit,
             requiredGenreValues
         );
-        if (!exactCandidates.isEmpty() || filters == null || !filters.active()) {
+        if (!exactCandidates.isEmpty()) {
             return new CandidateSearchResult(exactCandidates, filters, "");
         }
+        if ((filters == null || !filters.active()) && !hasRequiredGenres) {
+            return new CandidateSearchResult(List.of(), filters, "");
+        }
 
-        for (SearchFilters relaxedFilters : relaxedSearchFilters(filters)) {
-            List<ShowtimeCandidate> relaxedCandidates = findUpcomingCandidates(
-                relaxedFilters,
-                minStartsAt,
-                candidateLimit,
-                requiredGenreValues
-            );
-            if (!relaxedCandidates.isEmpty()) {
-                return new CandidateSearchResult(relaxedCandidates, relaxedFilters, RELAXED_FILTER_MESSAGE);
+        if (filters != null && filters.active()) {
+            for (SearchFilters relaxedFilters : relaxedSearchFilters(filters)) {
+                List<ShowtimeCandidate> relaxedCandidates = findUpcomingCandidates(
+                    relaxedFilters,
+                    minStartsAt,
+                    candidateLimit,
+                    requiredGenreValues
+                );
+                if (!relaxedCandidates.isEmpty()) {
+                    return new CandidateSearchResult(relaxedCandidates, relaxedFilters, RELAXED_FILTER_MESSAGE);
+                }
             }
         }
 
@@ -317,6 +302,40 @@ public class RecommendationService {
         );
         if (!broadCandidates.isEmpty()) {
             return new CandidateSearchResult(broadCandidates, null, RELAXED_FILTER_MESSAGE);
+        }
+
+        if (hasRequiredGenres) {
+            List<ShowtimeCandidate> genreRelaxedCandidates = findUpcomingCandidates(
+                filters,
+                minStartsAt,
+                candidateLimit,
+                Set.of()
+            );
+            if (!genreRelaxedCandidates.isEmpty()) {
+                return new CandidateSearchResult(genreRelaxedCandidates, filters, SELECTED_GENRE_RELAXED_MESSAGE);
+            }
+            if (filters != null && filters.active()) {
+                for (SearchFilters relaxedFilters : relaxedSearchFilters(filters)) {
+                    List<ShowtimeCandidate> relaxedCandidates = findUpcomingCandidates(
+                        relaxedFilters,
+                        minStartsAt,
+                        candidateLimit,
+                        Set.of()
+                    );
+                    if (!relaxedCandidates.isEmpty()) {
+                        return new CandidateSearchResult(relaxedCandidates, relaxedFilters, SELECTED_GENRE_RELAXED_MESSAGE);
+                    }
+                }
+            }
+            List<ShowtimeCandidate> broadGenreRelaxedCandidates = findUpcomingCandidates(
+                null,
+                minStartsAt,
+                candidateLimit,
+                Set.of()
+            );
+            if (!broadGenreRelaxedCandidates.isEmpty()) {
+                return new CandidateSearchResult(broadGenreRelaxedCandidates, null, SELECTED_GENRE_RELAXED_MESSAGE);
+            }
         }
         return new CandidateSearchResult(List.of(), filters, "");
     }
@@ -982,7 +1001,20 @@ public class RecommendationService {
             || normalized.equals("general-content")
             || normalized.equals("mega only")
             || normalized.equals("mega-only")
-            || normalized.equals("\uC77C\uBC18\uCF58\uD150\uD2B8");
+            || normalized.equals("special-content")
+            || normalized.equals("content-c")
+            || normalized.equals("classic-content")
+            || normalized.equals("classic-regular")
+            || normalized.equals("concert-live")
+            || normalized.equals("live-performance")
+            || normalized.equals("\uC77C\uBC18\uCF58\uD150\uD2B8")
+            || normalized.equals("\uC2A4\uD398\uC15C\uCF58\uD150\uD2B8")
+            || normalized.equals("\uAD7F\uC988\uD328\uD0A4\uC9C0")
+            || normalized.equals("\uCF58\uD150\uD2B8C")
+            || normalized.equals("\uACF5\uC5F0\uC2E4\uD669")
+            || normalized.equals("\uC5B4\uB9B0\uC774 \uACF5\uC5F0\uC2E4\uD669")
+            || normalized.equals("\uD074\uB798\uC2DD-\uC815\uADDC")
+            || normalized.equals("\uD074\uB798\uC2DD\uCF58\uD150\uD2B8");
     }
 
     private String seatHint(Integer remainingSeatCount, Integer totalSeatCount) {
@@ -1080,6 +1112,7 @@ public class RecommendationService {
                 .filter(scored -> hasGenreOverlap(scored, profile.preferredGenres()))
                 .toList();
             appendDistinctMovieCandidates(ordered, seenMovies, directPreferred);
+            appendDistinctMovieCandidates(ordered, seenMovies, rankedCandidates);
             return ordered;
         }
 

@@ -40,7 +40,7 @@ class RecommendationServiceQualityTests {
     private final ShowtimeRecommendationRepository showtimeRepository = mock(ShowtimeRecommendationRepository.class);
 
     @Test
-    void aiResultsPreferDistinctMoviesWhenEnoughDistinctChoicesExist() {
+    void preciseAiResultsPreferDistinctMoviesWhenEnoughDistinctChoicesExist() {
         RecommendationService service = service();
         ShowtimeCandidate first = candidate(1L, 10L, "First A");
         ShowtimeCandidate second = candidate(2L, 10L, "First A");
@@ -56,7 +56,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(4);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"recommendations\":[]}",
                 "codex-test",
@@ -67,7 +67,7 @@ class RecommendationServiceQualityTests {
                 )
             )));
 
-        RecommendationResponse response = service.recommend(request());
+        RecommendationResponse response = service.recommend(request("precise"));
 
         assertThat(response.recommendations()).hasSize(3);
         assertThat(response.recommendations()).extracting("movieId").containsExactly(10L, 11L, 12L);
@@ -127,7 +127,7 @@ class RecommendationServiceQualityTests {
     }
 
     @Test
-    void aiResultsTreatSameTitleAsSameMovieWhenIdsDiffer() {
+    void preciseAiResultsTreatSameTitleAsSameMovieWhenIdsDiffer() {
         RecommendationService service = service();
         ShowtimeCandidate first = candidate(1L, 10L, "Same Movie");
         ShowtimeCandidate second = candidate(2L, 20L, "Same Movie");
@@ -143,7 +143,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(4);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"recommendations\":[]}",
                 "codex-test",
@@ -154,7 +154,7 @@ class RecommendationServiceQualityTests {
                 )
             )));
 
-        RecommendationResponse response = service.recommend(request());
+        RecommendationResponse response = service.recommend(request("precise"));
 
         assertThat(response.recommendations()).hasSize(3);
         assertThat(response.recommendations()).extracting("title").containsExactly("Same Movie", "Other A", "Other B");
@@ -169,7 +169,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"recommendations\":[]}",
                 "codex-test",
@@ -181,7 +181,7 @@ class RecommendationServiceQualityTests {
                 ))
             )));
 
-        RecommendationResponse response = service.recommend(request());
+        RecommendationResponse response = service.recommend(request("precise"));
 
         assertThat(response.recommendations()).hasSize(1);
         assertThat(response.recommendations().get(0).reason()).doesNotContain("score 60", "mood:exciting", "matchedTags", "content:loud");
@@ -201,7 +201,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
                 "codex-test",
@@ -213,7 +213,7 @@ class RecommendationServiceQualityTests {
                 ))
             )));
 
-        RecommendationResponse response = service.recommend(request());
+        RecommendationResponse response = service.recommend(request("precise"));
 
         assertThat(response.recommendations()).hasSize(1);
         assertThat(response.recommendations().get(0).reason()).doesNotContain("겹치는 신호", "우선 추천");
@@ -232,7 +232,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
                 "codex-test",
@@ -244,7 +244,7 @@ class RecommendationServiceQualityTests {
                 ))
             )));
 
-        RecommendationResponse response = service.recommend(request());
+        RecommendationResponse response = service.recommend(request("precise"));
 
         assertThat(response.recommendations()).hasSize(1);
         assertThat(response.recommendations().get(0).valuePoint()).isNotEqualTo("15:40 상영");
@@ -260,7 +260,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
                 "codex-test",
@@ -272,7 +272,7 @@ class RecommendationServiceQualityTests {
                 ))
             )));
 
-        RecommendationResponse response = service.recommend(request());
+        RecommendationResponse response = service.recommend(request("precise"));
 
         assertThat(response.recommendations()).hasSize(1);
         assertThat(response.recommendations().get(0).reason()).contains("First A");
@@ -303,7 +303,7 @@ class RecommendationServiceQualityTests {
     }
 
     @Test
-    void gptFastKeepsNarrativeReasonAnalysisValueAndCaution() {
+    void gptPreciseKeepsNarrativeReasonAnalysisValueAndCaution() {
         RecommendationService service = service();
         ShowtimeCandidate first = candidate(1L, 10L, "First A");
         List<ShowtimeCandidate> candidates = List.of(first);
@@ -311,7 +311,7 @@ class RecommendationServiceQualityTests {
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
         when(showtimeRepository.countStoredShowtimes()).thenReturn(1);
         when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
-        when(codexClient.rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), anyList()))
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
             .thenReturn(Optional.of(new AiResult(
                 "{\"r\":[]}",
                 "gpt-test",
@@ -324,7 +324,7 @@ class RecommendationServiceQualityTests {
                 ))
             )));
 
-        RecommendationResponse response = service.recommend(request("fast", "gpt"));
+        RecommendationResponse response = service.recommend(request("precise", "gpt"));
 
         assertThat(response.recommendations()).hasSize(1);
         assertThat(response.recommendations().get(0).reason()).contains("친구", "조건");
