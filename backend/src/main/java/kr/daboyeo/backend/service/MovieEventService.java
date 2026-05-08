@@ -1,6 +1,7 @@
 package kr.daboyeo.backend.service;
 
 import kr.daboyeo.backend.crawler.LotteCinemaEventCrawler;
+import kr.daboyeo.backend.crawler.MegaboxEventCrawler;
 import kr.daboyeo.backend.domain.Category;
 import kr.daboyeo.backend.domain.MovieEvent;
 import kr.daboyeo.backend.repository.MovieEventRepository;
@@ -21,13 +22,14 @@ public class MovieEventService {
 
     private static final Logger logger = LoggerFactory.getLogger(MovieEventService.class);
 
-    private final LotteCinemaEventCrawler crawler;
+    private final LotteCinemaEventCrawler lotteCrawler;
+    private final MegaboxEventCrawler megaboxCrawler;
     private final MovieEventRepository repository;
 
     @Transactional
     public void crawlAndSaveEvents() {
         logger.info("Starting event crawling...");
-        List<MovieEvent> crawledEvents = crawler.crawlAllEvents();
+        List<MovieEvent> crawledEvents = crawlAllProviders();
         List<MovieEvent> eventsToSave = new ArrayList<>();
         Set<String> batchKeys = new HashSet<>();
 
@@ -43,7 +45,14 @@ public class MovieEventService {
 
     // 수동 크롤링을 위한 메서드 (테스트용)
     public List<MovieEvent> crawlEventsManually() {
-        return crawler.crawlAllEvents();
+        return crawlAllProviders();
+    }
+
+    private List<MovieEvent> crawlAllProviders() {
+        List<MovieEvent> crawledEvents = new ArrayList<>();
+        crawledEvents.addAll(lotteCrawler.crawlAllEvents());
+        crawledEvents.addAll(megaboxCrawler.crawlAllEvents());
+        return crawledEvents;
     }
 
     private boolean shouldSave(MovieEvent event, Set<String> batchKeys) {
