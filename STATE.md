@@ -2,29 +2,33 @@
 
 ## Current Task
 
-- task: `Commit current recommendation work and merge updated teammate branches`
+- task: `Refactor movie tag enrichment script boundaries`
 - phase: `implementation`
-- scope: `Commit the current AI recommendation/runtime/UI changes on lsh, fetch updated remote branches, inspect each branch delta, and merge or selectively import all safe teammate updates without dropping current work.`
-- verification_target: `Clean commit baseline, remote branch diff audit, merge conflict resolution, static/source mirror consistency, and repository verification commands after integration.`
-- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
-- score_breakdown: `dirty baseline commit 2; multi-branch fetch/diff audit 2; possible merge conflicts 2; frontend/backend/static mirror consistency 1; verification and no-miss reporting 1`
-- hard_triggers: `cross-branch import with dirty worktree; possible shared frontend/backend/static conflicts; user explicitly requires no updated branch changes be missed`
-- selected_rules: `commit current lsh work first; fetch and inspect every origin branch; compare branch tips before and after fetch; prefer full merge when safe and selective import only when branch changes conflict with current contracts; preserve STATE.md and current Codex recommendation/runtime contract; do not discard user changes`
-- selected_skills: `none`
+- scope: `Proceed with the approved Selfdex /goal candidate: tighten responsibilities inside scripts/ingest/enrich_movie_tags.py without changing runtime behavior or expanding the write set.`
+- verification_target: `Python syntax/compile checks, validate-only override parsing, repository context checks, and diff review.`
+- classification: `score_total=5; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- score_breakdown: `single 600-line ingestion script responsibility concentration 2; DB/external API boundaries 1; recommendation metadata path importance 1; narrow single-file write set 1`
+- hard_triggers: `external-source and DB-adjacent enrichment logic, but no live DB writes or public runtime checks are in scope`
+- selected_rules: `freeze single-file contract first; preserve provider raw metadata and movie_tags behavior; do not touch secrets, migrations, runtime config, or live DB; keep verification local/read-only`
+- selected_skills: `selfdex`
 - execution_topology: `single-session`
-- orchestration_value: `medium`
+- orchestration_value: `low`
 - agent_budget: `0`
-- spawn_decision: `no spawn; the user did not request subagents, and branch integration has overlapping shared files where main must keep one conflict-resolution lane.`
-- reason: `The user asked to commit current work and merge all newly updated branches without missing changes; the safe path is a clean baseline commit, then branch-by-branch diff inspection and integration.`
-- write_sets: `STATE.md; current dirty recommendation/runtime/UI files; merge-touched frontend/backend/static/scripts/docs files discovered from origin branch diffs`
-- contract_freeze: `Current lsh recommendation UI/runtime work is committed before branch integration. Each origin branch is audited by tip and diff, then fully merged or selectively imported with conflicts resolved manually. No secrets, provider-switch regressions, or static mirror drift are allowed.`
-- evaluation_need: `full; acceptance depends on proving every updated remote branch was inspected and either integrated or explicitly accounted for.`
-- project_invariants: `No secrets committed, no destructive reset/checkout/clean, current Codex-only recommendation contract preserved, frontend and Spring static mirrors remain synchronized when both exist.`
-- task_acceptance: `Current work is committed, remote branches are fetched, every origin branch delta is audited, all safe updated changes are merged/imported, verification passes or gaps are reported, and final status is clean except intentional remaining work.`
-- non_goals: `No push unless the user asks, no deployed-domain checks, no unrelated rewrite of branch history.`
-- hard_checks: `git status --short --branch; git diff --check; node --check for touched JS; python -m py_compile for touched Python; gradle -p backend bootJar when backend files are touched; WORKSPACE_CONTEXT checks; final branch audit summary.`
-- llm_review_rubric: `Check for missed remote branches, accidental loss of current recommendation work, static mirror drift, unsafe config overwrite, and unresolved conflict markers.`
-- evidence_required: `Commit hash for baseline work, fetched branch tip comparison, per-branch integration decision, verification outputs, final git status, and retrospective.`
+- spawn_decision: `no spawn; the user approved a bounded single-file Selfdex candidate and delegation would add handoff cost without disjoint write ownership.`
+- reason: `The approved /goal candidate is a medium-risk single-script maintainability improvement; the hard boundary is preserving movie_tags enrichment behavior while reducing internal responsibility mixing.`
+- write_sets: `STATE.md; scripts/ingest/enrich_movie_tags.py`
+- contract_freeze: `Only scripts/ingest/enrich_movie_tags.py may be changed. Refactor internal boundaries around provider auto tags, provider detail metadata, KOBIS metadata, and curated overrides while keeping CLI args, JSON output shape, DB writes, confidence/source constants, and external request behavior compatible. No live DB writes, secrets, migrations, or frontend/backend runtime files.`
+- evaluation_need: `light; acceptance is concrete and covered by compile, validate-only parsing, diff review, and repository context checks.`
+- project_invariants: `No secrets committed, no destructive reset/checkout/clean, provider-specific raw metadata preservation remains intact, movie_tags semantics stay compatible, and external calls stay opt-in through existing flags/API keys.`
+- task_acceptance: `The enrichment script has clearer internal phase boundaries, unchanged public CLI behavior, local verification passes or gaps are reported, and final git status is explained.`
+- non_goals: `No DB schema changes, no live TiDB mutation, no KOBIS/provider network smoke unless explicitly requested, no commit/push unless asked.`
+- hard_checks: `python -m py_compile scripts/ingest/enrich_movie_tags.py; python scripts/ingest/enrich_movie_tags.py --validate-only; python -m compileall -q scripts/ingest; git diff --check; WORKSPACE_CONTEXT checks.`
+- llm_review_rubric: `Check for changed JSON keys, changed DB write conditions, accidental eager provider/KOBIS calls, lost dry-run behavior, and widened write scope.`
+- evidence_required: `Changed function boundaries, compile/validate outputs, diff check result, WORKSPACE_CONTEXT checks, final git status, and retrospective.`
+- enrichment_refactor_evidence: `2026-05-08 completed the approved Selfdex /goal candidate inside scripts/ingest/enrich_movie_tags.py only. The long enrich_movie_tags orchestration was split into explicit phase helpers: new_enrichment_result, movie_tag_report, skipped_movie_report, upsert_planned_genres, enrich_provider_auto_tags, enrich_provider_detail_metadata, enrich_kobis_metadata, and apply_override_tags. Removed the unused apply_genre_tags helper after git grep confirmed no tracked references. CLI arguments, validate-only output, confidence/source constants, dry-run behavior, KOBIS/provider opt-in behavior, and movie_tags upsert calls were preserved. Verification passed: py_compile enrich_movie_tags.py, validate-only override parse with 8 entries/8 tags, compileall scripts/ingest, WORKSPACE_CONTEXT section checks, git diff --check with CRLF warnings only, and final git status shows only STATE.md plus enrich_movie_tags.py modified.`
+- enrichment_refactor_retrospective: `task=Refactor movie tag enrichment script boundaries; score_total=5; evaluation_fit=light fit because compile, validate-only, and diff review cover the bounded behavior contract; orchestration_fit=single-session fit because one script owns the full enrichment sequence and splitting workers would add handoff cost; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=none after /goal approval; reviewer_findings=phase helpers make DB writes and external metadata paths clearer while keeping public CLI/result shape compatible; verification_outcome=all local checks passed with CRLF warnings only; next_gate_adjustment=if this script grows again, split provider detail and KOBIS enrichment into separate modules with tests instead of adding more inline phases.`
+- commit_gate_blocker: `2026-05-08 user asked to keep Selfdex commit gate on and commit. Pre-commit checks for the daboyeo change passed, but C:\lsh\git\selfdex\scripts\check_commit_gate.py blocked the commit because Selfdex root STATE.json still describes the old daboyeo-selfdex-planning-timeout-repair contract and does not include scripts/ingest/enrich_movie_tags.py in its write_sets. First gate attempt also hit Selfdex checkout git dubious-ownership when include-git-diff was enabled, so the retry used --changed-path plus --no-git-diff and failed on budget-out-of-contract-path. No commit was created.`
+- commit_gate_override: `2026-05-08 user explicitly overrode the Selfdex gate blocker with "그냥 커밋 푸시 ㄱㄱ"; proceed with normal git commit and push of the verified daboyeo change without changing Selfdex root STATE.json.`
 - branch_merge_evidence: `2026-05-08 committed the dirty lsh recommendation baseline as 21ec604 fix: stabilize AI recommendation flow, then fetched origin and audited origin/main, origin/ksg, origin/kmh, and origin/feature/ksg-event. origin/main had only the old scaffold commit. origin/ksg was imported as the latest AI page spacing/copy/cache-bust patch into frontend and Spring static mirrors. origin/feature/ksg-event had unrelated history, so the safe event slice was selectively imported: Docker metadata, Lotte movie-event crawler/service/controller/domain/repository/scheduler/migrations/tests, and matching event static UI in both backend static and frontend localhost paths. The branch port overwrite was not imported because the active local browser/server contract is localhost:5500. origin/kmh was selectively imported for the backend map/nearby refresh work: TheaterMapRepository/Service/tests, CGV bridge no-op handling, Megabox skip-master area flow, nearby target/service/repository enhancements, showtime sync optional CGV movieNo handling, live nearby nearest-provider behavior, liveMovies provider normalization, and focused tests. Stale kmh deletions of frontend/src/js/constants/regions.js and frontend/src/map/theaters.json were not accepted because current index/script imports still depend on them; wholesale kmh homepage/map rewrites were also not accepted because they would break the current region-select and direct-compare contract. Verification passed: node --check for touched AI/live/event JS mirrors, python py_compile and compileall for collectors, gradle -p backend bootJar, focused Gradle tests for live nearby/nearby refresh/theater map, conflict-marker search, git diff --check with CRLF warnings only, and WORKSPACE_CONTEXT section checks.`
 - branch_merge_retrospective: `task=Commit lsh baseline and integrate updated teammate branches; score_total=8; evaluation_fit=full fit because the user explicitly required no missed branch updates and every remote branch needed an import or skip reason; orchestration_fit=single-session fit because the branches overlap shared frontend/static/backend contracts and one conflict-resolution lane reduced rework; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=feature/ksg-event had no merge base and kmh carried stale route-deleting frontend changes, so full merge shifted to selective import with explicit omissions; reviewer_findings=the safe core was to import event functionality and backend map/nearby runtime changes while preserving localhost:5500, Codex recommendation UI, current region data dependencies, and static mirror parity; verification_outcome=syntax checks, Python compile checks, bootJar, focused Gradle tests, conflict-marker search, WORKSPACE_CONTEXT checks, and diff check passed; next_gate_adjustment=for future teammate branch merges, audit branch tips and deletion diffs before accepting broad UI rewrites, especially when a branch is old or unrelated-history.`
 - event_front_visibility_task: `2026-05-08 new task after user reported the frontend still looked unchanged on localhost:5500. score_total=4; selected profile=single-session; hard trigger=runtime DB schema mismatch from imported event frontend/API; write_sets=STATE.md and movie_events migration files only; contract_freeze=make imported event frontend visible by fixing the missing movie_events.event_url schema, applying the local DB schema patch, and verifying /api/events plus served root/static assets without changing unrelated frontend design.`
@@ -375,74 +379,72 @@
 
 ## Orchestration Profile
 
-- score_total: `7`
-- score_breakdown: `2 recommendation fallback contract, 2 score cap semantics, 1 Codex input profile contract, 2 regression tests/build/runtime smoke`
-- hard_triggers: `recommendation response quality semantics; ambiguous fallback acceptance; implementation depends on selected-genre miss discovery result`
-- selected_rules: `no fake genre tags; keep direct selected-genre path unchanged; poster-only analysis only after selected-genre miss; cap genre-mismatched reserves; no DB/crawler/frontend change`
-- selected_skills: `repo-local verification`
+- score_total: `5`
+- score_breakdown: `single 600-line ingestion script responsibility concentration 2; DB/external API boundaries 1; recommendation metadata path importance 1; narrow single-file write set 1`
+- hard_triggers: `external-source and DB-adjacent enrichment logic, but no live DB writes or public runtime checks are in scope`
+- selected_rules: `freeze single-file contract first; preserve provider raw metadata and movie_tags behavior; do not touch secrets, migrations, runtime config, or live DB; keep verification local/read-only`
+- selected_skills: `selfdex`
 - execution_topology: `single-session`
 - orchestration_value: `low`
 - agent_budget: `0`
-- spawn_decision: `no spawn; backend service and focused tests are one overlapping recommendation contract.`
-- efficiency_basis: `Candidate search flag, scoring profile, Codex input, score cap, and service tests are tightly coupled and cheaper to keep in one lane.`
-- selection_reason: `User promoted the previously queued poster-only fallback plan with /goal and asked to start implementation.`
+- spawn_decision: `no spawn; the user approved a bounded single-file Selfdex candidate and delegation would add handoff cost without disjoint write ownership.`
+- efficiency_basis: `Result construction, provider auto metadata, provider detail metadata, KOBIS metadata, and curated overrides are separable internal phases but share one script-level behavior contract and one write set.`
+- selection_reason: `User approved the Selfdex-selected /goal candidate after read-only planning.`
 
 ## Evaluation Plan
 
-- evaluation_need: `full`
+- evaluation_need: `light`
 - project_invariants:
   - `Do not print, commit, or document real DB passwords, OAuth tokens, cookies, API keys, tunnel tokens, or OAuth auth paths.`
-  - `Do not expose secrets, private Kakao admin keys, Codex auth, bridge token, or local filesystem paths to browser responses.`
-  - `Do not overwrite unrelated frontend/backend user edits or current R2 poster assets.`
-  - `Preserve existing recommendation flow, Codex bridge runtime, poster-seed behavior, and same-origin browser compatibility.`
-  - `Preserve same-origin Spring-served frontend behavior on localhost:5500.`
-  - `Do not mutate DB tags, crawl data, prices, or frontend assets for this task.`
+  - `Preserve provider-specific raw metadata and movie_tags semantics.`
+  - `Do not overwrite unrelated frontend/backend/user edits.`
+  - `Do not mutate live DB tags, crawl data, prices, migrations, runtime config, or frontend assets for this task.`
 - task_acceptance:
-  - `When selected-genre search succeeds, existing direct selected-genre ranking and scoring remain unchanged.`
-  - `When selected-genre search misses and reserve candidates are used, scorer and Codex receive a profile with preferredGenres removed.`
-  - `Poster-derived likedGenres remain available in that fallback profile and can prioritize matching candidates.`
-  - `Final fallback or AI scores still use the original selected-genre profile for mismatch cap, so no selected-genre-missed reserve exceeds 68 solely from poster match.`
-  - `The response message stays honest that conditions were widened because there was no direct selected-genre showing.`
+  - `scripts/ingest/enrich_movie_tags.py has clearer internal phase boundaries.`
+  - `CLI flags, validate-only output, result JSON keys, dry-run behavior, source/confidence constants, and DB upsert conditions remain compatible.`
+  - `No provider/KOBIS network call becomes eager outside the existing options/API-key behavior.`
+  - `Local verification passes or gaps are reported.`
 - non_goals:
-  - `No schema migration, broad collector refactor, CGV signed API repair, frontend redesign, poster asset change, fuzzy title matching, DB mutation, or secret/token disclosure.`
+  - `No schema migration, live DB mutation, broad collector refactor, CGV signed API repair, frontend/backend runtime change, or secret/token disclosure.`
 - hard_checks:
-  - `Run gradle -p backend test --tests kr.daboyeo.backend.service.recommendation.RecommendationServiceCandidateFilterTests.`
-  - `Run gradle -p backend bootJar.`
-  - `Restart Spring localhost:5500 and run a romance/selected-genre-miss smoke if feasible.`
-  - `Run WORKSPACE_CONTEXT verification commands.`
-  - `Run git diff --check.`
+  - `python -m py_compile scripts/ingest/enrich_movie_tags.py`
+  - `python scripts/ingest/enrich_movie_tags.py --validate-only`
+  - `python -m compileall -q scripts/ingest`
+  - `Get-Content -Raw WORKSPACE_CONTEXT.toml`
+  - `Select-String -Path WORKSPACE_CONTEXT.toml -Pattern '^\\[workspace\\]','^\\[architecture\\]','^\\[editing_rules\\]','^\\[verification\\]'`
+  - `git diff --check`
 - llm_review_rubric:
-  - `Do not reintroduce title-only genre inference or fake metadata.`
-  - `Do not make selected-genre-missed reserves look like direct selected-genre matches.`
-  - `Do not send Codex preferredGenres that are known unavailable in the selected-genre-missed fallback.`
-  - `Do not break direct selected-genre candidate ranking.`
+  - `Check for changed JSON keys, changed DB write conditions, accidental eager provider/KOBIS calls, lost dry-run behavior, and widened write scope.`
 - evidence_required:
-  - `focused test result`
-  - `bootJar result`
-  - `runtime smoke result or explicit gap`
+  - `changed function boundaries`
+  - `compile and validate-only results`
   - `WORKSPACE_CONTEXT command result`
   - `git diff --check result`
+  - `final git status`
 
 ## Writer Slot
 
 - writer_slot: `main`
-- write_sets: `STATE.md; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; ERROR_LOG.md only for material failures`
+- write_sets: `STATE.md; scripts/ingest/enrich_movie_tags.py; ERROR_LOG.md only for material failures`
 
 ## Contract Freeze
 
-- status: `frozen for poster-only selected-genre-miss fallback`
-- source_basis: `The current sparse selected-genre fallback returns reserve candidates, but it still lets the unavailable selected genre remain the active scoring/Codex taste anchor. The frozen behavior separates analysis profile from final score-cap profile only for selected-genre-missed search results.`
-- output_code: `Extend CandidateSearchResult with selectedGenreRelaxed; derive a poster-only fallback TagProfile when true; use poster-only profile for scorer/ranking/Codex/analysis; use original selected-genre profile for validated score cap.`
-- output_tests: `Focused RecommendationServiceCandidateFilterTests proving Codex sees no preferredGenres in this fallback and final scores remain capped.`
+- status: `frozen for single-file enrichment script refactor`
+- source_basis: `Selfdex read-only planning selected scripts/ingest/enrich_movie_tags.py responsibility cleanup, and local inspection confirmed one script owns overrides, provider metadata, KOBIS metadata, DB upserts, and CLI flow.`
+- output_code: `Split enrich_movie_tags orchestration into explicit internal phase helpers while preserving CLI, JSON result shape, dry-run semantics, DB upsert conditions, and external call gating.`
+- output_tests: `Python py_compile, validate-only override parsing, compileall scripts/ingest, WORKSPACE_CONTEXT checks, and diff check.`
 - output_docs: `STATE verification note and ERROR_LOG.md only if material failures occur.`
-- write_sets: `STATE.md; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; ERROR_LOG.md if needed`
+- write_sets: `STATE.md; scripts/ingest/enrich_movie_tags.py; ERROR_LOG.md if needed`
 
 ## Reviewer
 
 - review_required: `self-review`
-- reviewer_focus: `Confirm direct selected-genre flow is unchanged, poster-only fallback does not mutate stored profile data, Codex receives no unavailable preferredGenres, and genre-mismatch reserve scores stay capped.`
+- reviewer_focus: `Confirm JSON keys, DB writes, dry-run behavior, provider/KOBIS gating, and single-file write boundary stayed compatible.`
 
 ## Last Update
+
+- timestamp: `2026-05-08 17:23:05 +09:00`
+- note: `Completed approved Selfdex /goal refactor for scripts/ingest/enrich_movie_tags.py. The script now has explicit phase helpers for result setup, provider auto tags, provider detail metadata, KOBIS metadata, and curated overrides; verification passed with CRLF warnings only.`
 
 - timestamp: `2026-05-08 13:03:40 +09:00`
 - note: `Completed image F floating-poster implementation for the AI recommendation result screen. Result cards now use detached rotating poster layers and the recommendation list supports vertical scrolling for multiple movies; localhost:5500 is running rebuilt jar PID 10580 with served static checks passing.`
@@ -666,6 +668,13 @@
 - note: `Verified PR #2 Spring static mirror correction. score_total remains 9; single-session; backend static index/style/script/map/region constants now mirror selected frontend files, bootJar was rebuilt, Spring restarted as PID 2368, and 8080/index.html contains kmh region/nearby markers.`
 
 ## Verification Results
+
+- movie_tag_enrichment_refactor_20260508:
+  - `timestamp`: `2026-05-08 17:23:05 +09:00`
+  - `classification`: `score_total 5; light evaluation; single-session/no-spawn because one script owns the approved Selfdex candidate and the write boundary is not separable.`
+  - `implementation`: `Split scripts/ingest/enrich_movie_tags.py into clearer internal phase helpers for result setup, provider auto metadata, provider detail metadata, KOBIS metadata, and curated overrides; removed unused apply_genre_tags after tracked-reference search found no users.`
+  - `checks`: `py_compile passed; validate-only parsed 8 overrides/8 tags; compileall scripts/ingest passed; WORKSPACE_CONTEXT section checks found workspace/architecture/verification/editing_rules; git diff --check passed with CRLF warnings only.`
+  - `status`: `modified files are STATE.md and scripts/ingest/enrich_movie_tags.py; no live DB write, migration, runtime config, frontend/backend app, commit, or push was performed.`
 
 - taste_focused_candidate_pool_20260504:
   - `timestamp`: `2026-05-04 16:16:49 +09:00`

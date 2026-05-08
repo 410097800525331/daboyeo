@@ -4,6 +4,18 @@ Append-only log for installer, execution, tool, and verification errors.
 Add new entries with timestamp, location, summary, and details.
 Do not rewrite existing entries; append only.
 
+- time: `2026-05-08 17:36:31 +09:00`
+  location: `Selfdex pre-commit gate`
+  summary: `Selfdex commit gate blocked external daboyeo commit`
+  details: `User explicitly asked to keep the Selfdex commit gate on and commit the daboyeo enrichment refactor. Local daboyeo verification passed, but C:\lsh\git\selfdex\scripts\check_commit_gate.py first failed while trying to include git diff from the Selfdex checkout because that checkout is dubious-owned for the sandbox user. Retrying with --changed-path STATE.md --changed-path scripts/ingest/enrich_movie_tags.py --no-git-diff reached the gate but failed budget-out-of-contract-path because Selfdex root STATE.json still describes the older daboyeo-selfdex-planning-timeout-repair contract and does not include scripts/ingest/enrich_movie_tags.py. Commit was not created.`
+  status: `open`
+
+- time: `2026-05-08 17:41:41 +09:00`
+  location: `Selfdex pre-commit gate`
+  summary: `Selfdex gate blocker explicitly overridden by user`
+  details: `After the gate failure was explained, the user asked "그냥 커밋 푸시 ㄱㄱ". This explicitly overrides the Selfdex gate blocker for the already verified daboyeo change; proceed with normal git commit and push without modifying the Selfdex root STATE.json contract.`
+  status: `resolved_by_user_override`
+
 - time: `2026-04-10 00:00:00 +09:00`
   location: `cgv_collector_demo.py, lotte_collector_demo.py, megabox_collector_demo.py`
   summary: `데모 스크립트 공통 실행 실패`

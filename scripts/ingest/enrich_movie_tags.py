@@ -405,38 +405,18 @@ def kobis_search(movie: dict[str, Any], api_key: str) -> dict[str, Any]:
     }
 
 
-def apply_genre_tags(
-    cursor: Any,
-    movie: dict[str, Any],
-    genres: list[str],
+def new_enrichment_result(
+    overrides_path: Path,
+    overrides: list[TagOverride],
+    movies: list[dict[str, Any]],
     *,
-    source: str,
-    confidence: Decimal,
+    current_only: bool,
     dry_run: bool,
-) -> int:
-    upserted = 0
-    for genre in missing_genres(movie, genres):
-        if not dry_run:
-            upsert_movie_tag(cursor, movie, "genre", genre, source, confidence)
-        upserted += 1
-    return upserted
-
-
-def enrich_movie_tags(
-    cursor: Any,
-    overrides_path: Path = DEFAULT_OVERRIDES_PATH,
-    *,
-    current_only: bool = True,
-    dry_run: bool = False,
-    provider_auto_tags: bool = True,
-    provider_detail_metadata: bool = False,
-    provider_detail_limit: int = 40,
-    kobis_metadata: bool = True,
-    kobis_limit: int = 60,
+    provider_auto_tags: bool,
+    provider_detail_metadata: bool,
+    provider_detail_limit: int,
 ) -> dict[str, Any]:
-    overrides = load_overrides(overrides_path)
-    movies = current_movies(cursor, current_only=current_only)
-    result: dict[str, Any] = {
+    return {
         "mode": "dry-run" if dry_run else "write",
         "overrides_path": str(overrides_path),
         "current_only": current_only,
@@ -477,134 +457,187 @@ def enrich_movie_tags(
         "skipped": [],
     }
 
-    if provider_auto_tags:
-        provider_confidence = Decimal("0.9500")
-        for movie in movies:
-            genres = provider_auto_genres(movie)
-            planned = missing_genres(movie, genres)
-            if not planned:
-                continue
-            result["provider_auto_tagging"]["matched_movie_count"] += 1
-            result["provider_auto_tagging"]["tags_planned"] += len(planned)
-            result["provider_auto_tagging"]["movies"].append(
-                {
-                    "providerCode": movie["provider_code"],
-                    "externalMovieId": movie["external_movie_id"],
-                    "titleKo": movie["title_ko"],
-                    "futureShowtimeCount": movie["future_showtime_count"],
-                    "tags": [f"genre:{genre}" for genre in planned],
-                }
+
+def movie_tag_report(
+    movie: dict[str, Any],
+    tags: list[str],
+    *,
+    include_future_showtimes: bool = True,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    report = {
+        "providerCode": movie["provider_code"],
+        "externalMovieId": movie["external_movie_id"],
+        "titleKo": movie["title_ko"],
+    }
+    if include_future_showtimes:
+        report["futureShowtimeCount"] = movie["future_showtime_count"]
+    if extra:
+        report.update(extra)
+    report["tags"] = [f"genre:{genre}" for genre in tags]
+    return report
+
+
+def skipped_movie_report(
+    movie: dict[str, Any],
+    reason: str,
+    *,
+    error: str | None = None,
+) -> dict[str, Any]:
+    report = {
+        "providerCode": movie["provider_code"],
+        "externalMovieId": movie["external_movie_id"],
+        "titleKo": movie["title_ko"],
+        "reason": reason,
+    }
+    if error:
+        report["error"] = error
+    return report
+
+
+def upsert_planned_genres(
+    cursor: Any,
+    movie: dict[str, Any],
+    planned: list[str],
+    *,
+    source: str,
+    confidence: Decimal,
+    dry_run: bool,
+) -> int:
+    if dry_run:
+        return 0
+    for genre in planned:
+        upsert_movie_tag(cursor, movie, "genre", genre, source, confidence)
+    return len(planned)
+
+
+def enrich_provider_auto_tags(
+    cursor: Any,
+    movies: list[dict[str, Any]],
+    section: dict[str, Any],
+    *,
+    dry_run: bool,
+) -> None:
+    provider_confidence = Decimal("0.9500")
+    for movie in movies:
+        genres = provider_auto_genres(movie)
+        planned = missing_genres(movie, genres)
+        if not planned:
+            continue
+        section["matched_movie_count"] += 1
+        section["tags_planned"] += len(planned)
+        section["movies"].append(movie_tag_report(movie, planned))
+        section["tags_upserted"] += upsert_planned_genres(
+            cursor,
+            movie,
+            planned,
+            source=SOURCE_PROVIDER_METADATA,
+            confidence=provider_confidence,
+            dry_run=dry_run,
+        )
+
+
+def enrich_provider_detail_metadata(
+    cursor: Any,
+    movies: list[dict[str, Any]],
+    section: dict[str, Any],
+    *,
+    dry_run: bool,
+    limit: int,
+) -> None:
+    detail_confidence = Decimal("0.9600")
+    detail_collectors = provider_detail_collectors()
+    for movie in movies:
+        if limit >= 0 and section["checked_movie_count"] >= limit:
+            break
+
+        section["checked_movie_count"] += 1
+        try:
+            lookup = provider_detail_search(movie, detail_collectors)
+        except Exception as exc:  # noqa: BLE001 - provider detail calls are best-effort.
+            section["skipped"].append(
+                skipped_movie_report(movie, "provider_detail_error", error=exc.__class__.__name__)
             )
-            if dry_run:
-                continue
-            for genre in planned:
-                upsert_movie_tag(cursor, movie, "genre", genre, SOURCE_PROVIDER_METADATA, provider_confidence)
-                result["provider_auto_tagging"]["tags_upserted"] += 1
+            continue
+        if lookup["status"] != "matched":
+            section["skipped"].append(skipped_movie_report(movie, lookup.get("reason", "not_matched")))
+            continue
 
-    if provider_detail_metadata:
-        detail_confidence = Decimal("0.9600")
-        detail_collectors = provider_detail_collectors()
-        for movie in movies:
-            if provider_detail_limit >= 0 and result["provider_detail_metadata"]["checked_movie_count"] >= provider_detail_limit:
-                break
+        planned = missing_genres(movie, lookup["genres"])
+        if not planned:
+            continue
+        section["matched_movie_count"] += 1
+        section["tags_planned"] += len(planned)
+        section["movies"].append(movie_tag_report(movie, planned))
+        section["tags_upserted"] += upsert_planned_genres(
+            cursor,
+            movie,
+            planned,
+            source=SOURCE_PROVIDER_DETAIL,
+            confidence=detail_confidence,
+            dry_run=dry_run,
+        )
 
-            result["provider_detail_metadata"]["checked_movie_count"] += 1
-            try:
-                lookup = provider_detail_search(movie, detail_collectors)
-            except Exception as exc:  # noqa: BLE001 - provider detail calls are best-effort.
-                result["provider_detail_metadata"]["skipped"].append(
-                    {
-                        "providerCode": movie["provider_code"],
-                        "externalMovieId": movie["external_movie_id"],
-                        "titleKo": movie["title_ko"],
-                        "reason": "provider_detail_error",
-                        "error": exc.__class__.__name__,
-                    }
-                )
-                continue
-            if lookup["status"] != "matched":
-                result["provider_detail_metadata"]["skipped"].append(
-                    {
-                        "providerCode": movie["provider_code"],
-                        "externalMovieId": movie["external_movie_id"],
-                        "titleKo": movie["title_ko"],
-                        "reason": lookup.get("reason", "not_matched"),
-                    }
-                )
-                continue
 
-            planned = missing_genres(movie, lookup["genres"])
-            if not planned:
-                continue
-            result["provider_detail_metadata"]["matched_movie_count"] += 1
-            result["provider_detail_metadata"]["tags_planned"] += len(planned)
-            result["provider_detail_metadata"]["movies"].append(
-                {
-                    "providerCode": movie["provider_code"],
-                    "externalMovieId": movie["external_movie_id"],
-                    "titleKo": movie["title_ko"],
-                    "futureShowtimeCount": movie["future_showtime_count"],
-                    "tags": [f"genre:{genre}" for genre in planned],
-                }
-            )
-            if dry_run:
-                continue
-            for genre in planned:
-                upsert_movie_tag(cursor, movie, "genre", genre, SOURCE_PROVIDER_DETAIL, detail_confidence)
-                result["provider_detail_metadata"]["tags_upserted"] += 1
-
+def enrich_kobis_metadata(
+    cursor: Any,
+    movies: list[dict[str, Any]],
+    section: dict[str, Any],
+    *,
+    dry_run: bool,
+    enabled: bool,
+    limit: int,
+) -> None:
     key = kobis_api_key()
-    if kobis_metadata and key:
-        result["kobis_metadata"]["enabled"] = True
-        result["kobis_metadata"]["reason"] = "api_key_configured"
+    if enabled and key:
+        section["enabled"] = True
+        section["reason"] = "api_key_configured"
         kobis_confidence = Decimal("0.9500")
-        for movie in movies[: max(0, kobis_limit)]:
-            result["kobis_metadata"]["checked_movie_count"] += 1
+        for movie in movies[: max(0, limit)]:
+            section["checked_movie_count"] += 1
             try:
                 lookup = kobis_search(movie, key)
             except Exception as exc:  # noqa: BLE001 - keep batch enrichment alive.
-                result["kobis_metadata"]["skipped"].append(
-                    {
-                        "providerCode": movie["provider_code"],
-                        "externalMovieId": movie["external_movie_id"],
-                        "titleKo": movie["title_ko"],
-                        "reason": "kobis_error",
-                        "error": exc.__class__.__name__,
-                    }
+                section["skipped"].append(
+                    skipped_movie_report(movie, "kobis_error", error=exc.__class__.__name__)
                 )
                 continue
             if lookup["status"] != "matched":
-                result["kobis_metadata"]["skipped"].append(
-                    {
-                        "providerCode": movie["provider_code"],
-                        "externalMovieId": movie["external_movie_id"],
-                        "titleKo": movie["title_ko"],
-                        "reason": lookup.get("reason", "not_matched"),
-                    }
-                )
+                section["skipped"].append(skipped_movie_report(movie, lookup.get("reason", "not_matched")))
                 continue
             planned = missing_genres(movie, lookup["genres"])
             if not planned:
                 continue
-            result["kobis_metadata"]["matched_movie_count"] += 1
-            result["kobis_metadata"]["tags_planned"] += len(planned)
-            result["kobis_metadata"]["movies"].append(
-                {
-                    "providerCode": movie["provider_code"],
-                    "externalMovieId": movie["external_movie_id"],
-                    "titleKo": movie["title_ko"],
-                    "kobisMovieCd": lookup.get("movieCd"),
-                    "tags": [f"genre:{genre}" for genre in planned],
-                }
+            section["matched_movie_count"] += 1
+            section["tags_planned"] += len(planned)
+            section["movies"].append(
+                movie_tag_report(
+                    movie,
+                    planned,
+                    include_future_showtimes=False,
+                    extra={"kobisMovieCd": lookup.get("movieCd")},
+                )
             )
-            if dry_run:
-                continue
-            for genre in planned:
-                upsert_movie_tag(cursor, movie, "genre", genre, SOURCE_KOBIS_METADATA, kobis_confidence)
-                result["kobis_metadata"]["tags_upserted"] += 1
-    elif kobis_metadata:
-        result["kobis_metadata"]["reason"] = "missing_api_key"
+            section["tags_upserted"] += upsert_planned_genres(
+                cursor,
+                movie,
+                planned,
+                source=SOURCE_KOBIS_METADATA,
+                confidence=kobis_confidence,
+                dry_run=dry_run,
+            )
+    elif enabled:
+        section["reason"] = "missing_api_key"
 
+
+def apply_override_tags(
+    cursor: Any,
+    overrides: list[TagOverride],
+    result: dict[str, Any],
+    *,
+    current_only: bool,
+    dry_run: bool,
+) -> None:
     for override in overrides:
         movie = current_movie_for_override(cursor, override)
         if movie is None:
@@ -655,6 +688,54 @@ def enrich_movie_tags(
             upsert_movie_tag(cursor, movie, tag_type, tag_value, override.source, override.confidence)
             existing_tags.add(f"{tag_type}:{tag_value}".lower())
             result["tags_upserted"] += 1
+
+
+def enrich_movie_tags(
+    cursor: Any,
+    overrides_path: Path = DEFAULT_OVERRIDES_PATH,
+    *,
+    current_only: bool = True,
+    dry_run: bool = False,
+    provider_auto_tags: bool = True,
+    provider_detail_metadata: bool = False,
+    provider_detail_limit: int = 40,
+    kobis_metadata: bool = True,
+    kobis_limit: int = 60,
+) -> dict[str, Any]:
+    overrides = load_overrides(overrides_path)
+    movies = current_movies(cursor, current_only=current_only)
+    result = new_enrichment_result(
+        overrides_path,
+        overrides,
+        movies,
+        current_only=current_only,
+        dry_run=dry_run,
+        provider_auto_tags=provider_auto_tags,
+        provider_detail_metadata=provider_detail_metadata,
+        provider_detail_limit=provider_detail_limit,
+    )
+
+    if provider_auto_tags:
+        enrich_provider_auto_tags(cursor, movies, result["provider_auto_tagging"], dry_run=dry_run)
+
+    if provider_detail_metadata:
+        enrich_provider_detail_metadata(
+            cursor,
+            movies,
+            result["provider_detail_metadata"],
+            dry_run=dry_run,
+            limit=provider_detail_limit,
+        )
+
+    enrich_kobis_metadata(
+        cursor,
+        movies,
+        result["kobis_metadata"],
+        dry_run=dry_run,
+        enabled=kobis_metadata,
+        limit=kobis_limit,
+    )
+    apply_override_tags(cursor, overrides, result, current_only=current_only, dry_run=dry_run)
     return result
 
 
