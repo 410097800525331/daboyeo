@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--codex-model", default=os.getenv("DABOYEO_CODEX_MODEL", ""))
     parser.add_argument("--codex-reasoning-effort", default=os.getenv("DABOYEO_CODEX_REASONING_EFFORT", ""))
     parser.add_argument("--poll-interval", type=float, default=float(os.getenv("DABOYEO_BRIDGE_POLL_INTERVAL", "2")))
-    parser.add_argument("--timeout", type=int, default=int(os.getenv("DABOYEO_BRIDGE_WORKER_TIMEOUT", "180")))
+    parser.add_argument("--timeout", type=int, default=int(os.getenv("DABOYEO_BRIDGE_WORKER_TIMEOUT", "70")))
     parser.add_argument("--once", action="store_true")
     return parser.parse_args()
 

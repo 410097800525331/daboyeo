@@ -784,3 +784,43 @@ Do not rewrite existing entries; append only.
 - summary: `Initial restart attempts failed because this PowerShell process had duplicate Path/PATH environment keys, and a fallback clean environment started Java with an invalid Windows socket state.`
 - details: `Start-Process first failed with a duplicate Path/PATH key error. Starting with UseNewEnvironment avoided that error but Tomcat failed with Windows socket error 10106. cmd start quoting attempts also failed. The resolved restart normalized the process environment to a single Path key, then Start-Process launched the rebuilt jar as PID 20428; /api/health returned ok.`
 - status: `resolved`
+
+# 2026-05-08 11:01 +09:00
+
+- time: `2026-05-08 11:01 +09:00`
+- location: `poster quality Spring restart on localhost:5500`
+- summary: `The first restart attempts did not replace the old localhost:5500 Java process and Start-Process again hit duplicate Path/PATH environment handling.`
+- details: `PID 5736 was still serving localhost:5500, so the first new process could not take the port. After stopping PID 5736, Start-Process failed with duplicate Path/PATH. A direct .NET ProcessStartInfo launch outside the sandbox started the rebuilt jar as PID 13640; /api/health returned ok and served static checks confirmed the poster-quality cache key and CSS/JS changes.`
+- status: `resolved`
+
+# 2026-05-08 13:03 +09:00
+
+- time: `2026-05-08 13:03 +09:00`
+- location: `floating poster Spring restart on localhost:5500`
+- summary: `Served static checks initially read stale AI page files, and sandboxed background launches did not persist after the shell command ended.`
+- details: `gradle processResources and bootJar succeeded and build/resources matched frontend/static sources, but the existing PID 13640 served the old cache key. Get-NetTCPConnection was denied, so netstat identified PID 13640. After stopping it, bootRun and java subprocess attempts inside the sandbox either hit duplicate Path/PATH handling or were cleaned up after the command returned. The resolved launch normalized Path/PATH and started the rebuilt jar outside the sandbox as PID 10580; /api/health returned 200 and served HTML/CSS/JS checks confirmed the floating-poster cache key and scroll/floating CSS.`
+- status: `resolved`
+
+# 2026-05-08 13:20 +09:00
+
+- time: `2026-05-08 13:20 +09:00`
+- location: `AI result snap-scroll Spring restart on localhost:5500`
+- summary: `Served static checks stayed stale until the rebuilt jar replaced the previous localhost:5500 Java process.`
+- details: `frontend and backend static sources matched, and gradle processResources updated build/resources, but the running PID 10580 still served the floating-poster cache key. A sandboxed Start-Process launch returned a healthy response once and then did not persist outside the command lifetime. The resolved launch used an approved out-of-sandbox hidden Start-Process with log redirection; the rebuilt jar is running as PID 16476, /api/health returns ok, and served HTML/CSS checks confirm 20260508-floating-snap plus hidden-scrollbar and mandatory snap CSS.`
+- status: `resolved`
+
+# 2026-05-08 14:18 +09:00
+
+- time: `2026-05-08 14:18 +09:00`
+- location: `AI result one-card snap verification`
+- summary: `The previous localhost:5500 process returned 500 for the AI page and the in-app browser automation plugin was missing browser-client.mjs during visual verification.`
+- details: `PID 16476 still passed /api/health but returned 500 for /src/pages/daboyeoAi.html, with a Spring error-page NoClassDefFoundError in the previous log. After bootJar, the process was replaced by an approved out-of-sandbox launch as PID 9160; /api/health returned ok and served HTML/CSS/JS checks confirmed the result-snap-clean cache key and updated rules. In-app browser automation could not be completed because C:\Users\pc07-00\.codex\plugins\cache\openai-bundled\browser-use\0.1.0-alpha2\scripts\browser-client.mjs was absent; verification fell back to syntax, static parity, build, health, and served resource checks.`
+- status: `resolved-with-browser-gap`
+
+# 2026-05-08 14:55 +09:00
+
+- time: `2026-05-08 14:55 +09:00`
+- location: `Codex AI bridge precise recommendation runtime`
+- summary: `The bridge heartbeat was ready, but a precise Codex job timed out and then failed to report because Spring had already removed the job.`
+- details: `Provider health returned ready, but .local/ai-bridge.err.log showed gpt-5.5 with xhigh reasoning timing out after 180 seconds, followed by HTTP 404 from /api/internal/ai-bridge/jobs/{jobId}/result. The repair lowers local precise defaults to gpt-5.4/medium with fewer candidates and tokens, shortens Spring bridge timeouts, and makes the worker timeout shorter than Spring's result wait so stale job reports do not linger.`
+- status: `resolved`

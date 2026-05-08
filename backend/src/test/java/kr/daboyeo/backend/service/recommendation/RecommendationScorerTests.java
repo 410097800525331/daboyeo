@@ -204,6 +204,36 @@ class RecommendationScorerTests {
         assertThat(directFit.score()).isGreaterThan(genericFit.score());
     }
 
+    @Test
+    void noDirectTasteMismatchKeepsScoreSpreadBelowDirectMatchBand() {
+        TagProfile profile = new TagProfile();
+        profile.setMood("light");
+        profile.addPreferredGenre("romance");
+        profile.addWeight("genre:romance", 6);
+        profile.addWeight("mood:light", 4);
+        profile.addWeight("mood:funny", 3);
+        profile.addWeight("content:comfort", 3);
+
+        var strongReserve = scorer.scoreOne(profile, candidate(
+            "Strong Reserve",
+            "12",
+            105,
+            Set.of("mood:light", "mood:funny", "content:comfort")
+        )).orElseThrow();
+        var weakReserve = scorer.scoreOne(profile, candidate(
+            "Weak Reserve",
+            "12",
+            150,
+            Set.of()
+        )).orElseThrow();
+
+        assertThat(strongReserve.penalties()).contains("taste_mismatch");
+        assertThat(weakReserve.penalties()).contains("taste_mismatch");
+        assertThat(strongReserve.score()).isGreaterThan(weakReserve.score());
+        assertThat(strongReserve.score()).isLessThan(68);
+        assertThat(weakReserve.score()).isLessThan(strongReserve.score());
+    }
+
     private ShowtimeCandidate candidate(String ageRating, Integer runtimeMinutes, Set<String> tags) {
         return candidate("Test Movie", ageRating, runtimeMinutes, tags);
     }

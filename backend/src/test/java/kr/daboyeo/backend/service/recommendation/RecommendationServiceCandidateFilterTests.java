@@ -322,6 +322,9 @@ class RecommendationServiceCandidateFilterTests {
     void selectedGenreWithoutExplicitCandidateReturnsReserveRecommendations() {
         RecommendationService service = service(20, 5, 5);
         TagProfile profile = new TagProfile();
+        profile.addWeight("genre:animation", 6);
+        profile.addWeight("genre:drama", 5);
+        profile.addWeight("genre:comedy", 5);
         profile.addPreferredGenre("animation");
         profile.addLikedGenre("drama");
         profile.addLikedGenre("comedy");
@@ -332,8 +335,8 @@ class RecommendationServiceCandidateFilterTests {
             .thenReturn(List.of(), List.of());
         when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
             .thenReturn(List.of(prada, marioTitleOnly));
-        when(scorer.score(eq(profile), eq(List.of(prada, marioTitleOnly)), eq(null)))
-            .thenReturn(List.of(scored(prada, 68), scored(marioTitleOnly, 68)));
+        when(scorer.score(any(TagProfile.class), eq(List.of(prada, marioTitleOnly)), eq(null)))
+            .thenReturn(List.of(scored(prada, 91), scored(marioTitleOnly, 80)));
         when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
 
         RecommendationResponse response = service.recommend(request());
@@ -344,13 +347,59 @@ class RecommendationServiceCandidateFilterTests {
             .containsExactly("Devil Wears Prada 2", "Super Mario Galaxy");
         assertThat(response.recommendations())
             .extracting(item -> item.score())
-            .allMatch(score -> score <= 68);
+            .containsExactly(64, 59);
         assertThat(response.message()).contains("\uC870\uAC74\uC744 \uB113\uD600");
-        verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), any(TagProfile.class), any());
+        ArgumentCaptor<TagProfile> scorerProfile = ArgumentCaptor.forClass(TagProfile.class);
+        verify(scorer).score(scorerProfile.capture(), eq(List.of(prada, marioTitleOnly)), eq(null));
+        assertThat(scorerProfile.getValue().preferredGenres()).isEmpty();
+        assertThat(scorerProfile.getValue().likedGenres())
+            .containsExactlyInAnyOrder("genre:drama", "genre:comedy");
+        assertThat(scorerProfile.getValue().weights()).containsKeys("genre:drama", "genre:comedy");
+        assertThat(scorerProfile.getValue().weights()).doesNotContainKey("genre:animation");
+        ArgumentCaptor<TagProfile> codexProfile = ArgumentCaptor.forClass(TagProfile.class);
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.FAST), codexProfile.capture(), any());
+        assertThat(codexProfile.getValue().preferredGenres()).isEmpty();
+        assertThat(codexProfile.getValue().likedGenres())
+            .containsExactlyInAnyOrder("genre:drama", "genre:comedy");
     }
 
     @Test
-    void codexModelScoresDriveOrderButNoDirectTasteReserveScoresAreCapped() {
+    void selectedGenreMissCompressesCodexScoresAgainstOriginalGenreProfile() {
+        RecommendationService service = service(20, 5, 5);
+        TagProfile profile = new TagProfile();
+        profile.addWeight("genre:animation", 6);
+        profile.addWeight("genre:drama", 5);
+        profile.addPreferredGenre("animation");
+        profile.addLikedGenre("drama");
+        ShowtimeCandidate prada = candidate(1, "Devil Wears Prada 2", Set.of("genre:drama", "mood:light"));
+        when(profileBuilder.build(any(), any(), any())).thenReturn(profile);
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), isNull(), anySet()))
+            .thenReturn(List.of(), List.of());
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
+            .thenReturn(List.of(prada));
+        when(scorer.score(any(TagProfile.class), eq(List.of(prada)), eq(null)))
+            .thenReturn(List.of(scored(prada, 92)));
+        when(codexClient.rankAndExplain(any(), any(), any()))
+            .thenReturn(Optional.of(new AiResult(
+                "{\"r\":[]}",
+                "codex",
+                List.of(new AiPick(prada.showtimeId(), 99, "poster match", "", "value", "analysis"))
+            )));
+
+        RecommendationResponse response = service.recommend(request("precise", null, "codex"));
+
+        assertThat(response.status()).isEqualTo("ok");
+        assertThat(response.recommendations())
+            .extracting(item -> item.score())
+            .containsExactly(65);
+        ArgumentCaptor<TagProfile> codexProfile = ArgumentCaptor.forClass(TagProfile.class);
+        verify(codexClient).rankAndExplain(eq(RecommendationMode.PRECISE), codexProfile.capture(), any());
+        assertThat(codexProfile.getValue().preferredGenres()).isEmpty();
+        assertThat(codexProfile.getValue().likedGenres()).containsExactly("genre:drama");
+    }
+
+    @Test
+    void codexModelScoresDriveOrderButNoDirectTasteReserveScoresAreCompressed() {
         RecommendationService service = service(20, 5, 5);
         TagProfile profile = new TagProfile();
         profile.addPreferredGenre("sf");
@@ -381,7 +430,7 @@ class RecommendationServiceCandidateFilterTests {
             .containsExactly("Project Hail Mary", "Devil Wears Prada 2", "Super Mario Galaxy");
         assertThat(response.recommendations())
             .extracting(item -> item.score())
-            .containsExactly(96, 68, 68);
+            .containsExactly(96, 56, 52);
     }
 
     @Test

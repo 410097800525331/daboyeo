@@ -45,6 +45,7 @@ import org.springframework.stereotype.Service;
 import static kr.daboyeo.backend.domain.recommendation.RecommendationModels.newAnonymousId;
 import static kr.daboyeo.backend.domain.recommendation.RecommendationModels.newRunId;
 import static kr.daboyeo.backend.domain.recommendation.RecommendationModels.normalizeAnonymousId;
+import static kr.daboyeo.backend.domain.recommendation.RecommendationModels.normalizeTagKey;
 
 @Service
 public class RecommendationService {
@@ -53,7 +54,6 @@ public class RecommendationService {
     private static final int CANDIDATE_LIMIT = 240;
     private static final int SELECTED_GENRE_CANDIDATE_LIMIT = 1200;
     private static final int RESULT_LIMIT = 3;
-    private static final int NO_DIRECT_TASTE_MATCH_CAP = 68;
     private static final String RELAXED_FILTER_MESSAGE = "선택 조건과 정확히 맞는 상영이 없어 조건을 넓혀 추천했어.";
     private static final String SELECTED_GENRE_RELAXED_MESSAGE =
         "\uC120\uD0DD\uD55C \uC7A5\uB974\uC640 \uC9C1\uC811 \uC77C\uCE58\uD558\uB294 \uC0C1\uC601\uC774 \uC5C6\uC5B4 \uC870\uAC74\uC744 \uB113\uD600 \uC608\uBE44 \uCD94\uCC9C\uD588\uC5B4.";
@@ -203,7 +203,11 @@ public class RecommendationService {
             );
         }
 
-        List<ScoredCandidate> scored = scorer.score(tagProfile, candidates, effectiveSearchFilters);
+        TagProfile analysisProfile = candidateSearch.selectedGenreRelaxed()
+            ? posterOnlyFallbackProfile(tagProfile)
+            : tagProfile;
+        TagProfile scoreCapProfile = candidateSearch.selectedGenreRelaxed() ? tagProfile : analysisProfile;
+        List<ScoredCandidate> scored = scorer.score(analysisProfile, candidates, effectiveSearchFilters);
         if (scored.isEmpty()) {
             return noCandidateResponse(
                 startedAt,
@@ -217,16 +221,16 @@ public class RecommendationService {
             );
         }
 
-        List<ScoredCandidate> tasteAwareScored = rankTasteAwareCandidates(scored, tagProfile);
+        List<ScoredCandidate> tasteAwareScored = rankTasteAwareCandidates(scored, analysisProfile);
         List<ScoredCandidate> aiCandidates = selectDistinctMovieItems(
             tasteAwareScored,
             properties.aiCandidateLimitFor(aiProvider, mode)
         );
-        var aiResult = codexClient.rankAndExplain(mode, tagProfile, aiCandidates);
+        var aiResult = codexClient.rankAndExplain(mode, analysisProfile, aiCandidates);
         List<RecommendationItem> items = aiResult
-            .map(result -> itemsFromAi(aiCandidates, result.picks(), tagProfile, mode, aiProvider))
+            .map(result -> itemsFromAi(aiCandidates, result.picks(), analysisProfile, scoreCapProfile, mode, aiProvider))
             .filter(list -> !list.isEmpty())
-            .orElseGet(() -> fallbackItems(tasteAwareScored, tagProfile, mode, aiProvider));
+            .orElseGet(() -> fallbackItems(tasteAwareScored, analysisProfile, scoreCapProfile, mode, aiProvider));
 
         RecommendationResponse response = new RecommendationResponse(
             runId,
@@ -274,10 +278,10 @@ public class RecommendationService {
             requiredGenreValues
         );
         if (!exactCandidates.isEmpty()) {
-            return new CandidateSearchResult(exactCandidates, filters, "");
+            return new CandidateSearchResult(exactCandidates, filters, "", false);
         }
         if ((filters == null || !filters.active()) && !hasRequiredGenres) {
-            return new CandidateSearchResult(List.of(), filters, "");
+            return new CandidateSearchResult(List.of(), filters, "", false);
         }
 
         if (filters != null && filters.active()) {
@@ -289,7 +293,7 @@ public class RecommendationService {
                     requiredGenreValues
                 );
                 if (!relaxedCandidates.isEmpty()) {
-                    return new CandidateSearchResult(relaxedCandidates, relaxedFilters, RELAXED_FILTER_MESSAGE);
+                    return new CandidateSearchResult(relaxedCandidates, relaxedFilters, RELAXED_FILTER_MESSAGE, false);
                 }
             }
         }
@@ -301,7 +305,7 @@ public class RecommendationService {
             requiredGenreValues
         );
         if (!broadCandidates.isEmpty()) {
-            return new CandidateSearchResult(broadCandidates, null, RELAXED_FILTER_MESSAGE);
+            return new CandidateSearchResult(broadCandidates, null, RELAXED_FILTER_MESSAGE, false);
         }
 
         if (hasRequiredGenres) {
@@ -312,7 +316,7 @@ public class RecommendationService {
                 Set.of()
             );
             if (!genreRelaxedCandidates.isEmpty()) {
-                return new CandidateSearchResult(genreRelaxedCandidates, filters, SELECTED_GENRE_RELAXED_MESSAGE);
+                return new CandidateSearchResult(genreRelaxedCandidates, filters, SELECTED_GENRE_RELAXED_MESSAGE, true);
             }
             if (filters != null && filters.active()) {
                 for (SearchFilters relaxedFilters : relaxedSearchFilters(filters)) {
@@ -323,7 +327,7 @@ public class RecommendationService {
                         Set.of()
                     );
                     if (!relaxedCandidates.isEmpty()) {
-                        return new CandidateSearchResult(relaxedCandidates, relaxedFilters, SELECTED_GENRE_RELAXED_MESSAGE);
+                        return new CandidateSearchResult(relaxedCandidates, relaxedFilters, SELECTED_GENRE_RELAXED_MESSAGE, true);
                     }
                 }
             }
@@ -334,10 +338,10 @@ public class RecommendationService {
                 Set.of()
             );
             if (!broadGenreRelaxedCandidates.isEmpty()) {
-                return new CandidateSearchResult(broadGenreRelaxedCandidates, null, SELECTED_GENRE_RELAXED_MESSAGE);
+                return new CandidateSearchResult(broadGenreRelaxedCandidates, null, SELECTED_GENRE_RELAXED_MESSAGE, true);
             }
         }
-        return new CandidateSearchResult(List.of(), filters, "");
+        return new CandidateSearchResult(List.of(), filters, "", false);
     }
 
     private List<SearchFilters> relaxedSearchFilters(SearchFilters filters) {
@@ -561,7 +565,8 @@ public class RecommendationService {
     private List<RecommendationItem> itemsFromAi(
         List<ScoredCandidate> rankedCandidates,
         List<AiPick> picks,
-        TagProfile profile,
+        TagProfile analysisProfile,
+        TagProfile scoreCapProfile,
         RecommendationMode mode,
         AiProvider provider
     ) {
@@ -582,7 +587,7 @@ public class RecommendationService {
         List<AiPick> sortedPicks = picks.stream()
             .filter(pick -> byShowtime.containsKey(pick.showtimeId()))
             .sorted(Comparator.comparingInt((AiPick pick) ->
-                validatedModelScore(pick, byShowtime.get(pick.showtimeId()), profile)
+                validatedModelScore(pick, byShowtime.get(pick.showtimeId()), scoreCapProfile)
             ).reversed())
             .toList();
         List<ScoredCandidate> ordered = new ArrayList<>();
@@ -598,18 +603,18 @@ public class RecommendationService {
             .map(scored -> {
                 AiPick pick = pickByShowtime.get(scored.candidate().showtimeId());
                 if (pick == null) {
-                    return fallbackItem(scored, profile, mode, provider);
+                    return fallbackItem(scored, analysisProfile, scoreCapProfile, mode, provider);
                 }
                 return toItem(
                     scored,
                     qualityReason(pick.reason(), scored, mode, provider),
-                    pick.caution(),
+                    resolvedCaution(pick.caution(), scored, analysisProfile, scoreCapProfile),
                     qualityValuePoint(pick.valuePoint(), scored.candidate(), mode, provider),
-                    profile,
+                    analysisProfile,
                     mode,
                     provider,
-                    qualityAnalysisPoint(pick.analysisPoint(), scored, profile, mode, provider),
-                    validatedModelScore(pick, scored, profile)
+                    qualityAnalysisPoint(pick.analysisPoint(), scored, analysisProfile, mode, provider),
+                    validatedModelScore(pick, scored, scoreCapProfile)
                 );
             })
             .toList();
@@ -617,20 +622,39 @@ public class RecommendationService {
 
     private List<RecommendationItem> fallbackItems(
         List<ScoredCandidate> rankedCandidates,
-        TagProfile profile,
+        TagProfile analysisProfile,
+        TagProfile scoreCapProfile,
         RecommendationMode mode,
         AiProvider provider
     ) {
         return selectDistinctMovieItems(rankedCandidates)
             .stream()
-            .map(scored -> fallbackItem(scored, profile, mode, provider))
+            .map(scored -> fallbackItem(scored, analysisProfile, scoreCapProfile, mode, provider))
             .toList();
+    }
+
+    private String resolvedCaution(
+        String modelCaution,
+        ScoredCandidate scored,
+        TagProfile analysisProfile,
+        TagProfile scoreCapProfile
+    ) {
+        if (scoreCapProfile != analysisProfile
+            && hasTasteAnchor(scoreCapProfile)
+            && !hasGenreOverlap(scored, tasteAnchorGenres(scoreCapProfile))) {
+            return groundedCaution(scored, scoreCapProfile);
+        }
+        return modelCaution;
     }
 
     private int validatedModelScore(AiPick pick, ScoredCandidate scored, TagProfile profile) {
         int score = pick == null || pick.score() == null ? scored.score() : clampScore(pick.score());
         if (hasTasteAnchor(profile) && !hasGenreOverlap(scored, tasteAnchorGenres(profile))) {
-            score = Math.min(score, NO_DIRECT_TASTE_MATCH_CAP);
+            int evidenceBoundedScore = Math.min(score, clampScore(scored.score()));
+            score = RecommendationScorer.reserveScoreForNoDirectTasteMatch(
+                evidenceBoundedScore,
+                scored.penalties().contains("taste_mismatch")
+            );
         }
         return score;
     }
@@ -638,7 +662,10 @@ public class RecommendationService {
     private int fallbackScore(ScoredCandidate scored, TagProfile profile) {
         int score = clampScore(scored.score());
         if (hasTasteAnchor(profile) && !hasGenreOverlap(scored, tasteAnchorGenres(profile))) {
-            return Math.min(score, NO_DIRECT_TASTE_MATCH_CAP);
+            return RecommendationScorer.reserveScoreForNoDirectTasteMatch(
+                score,
+                scored.penalties().contains("taste_mismatch")
+            );
         }
         if (hasTasteAnchor(profile)) {
             return Math.max(76, score);
@@ -667,6 +694,31 @@ public class RecommendationService {
             .map(tag -> tag.startsWith("genre:") ? tag.substring("genre:".length()) : tag)
             .filter(tag -> !tag.isBlank())
             .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private TagProfile posterOnlyFallbackProfile(TagProfile profile) {
+        if (profile == null || profile.preferredGenres().isEmpty()) {
+            return profile;
+        }
+        Set<String> posterGenres = new LinkedHashSet<>(profile.likedGenres());
+        posterGenres.removeAll(profile.preferredGenres());
+
+        TagProfile fallbackProfile = new TagProfile();
+        fallbackProfile.setAudience(profile.audience());
+        fallbackProfile.setMood(profile.mood());
+        fallbackProfile.addAvoid(profile.avoid());
+        posterGenres.forEach(fallbackProfile::addLikedGenre);
+
+        Map<String, Integer> retainedWeights = new LinkedHashMap<>();
+        profile.weights().forEach((key, value) -> {
+            String normalizedKey = normalizeTagKey(key);
+            if (normalizedKey.startsWith("genre:") && !posterGenres.contains(normalizedKey)) {
+                return;
+            }
+            retainedWeights.put(key, value);
+        });
+        fallbackProfile.addWeights(retainedWeights);
+        return fallbackProfile;
     }
 
     private String selectedGenreNoMatchMessage(TagProfile profile) {
@@ -1174,16 +1226,17 @@ public class RecommendationService {
 
     private RecommendationItem fallbackItem(
         ScoredCandidate scored,
-        TagProfile profile,
+        TagProfile analysisProfile,
+        TagProfile scoreCapProfile,
         RecommendationMode mode,
         AiProvider provider
     ) {
         ShowtimeCandidate candidate = scored.candidate();
-        int resolvedScore = fallbackScore(scored, profile);
+        int resolvedScore = fallbackScore(scored, scoreCapProfile);
         String reason = groundedReason(scored);
-        String caution = groundedCaution(scored, profile);
+        String caution = groundedCaution(scored, scoreCapProfile);
         String valuePoint = groundedValuePoint(candidate);
-        String resolvedAnalysisPoint = analysisPoint(scored, profile);
+        String resolvedAnalysisPoint = analysisPoint(scored, analysisProfile);
         return new RecommendationItem(
             candidate.movieId(),
             candidate.showtimeId(),
@@ -1476,7 +1529,8 @@ public class RecommendationService {
     private record CandidateSearchResult(
         List<ShowtimeCandidate> candidates,
         SearchFilters filters,
-        String message
+        String message,
+        boolean selectedGenreRelaxed
     ) {
         CandidateSearchResult {
             candidates = candidates == null ? List.of() : List.copyOf(candidates);

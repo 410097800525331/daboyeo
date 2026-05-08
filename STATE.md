@@ -2,29 +2,45 @@
 
 ## Current Task
 
-- task: `Fix polluted genre tags and sparse romance recommendations`
-- phase: `completed`
-- scope: `Remove noncanonical provider category values from recommendation-visible genre tags, let provider detail enrichment add missing canonical genres even when a movie already has one genre, and make selected-genre recommendation fall back to honest reserve candidates instead of empty results when live DB has no direct genre rows.`
-- verification_target: `Compile changed ingest/backend code, clean live noncanonical genre rows, run bounded provider-detail enrichment, audit future genre coverage, and smoke the romance recommendation path.`
-- classification: `score_total=8; single-session; orchestration_value=low; agent_budget=0; evaluation_need=full`
-- score_breakdown: `DB tag integrity 2; recommendation no-candidate behavior 2; live DB mutation 2; provider detail enrichment contract 1; regression tests/runtime smoke 1`
-- hard_triggers: `data_fidelity_risk; live database mutation; recommendation response quality semantics; external provider metadata dependency`
-- selected_rules: `no title-only genre inference; canonical genres only in movie_tags.tag_type=genre; provider category labels are ignored/cleaned; selected genre can relax to reserve candidates with lower scores; no frontend redesign`
-- selected_skills: `repo-local verification`
+- task: `Commit current recommendation work and merge updated teammate branches`
+- phase: `implementation`
+- scope: `Commit the current AI recommendation/runtime/UI changes on lsh, fetch updated remote branches, inspect each branch delta, and merge or selectively import all safe teammate updates without dropping current work.`
+- verification_target: `Clean commit baseline, remote branch diff audit, merge conflict resolution, static/source mirror consistency, and repository verification commands after integration.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- score_breakdown: `dirty baseline commit 2; multi-branch fetch/diff audit 2; possible merge conflicts 2; frontend/backend/static mirror consistency 1; verification and no-miss reporting 1`
+- hard_triggers: `cross-branch import with dirty worktree; possible shared frontend/backend/static conflicts; user explicitly requires no updated branch changes be missed`
+- selected_rules: `commit current lsh work first; fetch and inspect every origin branch; compare branch tips before and after fetch; prefer full merge when safe and selective import only when branch changes conflict with current contracts; preserve STATE.md and current Codex recommendation/runtime contract; do not discard user changes`
+- selected_skills: `none`
 - execution_topology: `single-session`
-- orchestration_value: `low`
+- orchestration_value: `medium`
 - agent_budget: `0`
-- spawn_decision: `no spawn; tag normalization, cleanup, enrichment, and recommendation fallback share one tightly coupled acceptance path.`
-- reason: `Live audit showed future movie_tags contains no romance rows and includes polluted genre values such as 일반콘텐트, 스페셜콘텐트, mega only, and title-like provider labels. The enrichment loop also skipped provider detail calls whenever any genre already existed, leaving missing secondary genres unresolved.`
-- write_sets: `STATE.md; scripts/ingest/genre_tagging.py; scripts/ingest/enrich_movie_tags.py; scripts/ingest/cleanup_movie_genre_tags.py; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; configured TiDB movie_tags through cleanup/enrichment scripts; ERROR_LOG.md only for material failures`
-- contract_freeze: `Do not fake romance tags from titles or posters. Persist genre tags only when normalized into the canonical genre set. Delete current noncanonical genre rows from movie_tags. Provider detail enrichment must add missing canonical genres for current/future movies even if they already have drama/action/etc. If a selected UI genre has zero live rows, RecommendationService must say conditions were widened and return lower-score reserve recommendations rather than a hard empty state.`
-- evaluation_need: `full; the fix mutates live recommendation-visible tags and changes user-facing fallback semantics.`
-- project_invariants: `No hardcoded secrets, no title-only genre inference, no fake future dates, no collection slowdown in default crawl, preserve provider row-date validation, and keep reserve recommendations visibly lower-confidence.`
-- task_acceptance: `Noncanonical genre values are gone from live movie_tags, provider-detail enrichment can add secondary canonical genres on already-tagged movies, and romance-selected recommendation no longer returns an empty candidate list solely because direct romance rows are absent.`
-- non_goals: `No schema migration, no frontend redesign, no CGV signed API repair, no full 14-day crawl, no provider price expansion, no fake curated romance overrides.`
-- hard_checks: `py_compile changed Python files; cleanup dry-run/write audit; bounded provider-detail enrichment; focused Gradle recommendation tests; bootJar/restart if backend changed; romance API smoke; git diff --check; WORKSPACE_CONTEXT verification commands`
-- llm_review_rubric: `Check that genre cleanup is canonical-set based, provider detail enrichment remains bounded, recommendation fallback does not overclaim direct genre matches, and no title/poster-only inference returns as metadata.`
-- evidence_required: `pre/post DB genre audit, cleanup result JSON, enrichment result JSON, focused test/build output, and romance runtime smoke result.`
+- spawn_decision: `no spawn; the user did not request subagents, and branch integration has overlapping shared files where main must keep one conflict-resolution lane.`
+- reason: `The user asked to commit current work and merge all newly updated branches without missing changes; the safe path is a clean baseline commit, then branch-by-branch diff inspection and integration.`
+- write_sets: `STATE.md; current dirty recommendation/runtime/UI files; merge-touched frontend/backend/static/scripts/docs files discovered from origin branch diffs`
+- contract_freeze: `Current lsh recommendation UI/runtime work is committed before branch integration. Each origin branch is audited by tip and diff, then fully merged or selectively imported with conflicts resolved manually. No secrets, provider-switch regressions, or static mirror drift are allowed.`
+- evaluation_need: `full; acceptance depends on proving every updated remote branch was inspected and either integrated or explicitly accounted for.`
+- project_invariants: `No secrets committed, no destructive reset/checkout/clean, current Codex-only recommendation contract preserved, frontend and Spring static mirrors remain synchronized when both exist.`
+- task_acceptance: `Current work is committed, remote branches are fetched, every origin branch delta is audited, all safe updated changes are merged/imported, verification passes or gaps are reported, and final status is clean except intentional remaining work.`
+- non_goals: `No push unless the user asks, no deployed-domain checks, no unrelated rewrite of branch history.`
+- hard_checks: `git status --short --branch; git diff --check; node --check for touched JS; python -m py_compile for touched Python; gradle -p backend bootJar when backend files are touched; WORKSPACE_CONTEXT checks; final branch audit summary.`
+- llm_review_rubric: `Check for missed remote branches, accidental loss of current recommendation work, static mirror drift, unsafe config overwrite, and unresolved conflict markers.`
+- evidence_required: `Commit hash for baseline work, fetched branch tip comparison, per-branch integration decision, verification outputs, final git status, and retrospective.`
+- bridge_recovery_evidence: `2026-05-08 diagnosed the bridge-dead report. /api/health was ok and provider health reported codex ready, but .local/ai-bridge.err.log showed the real failure: a precise gpt-5.5 job with xhigh reasoning timed out after 180 seconds, then result reporting hit HTTP 404 because Spring had already timed out/removed the job. The repair changed local precise defaults in backend/src/main/resources/application.yml to gpt-5.4, medium reasoning, 8 candidates, 900 max tokens, 75s Spring result wait, and 90s job TTL. scripts/ai_bridge_agent.py now defaults DABOYEO_BRIDGE_WORKER_TIMEOUT to 70s so worker failures report before Spring drops the job. Spring restarted on localhost:5500 as PID 12952 with startup showtime sync disabled for the process; bridge worker restarted as PID 13540 using the .env token through process environment only and workspace-local backend/build/codex-bin/codex.exe. Provider health now reports expectedModels=[gpt-5.4-mini,gpt-5.4], available=true, status=ready. A live precise POST /api/recommendations smoke completed in 18.8s with status=ok, mode=precise, model=gpt-5.4, and 3 recommendations. New bridge recovered logs had no tail errors.`
+- bridge_recovery_retrospective: `task=Recover Codex AI bridge runtime; score_total=5; evaluation_fit=light fit because provider health plus one live recommendation smoke directly covered the reported failure; orchestration_fit=single-session fit because Spring config, worker timeout, restart, and smoke were one local runtime handshake; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=heartbeat-ready was not enough evidence, so the task shifted to job execution timeout alignment; reviewer_findings=the old defaults let the worker hold a precise job for twice as long as Spring waited, making the bridge appear alive but functionally dead; verification_outcome=py_compile, bootJar, /api/health, provider health, live precise recommendation smoke, bridge log tail, WORKSPACE_CONTEXT checks, and git diff --check passed with CRLF warnings only; next_gate_adjustment=for future bridge health reports, check provider health and an actual recommendation job before deciding the worker is healthy.`
+- responsive_scroll_evidence: `2026-05-08 tuned the AI result scroller after the user reported the previous smooth scroll felt too slow and laggy. The JS-controlled result list now uses RESULT_SCROLL_ANIMATION_MS=300, RESULT_SCROLL_WHEEL_THRESHOLD=6, RESULT_SCROLL_WHEEL_RESET_MS=80, and a front-loaded cubic ease-out curve instead of the previous 720ms ease-in-out. .ai-result-list now uses scroll-behavior:auto so native CSS smooth scrolling does not stack with requestAnimationFrame updates. setupResultListScrollAnimation now skips non-scrollable lists, preserving the mobile/non-scroll fallback. Cache key is 20260508-result-snap-responsive. Frontend, Spring static, and backend build JS/CSS/HTML hashes match; bootJar passed; localhost:5500 was restarted from the rebuilt jar; /api/health returned ok; served HTML/CSS/JS confirmed the responsive cache key, CSS auto scroll behavior, 300ms animation, 6px wheel threshold, and ease-out curve.`
+- responsive_scroll_retrospective: `task=Tune AI result scroll responsiveness; score_total=3; evaluation_fit=light fit because the issue was a direct interaction-feel regression; orchestration_fit=single-session fit because JS timing, CSS scroll behavior, cache keys, static mirrors, and localhost refresh were one tight surface; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=the previous smooth-scroll fix was too slow in real use, so the contract shifted from softer motion to responsive motion; reviewer_findings=the likely lag source was stacked CSS smooth scrolling plus long JS rAF duration and ignored wheel input during a long animation; verification_outcome=node checks, source/static/build parity, bootJar, localhost health, served cache/CSS/JS checks, WORKSPACE_CONTEXT checks, and git diff --check passed with CRLF warnings only; next_gate_adjustment=for scroll UX, keep animation under roughly 300ms unless the user explicitly wants cinematic pacing.`
+- smooth_scroll_evidence: `2026-05-08 made the AI result one-card scroller feel softer by adding a scoped requestAnimationFrame scroll controller in daboyeoAi.js. Multiple-result lists now intercept only vertical wheel input inside the result list, buffer tiny wheel deltas, animate card-to-card movement over 720ms with cubic ease-in-out, support Arrow/Page/Space/Home/End navigation, temporarily disable scroll-snap during the animation, and immediately jump for prefers-reduced-motion users. Frontend and Spring static JS/HTML mirrors were synchronized, cache key is 20260508-result-snap-smooth, backend build resources match source/static hashes, bootJar passed, localhost:5500 was restarted from the rebuilt jar, /api/health returned ok, served HTML confirms the smooth cache key, and served JS confirms RESULT_SCROLL_ANIMATION_MS, setupResultListScrollAnimation, requestAnimationFrame, wheel timer cleanup, and reduced-motion support.`
+- smooth_scroll_retrospective: `task=Smooth AI result card scroll animation; score_total=3; evaluation_fit=light fit because the request was a narrow browser-comment motion polish; orchestration_fit=single-session fit because one JS controller plus HTML cache key and static mirrors are tightly coupled; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=none; reviewer_findings=the main risk was double-trigger jitter from native scroll-snap fighting programmatic movement, handled by disabling snap during the eased animation and buffering wheel deltas; verification_outcome=node checks, source/static/build parity, bootJar, localhost health, served cache/JS checks, WORKSPACE_CONTEXT checks, and git diff --check passed with CRLF warnings only; next_gate_adjustment=for future motion tweaks, test the input controller separately from layout math so card sizing fixes do not get mixed with animation tuning.`
+- one_card_snap_evidence: `2026-05-08 applied browser review comments to the AI result screen. The result layout now hides page-level vertical scroll on desktop result screens, the result list is a one-card scrollport with grid-auto-rows:100%, zero inter-card gap, one-card height via --ai-result-list-height, mandatory vertical snap, hidden scrollbar chrome, and a small CSS-only animated scroll cue when multiple recommendations exist. Result cards no longer allow metadata to spill visually: body overflow is clipped inside the card, card content uses tighter spacing, result text is line-clamped on desktop, showtime metadata is a 4-column desktop grid, and showtime labels are shortened by formatting startsAt as M월 D일 HH:mm instead of duplicating showDate plus the raw ISO value. Frontend, Spring static source, and backend build resources have matching CSS/JS/HTML hashes; cache key is 20260508-result-snap-clean. Verification passed: node --check for both AI JS mirrors, gradle -p backend bootJar, /api/health ok on restarted PID 9160, served HTML/CSS/JS checks confirmed the new cache key, one-card scroll CSS, scroll cue CSS, 4-column showtime grid, result layout multiple-results class, and date-time formatter. Browser visual automation was not completed because the browser-use plugin cache was missing browser-client.mjs; this gap was logged in ERROR_LOG.md.`
+- one_card_snap_retrospective: `task=Polish AI result one-card snap viewport; score_total=5; evaluation_fit=light mostly fit because the requested fixes were concrete browser-comment visual behaviors, though final pixel confirmation had a browser-tool gap; orchestration_fit=single-session fit because CSS, tiny JS formatting/class changes, static mirrors, and localhost refresh were one coupled result-page slice; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=previous snap still allowed next-card peek and metadata overflow, so the list was changed from a padded scroller into a one-card scrollport; reviewer_findings=the overflow was caused by card content exceeding the fixed snap height and a 4th showtime tile wrapping below the first row; verification_outcome=syntax/static/build/served checks passed, browser automation unavailable due missing plugin file; next_gate_adjustment=for future visual fixes, prefer a one-card grid row contract before tuning small spacing values.`
+- snap_scroll_evidence: `2026-05-08 tightened the AI recommendation result list into a hidden-scrollbar snap scroller. The result list now uses fixed viewport-relative height, mandatory vertical scroll snapping, scroll-snap-stop: always per card, hidden Firefox/WebKit scrollbar chrome, smoother scroll behavior, reduced result card/list vertical padding, a smaller floating poster scale, and a result-screen-specific .ai-screen :has() padding override so the visible section fits better. Frontend and Spring static CSS/HTML mirrors have matching hashes and cache key 20260508-floating-snap; backend build/resources and bootJar were refreshed. Spring was restarted on localhost:5500 as PID 16476 after the old PID 10580 served stale jar resources; /api/health returned ok and served HTML/CSS checks confirmed the floating-snap cache key, hidden scrollbar, mandatory snap, snap-stop, result list height calc, and card snap-height CSS. Browser completed a fast recommendation flow to the result page with 2 result cards, console error count 0, and keyboard PageDown on the focused result list snapped the visible item from the 1st recommendation to the 2nd recommendation.`
+- snap_scroll_retrospective: `task=Tighten AI result full-page snap scrolling; score_total=4; evaluation_fit=light fit because acceptance was concrete CSS/static behavior; orchestration_fit=single-session fit because source CSS/HTML, static mirrors, build resources, and localhost refresh were one tightly coupled page slice; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=the live server was stale and needed processResources, bootJar, and an out-of-sandbox persistent restart; reviewer_findings=the main UX bug was list/card vertical math plus visible scroll chrome, not recommendation data or JS rendering; verification_outcome=passed static parity, served checks, WORKSPACE_CONTEXT checks, bootJar, health, and diff checks; next_gate_adjustment=for result-screen visual tweaks, check served cache key before judging browser state.`
+- floating_poster_evidence: `2026-05-08 implemented selected image F on the AI result screen. Result cards now use a detached absolute poster layer with strict 2:3 sizing, contain object-fit, perspective rotate, glow, shadow, floating animation, rank tab, and mobile fallback that returns the poster to a centered non-overlapping block. The old rigid poster well is removed from the desktop layout. Multiple recommendations now render in a vertically scrollable .ai-result-list with scroll snapping, keyboard focus ring, role=list/listitem semantics, and per-card booking/seat-map actions preserved. Frontend and Spring static source mirrors have matching hashes and cache key 20260508-floating-poster; backend build/resources and bootJar were refreshed. Verification passed: node --check for both AI JS files, frontend/static/build hash parity, WORKSPACE_CONTEXT checks, git diff --check with CRLF warnings only, localhost:5500 restarted from rebuilt jar as PID 10580, /api/health 200, served HTML/CSS/JS checks confirmed the new cache key, aiFloatingPoster, has-multiple-results, absolute poster positioning, scroll-snap rule, and list/listitem roles, and the in-app browser opened the AI page with console error count 0.`
+- poster_quality_evidence: `2026-05-08 active PosterSeedService manifests are korea-boxoffice-top50-posters.json and korea-animation-boxoffice-top30-posters.json; audit found 76/76 active poster paths are .webp and /api/recommendation/poster-seed?limit=40 returned 40/40 .webp URLs. frontend/src/assets/R2/posters and backend static mirror each contain 76 .webp poster files with matching hashes; the only non-webp item is .gitkeep. Legacy recommendation/poster-seed.json still contains 30 TMDB w342 .jpg URLs but rg found no active service reference. WebP dimension audit found one low-resolution file, movie/transformers-dark-of-the-moon.webp at 198x288, and one wide-ratio outlier, movie/extreme-job.webp at 2296x2526 ratio 0.909. Updated AI poster CSS to bound seed cards to 174px outer width (190px single-column mobile), preserve 2:3 boxes, switch seed/result images from cover to contain, center artwork, lower hover zoom, and add small-source result handling. Updated AI JS to set width/height/sizes/decoding/fetchPriority hints and provide TMDB w342/w500/w780 srcset when legacy TMDB URLs ever appear. Frontend and Spring static HTML/JS/CSS mirrors have matching hashes and cache key 20260508-poster-quality. Verification passed: node --check for frontend/backend AI JS, active manifest/asset/dimension audits, gradle -p backend bootJar, Spring restarted on localhost:5500 as PID 13640, /api/health ok, served HTML/CSS/JS checks confirmed cache key/object-fit contain/no cover/image hints, sampled low-res poster returned image/webp, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only. Browser automation screenshot was not completed because Playwright CLI required npm cache/package execution and the elevated request was rejected; static served checks covered the deployed files.`
+- poster_quality_retrospective: `task=Optimize AI poster display quality and aspect ratio; score_total=6; evaluation_fit=light fit because checks were source/served/static plus visual-risk reasoning; orchestration_fit=single-session fit because CSS/JS/HTML/static mirrors were one coupled page slice; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=server restart needed one retry because old PID 5736 still owned 5500 and PowerShell Start-Process hit duplicate Path/PATH again; reviewer_findings=the real visual risk was not active non-webp seed data but cover-cropping and over-scaling of one low-res and one wide-ratio poster; verification_outcome=passed with browser screenshot gap documented; next_gate_adjustment=for poster quality bugs, audit active manifests and natural dimensions before replacing assets or changing recommendation data.`
+- granular_mismatch_score_evidence: `2026-05-08 replaced flat genre-mismatch score capping with RecommendationScorer.reserveScoreForNoDirectTasteMatch. The shared helper compresses evidence scores into a lower reserve band instead of returning min(score, 68), and applies an extra taste_mismatch penalty when the scored candidate itself has no direct taste match. RecommendationService now uses the same helper for fallback and Codex-picked items; Codex display score first takes min(modelScore, codeScore), then compresses, so model scores cannot inflate genre-mismatched reserves. Updated tests assert service fallback scores 64/59 instead of only <=68, Codex genre-miss score 65 instead of 68, and mixed direct/reserve Codex scores 96/56/52 instead of 96/68/68. Added a scorer test proving strong and weak no-direct reserves keep score spread below the direct-match band. Verification passed: focused Gradle tests for RecommendationScorerTests and RecommendationServiceCandidateFilterTests, bootJar, Spring restarted on localhost:5500 as PID 5736, /api/health ok, /api/recommendation/providers/health Codex ready, live romance fast smoke returned status=ok model=gpt-5.4-mini with scores 66/53/50, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only.`
+- poster_first_flow_evidence: `2026-05-08 changed the AI guide flow to audience -> mood -> avoid -> posters -> genres -> mode. Poster seed now calls getPosterSeed with an empty genre list and a balanced cache key, so poster taste is captured before any genre bias. Genre selection now allows up to 3 values, preserves existing poster choices, and still submits survey.preferredGenres as an array. Back navigation from genres to posters preserves liked posters, and mode back to genres preserves selected genres. Frontend and Spring static JS/HTML mirrors have matching hashes; cache key is 20260508-poster-first; initial HTML progress is 1 / 6. Verification passed: node --check for frontend and backend static JS, dead poster genre-filter helper search returned no matches, static source checks confirmed neutral poster seed and poster->genre->mode order, bootJar passed, Spring restarted on localhost:5500 as PID 16288, /api/health ok, /api/recommendation/providers/health returned Codex ready, served HTML/JS checks passed, in-app browser confirmed poster step 4/6 before genre step 5/6, three simultaneous genres selected with aria-pressed=true, mode step 6/6 rendered, browser console error count=0, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only.`
+- poster_only_fallback_evidence: `2026-05-08 implemented selected-genre-missed poster-only fallback scoring. CandidateSearchResult now records selectedGenreRelaxed only when the service has to drop required selected genres after direct selected-genre searches miss. In that path RecommendationService derives a new analysis profile with preferredGenres removed, poster-liked genres retained, nonposter selected genre weights removed, and audience/mood/avoid/non-genre weights preserved. scorer.score, rankTasteAwareCandidates, and Codex rankAndExplain receive the poster-only profile; validatedModelScore/fallbackScore and caution grounding still use the original selected-genre profile so genre-mismatched reserves cap at <=68. Focused RecommendationServiceCandidateFilterTests passed and assert Codex receives no preferredGenres in the miss path. bootJar passed. Local Spring health passed on localhost:5500. Romance selected-genre-miss API smoke returned status=fallback, model=gpt-5.4-mini, count=3, scores=68,68,68, and genre-mismatch cautions. Persistent Spring is available on localhost:5500 through PID 22484. WORKSPACE_CONTEXT checks passed and git diff --check passed with CRLF warnings only.`
 - genre_cleanup_fallback_evidence: `2026-05-07 live audit confirmed the tag issue: movie_tags had 79 noncanonical tag_type=genre rows, including 일반콘텐트=54, mega only=6, 스페셜콘텐트=4, 공연실황=3, and a title-like 킬 빌 &#40;2026&#41; row; future showtime genres had no romance rows. Added scripts/ingest/cleanup_movie_genre_tags.py and deleted only noncanonical genre rows; post-cleanup noncanonical genre rows=0. Provider detail enrichment now checks already-tagged current/future movies too; live run checked 44 movies, planned/upserted 0 new tags, and skipped 3 no-canonical genre detail pages, proving the remaining romance gap is not a fakeable tag bug. Future canonical genre audit after cleanup: drama=19 movies, animation=10, action=4, music=4, history=3, horror=3, sf=3, adventure=2, fantasy=2, comedy=1, family=1, romance=0. RecommendationService now relaxes selected-genre hard filtering when no direct selected genre rows exist and returns low-score reserve recommendations instead of no_selected_genre_candidates. Focused RecommendationServiceCandidateFilterTests passed, bootJar passed, Spring restarted on localhost:5500 as PID 20428 after resolving local Path/PATH restart errors, /api/health returned ok, and a live romance fast smoke returned status=ok, model=gpt-5.4-mini, count=3, message='선택한 장르와 직접 일치하는 상영이 없어 조건을 넓혀 예비 추천했어.', scores 66/63/60. git diff --check and WORKSPACE_CONTEXT checks passed with CRLF warnings only.`
 - bounded_enrichment_evidence: `2026-05-07 added opt-in bounded enrichment after lightweight collection. scripts/ingest/enrich_movie_tags.py now supports --include-provider-details with --provider-detail-limit and fetches provider movie detail only for current/future movies still missing genre tags. Megabox detail lookup now uses representative_movie_id before external_movie_id because movieNo variants such as 26022302 do not expose reliable genre detail while rpstMovieNo 26022300 does. Live tag run checked 12 untagged movies, matched 11, and upserted 12 provider_detail genre tags; the only skipped row was a Seventeen live-viewing item with no canonical provider genre. Added scripts/ingest/enrich_showtime_prices.py for current/future showtimes with missing min_price_amount; live run --provider all --limit 50 checked 50 showtimes in about 42s, priced 48, upserted 321 showtime_prices, and had 0 fetch errors. Post-write audit: current/future genre coverage LOTTE_CINEMA 9/10, MEGABOX 56/56; provider_detail genre rows by value action=1, animation=3, drama=6, sf=1, thriller=1; future price coverage LOTTE_CINEMA 361/6595 and MEGABOX 113/5644; showtime_price rows LOTTE_CINEMA 2172 rows/361 showtimes, MEGABOX 870 rows/113 showtimes. Verification passed: py_compile changed ingest/collector files, override validate-only, CLI assertions, WORKSPACE_CONTEXT checks, git status --short, and git diff --check returned CRLF warnings only.`
 - collect_all_enrichment_wiring_evidence: `scripts/ingest/collect_all_to_tidb.py keeps default collection lightweight, but can now opt into post-crawl enrichment with --include-metadata-tags --include-provider-detail-tags --provider-detail-tag-limit N for missing genre tags and --enrich-missing-prices --missing-price-limit N for missing current/future showtime prices. CLI assertion confirmed defaults remain skip_metadata_tags=true, include_provider_detail_tags=false, enrich_missing_prices=false, include_provider_details=false, and missing_price_limit=100.`
@@ -41,6 +57,54 @@
 - megabox_date_validation_evidence: `2026-05-07 Socratic review concluded Megabox master rows and generated playDe lists are not enough; the only reliable ingest gate is row-level equality between requested playDe and returned schedule.play_date after db_date normalization. Implemented megabox_schedule_date_matches and megabox_schedules_for_requested_date in scripts/ingest/collect_all_to_tidb.py, and ingest_megabox now filters raw_schedules before any theater/screen/showtime/tag upsert. Result JSON tracks schedule_date_mismatches, bounded schedule_date_mismatch_dates, and schedule_queries_with_only_date_mismatches. Verification passed: python -m py_compile scripts/ingest/collect_all_to_tidb.py; inline helper assertion kept 20260509/2026-05-09 rows and rejected 20260507 for requested 20260509; bounded Megabox dry-run selected 20260507-20260509; git diff --check passed with CRLF warnings only. A no-write live mismatch probe for 20260611 was attempted after earlier successful probes, but Megabox returned non-JSON, so it was logged and not used as acceptance evidence.`
 
 ## Retrospective
+
+- task: `Implement floating poster result layout from image F`
+- score_total: `6`
+- evaluation_fit: `light fit; acceptance was concrete visual structure, scroll behavior, static mirror parity, and served resource freshness`
+- orchestration_fit: `single-session fit; CSS layer geometry, JS list semantics, cache keys, and static mirrors were one coupled frontend slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the previous completed poster quality task became a new implementation after the user selected image F and clarified that multiple result cards must remain browsable`
+- reviewer_findings: `the result card no longer has a poster well; each recommendation owns a floating strict-ratio poster, the list scrolls vertically for multiple movies, and mobile collapses the poster safely above the body`
+- verification_outcome: `node --check passed for both AI JS mirrors; frontend/backend/build static hashes matched; bootJar passed; localhost:5500 restarted from rebuilt jar as PID 10580; served checks confirmed floating-poster cache/CSS/JS markers; in-app browser opened the page with zero console errors; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `for future result-screen visual work, update build resources or rebuilt jar before trusting localhost because a running Spring process can serve stale static files`
+
+- task: `Granular reserve scores for genre-mismatched recommendations`
+- score_total: `6`
+- evaluation_fit: `light fit; focused service/scorer tests directly cover score spread, model-score bounding, and direct-match preservation`
+- orchestration_fit: `single-session fit; scoring helper, service validation, and tests were one coupled backend semantics slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the user flagged that genre-mismatched reserves looked like a flat 68-point bucket, so the task shifted from frontend flow polish to backend score semantics`
+- reviewer_findings: `the old min(score, 68) path collapsed many high reserves; the new path compresses code-supported evidence scores and uses the lower of Codex and code scores before display`
+- verification_outcome: `focused Gradle tests passed, bootJar passed, Spring localhost:5500 restarted as PID 5736, provider health is Codex ready, live romance fast smoke returned variable reserve scores 66/53/50, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `future scoring caps should be expressed as transforms with spread-preserving tests, not only as max-score assertions`
+
+- task: `Poster-first preference flow with multi-select viewing genres`
+- score_total: `6`
+- evaluation_fit: `light fit; the acceptance was concrete UI flow order, neutral poster seed request, bounded multi-select genre payload, and Spring-served freshness`
+- orchestration_fit: `single-session fit; HTML cache, AI page JS, static mirror, build, restart, and browser check were one coupled frontend runtime slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the earlier selected-genre poster-priority idea was superseded by the user clarification to pick unbiased posters first, then choose viewing genres`
+- reviewer_findings: `poster seed no longer depends on selected genres, multi-select genres no longer clear poster picks, back navigation preserves poster and genre choices in the new adjacent steps, and Spring static files match frontend source`
+- verification_outcome: `node --check passed for both JS mirrors; static source checks passed; bootJar passed; Spring restarted on localhost:5500 as PID 16288; provider health reports Codex ready; in-app browser verified poster 4/6 -> genre 5/6 -> mode 6/6 and three selected genres; browser console had 0 errors; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when wizard step order changes, verify back navigation state retention as part of the contract instead of only checking forward CTA paths`
+
+- task: `Poster-only fallback scoring when selected genre has no direct candidates`
+- score_total: `7`
+- evaluation_fit: `full fit; the change affected candidate search state, Codex profile grounding, fallback/AI score caps, and runtime recommendation trust`
+- orchestration_fit: `single-session fit; one RecommendationService path plus focused tests was tightly coupled and had no useful disjoint write lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the queued planning-only handoff was promoted to active /goal; implementation stayed within the frozen backend service/test write set`
+- reviewer_findings: `selected-genre hits keep the existing path, selected-genre misses now send poster-only likedGenres to scorer/Codex, and final scores are still capped by the original selected-genre mismatch`
+- verification_outcome: `focused RecommendationServiceCandidateFilterTests passed, bootJar passed, localhost romance selected-genre-miss smoke returned three 68-point reserve results, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `future sparse-genre fallback work should distinguish analysis profile, candidate search filter, and final confidence cap explicitly before changing prompts or UI copy`
 
 - task: `Fix polluted genre tags and sparse romance recommendations`
 - score_total: `8`
@@ -300,43 +364,22 @@
 
 ## Next Task
 
-- task: `Poster-only fallback scoring when selected genre has no direct candidates`
-- status: `queued; planning only, not implemented on this machine`
-- scope: `When a user selects a genre but the live DB has zero direct candidates for that genre, keep the user-facing fallback honest: drop the selected genre from the scoring/AI-analysis profile, rank candidates from poster-derived taste tags and other non-genre survey signals only, then cap or penalize final scores because the selected genre did not match.`
-- reason: `The current sparse-genre fallback already returns reserve recommendations, but the next refinement should make the analysis basis explicitly poster-only when selected-genre rows are absent instead of letting the missing selected genre remain inside the scorer/AI taste profile.`
-- proposed_contract:
-  - `Do not create fake genre tags and do not infer genre from titles/posters.`
-  - `Direct selected-genre candidates, when present, still win and keep the current genre-first path.`
-  - `Only when the selected genre hard query returns no rows, build a scoring profile that excludes profile.preferredGenres and keeps poster-derived likedGenres plus audience/mood/avoid signals.`
-  - `Return a clear message such as 선택한 장르와 직접 일치하는 상영이 없어 포스터 취향만으로 예비 추천했어.`
-  - `Keep final recommendation scores capped below direct-match results, e.g. <=68, and keep reasons/cautions saying the genre is not a direct match.`
-  - `Codex fast/precise should receive the poster-only candidate list in this fallback path, not a profile that still asks it to satisfy the unavailable selected genre.`
-- suggested_write_set: `STATE.md; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; possibly RecommendationModels.TagProfile only if a lightweight copy helper is cleaner`
-- suggested_implementation_steps:
-  - `Extend CandidateSearchResult with a boolean such as selectedGenreRelaxed or selectedGenreMissed.`
-  - `When selectedGenreMissed is true, derive an analysis/scoring TagProfile that removes preferredGenres while preserving poster-liked genres and other survey-derived weights.`
-  - `Use the poster-only profile for scorer.score(...), rankTasteAwareCandidates(...), Codex rankAndExplain(...), fallbackItem/validatedModelScore if needed, but keep the original profile available for display and score cap decisions.`
-  - `Apply the genre-mismatch score cap using the original selected genre profile so reserve scores stay visibly lower.`
-  - `Update/add tests: selected genre missing + poster-liked drama/comedy should rank drama/comedy candidates, call Codex with no preferredGenres, return 3 items, cap scores <=68, and include the widened/poster-only message.`
-- suggested_verification:
-  - `gradle -p backend test --tests kr.daboyeo.backend.service.recommendation.RecommendationServiceCandidateFilterTests`
-  - `gradle -p backend bootJar`
-  - `Restart Spring 5500 if implementing locally, then POST /api/recommendations with preferredGenres=['romance'] and posterChoices 3+ to confirm 3 poster-based reserve results.`
-- non_goal: `No DB mutation, no crawler/tag enrichment change, no frontend redesign, no fake romance metadata, no score inflation for genre-mismatched reserves.`
+- task: `none`
+- status: `the queued poster-only fallback task was promoted to Current Task on 2026-05-08.`
 
 ## Orchestration Profile
 
-- score_total: `8`
-- score_breakdown: `2 recommendation genre contract, 2 DB tag write path, 2 provider metadata gap, 1 ingest pipeline integration, 1 candidate fetch depth/runtime smoke`
-- hard_triggers: `data_fidelity_risk; live database write path; recommendation response quality semantics; external provider metadata gap`
-- selected_rules: `use selfdex read-only plan only as input; freeze tag evidence contract before writes; do not infer genre from title-only matches; verify validate-only, dry-run/write, compile, and localhost recommendation smoke`
-- selected_skills: `selfdex`
+- score_total: `7`
+- score_breakdown: `2 recommendation fallback contract, 2 score cap semantics, 1 Codex input profile contract, 2 regression tests/build/runtime smoke`
+- hard_triggers: `recommendation response quality semantics; ambiguous fallback acceptance; implementation depends on selected-genre miss discovery result`
+- selected_rules: `no fake genre tags; keep direct selected-genre path unchanged; poster-only analysis only after selected-genre miss; cap genre-mismatched reserves; no DB/crawler/frontend change`
+- selected_skills: `repo-local verification`
 - execution_topology: `single-session`
-- orchestration_value: `medium`
+- orchestration_value: `low`
 - agent_budget: `0`
-- spawn_decision: `no spawn; user invoked selfdex, but the write set is one small sequential script/catalog/integration patch with one DB verification path`
-- efficiency_basis: `Override catalog schema, enrichment script, collect_all integration, and runtime smoke share one tight contract; local implementation is cheaper than handing off overlapping writes.`
-- selection_reason: `User asked to review the Selfdex plan with Socratic questioning and start the /goal for the missing-provider-genre problem.`
+- spawn_decision: `no spawn; backend service and focused tests are one overlapping recommendation contract.`
+- efficiency_basis: `Candidate search flag, scoring profile, Codex input, score cap, and service tests are tightly coupled and cheaper to keep in one lane.`
+- selection_reason: `User promoted the previously queued poster-only fallback plan with /goal and asked to start implementation.`
 
 ## Evaluation Plan
 
@@ -347,54 +390,74 @@
   - `Do not overwrite unrelated frontend/backend user edits or current R2 poster assets.`
   - `Preserve existing recommendation flow, Codex bridge runtime, poster-seed behavior, and same-origin browser compatibility.`
   - `Preserve same-origin Spring-served frontend behavior on localhost:5500.`
-  - `Preserve /api/showtimes/refresh as a manual server API unless removal becomes necessary, but do not call it from browser entry flows.`
+  - `Do not mutate DB tags, crawl data, prices, or frontend assets for this task.`
 - task_acceptance:
-  - `Selfdex read-only plan is considered but not followed blindly when it misses the current genre-metadata failure.`
-  - `Current movie tag overrides are exact provider/external_movie_id entries with evidence notes, not loose title substring rules.`
-  - `enrich_movie_tags.py supports --validate-only, --dry-run, and write modes.`
-  - `collect_all_to_tidb.py runs metadata tag enrichment after successful writes unless --skip-metadata-tags is passed.`
-  - `Animation-selected recommendation smoke returns three tagged recommendations when at least three distinct tagged movies exist, and 짱구/Audition 109 stays without genre:animation.`
+  - `When selected-genre search succeeds, existing direct selected-genre ranking and scoring remain unchanged.`
+  - `When selected-genre search misses and reserve candidates are used, scorer and Codex receive a profile with preferredGenres removed.`
+  - `Poster-derived likedGenres remain available in that fallback profile and can prioritize matching candidates.`
+  - `Final fallback or AI scores still use the original selected-genre profile for mismatch cap, so no selected-genre-missed reserve exceeds 68 solely from poster match.`
+  - `The response message stays honest that conditions were widened because there was no direct selected-genre showing.`
 - non_goals:
-  - `No schema migration, broad collector refactor, CGV signed API repair, frontend redesign, poster asset change, fuzzy title matching, or secret/token disclosure.`
+  - `No schema migration, broad collector refactor, CGV signed API repair, frontend redesign, poster asset change, fuzzy title matching, DB mutation, or secret/token disclosure.`
 - hard_checks:
-  - `Run enrich_movie_tags.py --validate-only.`
-  - `Run enrich_movie_tags.py --dry-run with safe DB output only.`
-  - `Run enrichment write against configured TiDB if dry-run matches the frozen contract.`
-  - `Run python -m compileall -q scripts/ingest.`
-  - `Run focused RecommendationService candidate/filter tests if service candidate-depth code changes.`
-  - `Run a localhost animation recommendation smoke.`
+  - `Run gradle -p backend test --tests kr.daboyeo.backend.service.recommendation.RecommendationServiceCandidateFilterTests.`
+  - `Run gradle -p backend bootJar.`
+  - `Restart Spring localhost:5500 and run a romance/selected-genre-miss smoke if feasible.`
+  - `Run WORKSPACE_CONTEXT verification commands.`
+  - `Run git diff --check.`
 - llm_review_rubric:
-  - `Do not reintroduce title-only genre inference.`
-  - `Do not make provider generic tags like 일반콘텐트 count as selected genre evidence.`
-  - `Do not print DB passwords, API secrets, cookies, or raw auth payloads.`
-  - `Do not make the ingestion script depend on external web lookups during normal crawl writes.`
+  - `Do not reintroduce title-only genre inference or fake metadata.`
+  - `Do not make selected-genre-missed reserves look like direct selected-genre matches.`
+  - `Do not send Codex preferredGenres that are known unavailable in the selected-genre-missed fallback.`
+  - `Do not break direct selected-genre candidate ranking.`
 - evidence_required:
-  - `selfdex plan verdict`
-  - `validate-only result`
-  - `dry-run/write tag enrichment result`
-  - `compileall result`
-  - `localhost recommendation smoke result`
+  - `focused test result`
+  - `bootJar result`
+  - `runtime smoke result or explicit gap`
+  - `WORKSPACE_CONTEXT command result`
+  - `git diff --check result`
 
 ## Writer Slot
 
 - writer_slot: `main`
-- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; scripts/ingest/collect_all_to_tidb.py; scripts/ingest/enrich_movie_tags.py; scripts/ingest/current_movie_tag_overrides.json; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; configured TiDB movie_tags through the new enrichment script`
+- write_sets: `STATE.md; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; ERROR_LOG.md only for material failures`
 
 ## Contract Freeze
 
-- status: `frozen for post-crawl metadata tag enrichment plus selected-genre fetch depth repair`
-- source_basis: `Provider showtime APIs are valid for schedules but too coarse for recommendation genres. The Socratic answer is to keep crawler data untouched and add a separate exact-id metadata enrichment step that writes explicit movie_tags only from curated evidence. Runtime smoke then showed 8 tagged future movies but only 2 recommendations because the first 240 upcoming candidates were crowded by repeated Mario showtimes before genre filtering.`
-- output_code: `Add scripts/ingest/current_movie_tag_overrides.json and scripts/ingest/enrich_movie_tags.py; wire collect_all_to_tidb.py to run enrichment after write by default with a skip flag; widen RecommendationService candidate fetch depth only when explicit preferred genres are selected.`
-- output_tests: `validate-only, DB dry-run/write enrichment, compileall, focused RecommendationService candidate/filter tests, animation-selected recommendation smoke, and a DB assertion that 짱구/Audition 109 has no genre:animation tag.`
-- output_docs: `STATE verification note; ERROR_LOG.md if material failures occur.`
-- write_sets: `STATE.md; ERROR_LOG.md if needed; scripts/ingest/collect_all_to_tidb.py; scripts/ingest/enrich_movie_tags.py; scripts/ingest/current_movie_tag_overrides.json; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; configured TiDB movie_tags`
+- status: `frozen for poster-only selected-genre-miss fallback`
+- source_basis: `The current sparse selected-genre fallback returns reserve candidates, but it still lets the unavailable selected genre remain the active scoring/Codex taste anchor. The frozen behavior separates analysis profile from final score-cap profile only for selected-genre-missed search results.`
+- output_code: `Extend CandidateSearchResult with selectedGenreRelaxed; derive a poster-only fallback TagProfile when true; use poster-only profile for scorer/ranking/Codex/analysis; use original selected-genre profile for validated score cap.`
+- output_tests: `Focused RecommendationServiceCandidateFilterTests proving Codex sees no preferredGenres in this fallback and final scores remain capped.`
+- output_docs: `STATE verification note and ERROR_LOG.md only if material failures occur.`
+- write_sets: `STATE.md; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; ERROR_LOG.md if needed`
 
 ## Reviewer
 
 - review_required: `self-review`
-- reviewer_focus: `Confirm the patch solves missing provider genres without title-only inference, keeps normal crawl writes deterministic/offline, and preserves explicit selected-genre gating.`
+- reviewer_focus: `Confirm direct selected-genre flow is unchanged, poster-only fallback does not mutate stored profile data, Codex receives no unavailable preferredGenres, and genre-mismatch reserve scores stay capped.`
 
 ## Last Update
+
+- timestamp: `2026-05-08 13:03:40 +09:00`
+- note: `Completed image F floating-poster implementation for the AI recommendation result screen. Result cards now use detached rotating poster layers and the recommendation list supports vertical scrolling for multiple movies; localhost:5500 is running rebuilt jar PID 10580 with served static checks passing.`
+
+- timestamp: `2026-05-08 10:43:29 +09:00`
+- note: `Completed granular genre-mismatch reserve scoring. Flat 68-point capping is replaced with compressed score spread; focused tests and live romance smoke now show variable reserve scores.`
+
+- timestamp: `2026-05-08 10:38:36 +09:00`
+- note: `Reclassified active task from completed poster-first flow to granular genre-mismatch reserve scoring. score_total=6, single-session, agent_budget=0. Current bug: scorer/service both use a flat 68 cap, causing high reserve candidates to collapse to the same score.`
+
+- timestamp: `2026-05-08 10:08:25 +09:00`
+- note: `Completed poster-first AI flow. Poster seed is now genre-neutral, genre selection moved after posters and supports up to 3 selections, browser flow verified through mode step, Spring restarted on localhost:5500 as PID 16288, and Codex bridge health is ready.`
+
+- timestamp: `2026-05-08 09:53:18 +09:00`
+- note: `Reclassified the active task. The previous selected-genre DB poster priority idea is superseded by poster-first unbiased taste selection, followed by multi-select viewing genres. score_total=6, single-session, agent_budget=0, frontend/static mirror write set only.`
+
+- timestamp: `2026-05-08 09:35:25 +09:00`
+- note: `Completed poster-only fallback scoring. Focused RecommendationServiceCandidateFilterTests and bootJar passed. Runtime smoke for romance selected-genre miss returned three capped reserve recommendations at 68 with mismatch cautions. Spring localhost:5500 health is ok on PID 22484.`
+
+- timestamp: `2026-05-08 09:22:43 +09:00`
+- note: `Promoted the queued poster-only fallback scoring plan to the active /goal. score_total=7, single-session, agent_budget=0, write set limited to RecommendationService, its focused candidate/filter tests, STATE, and ERROR_LOG only if needed.`
 
 - timestamp: `2026-05-07 17:55:00 +09:00`
 - note: `Planning-only handoff saved for the next computer: implement poster-only fallback scoring when a selected genre has no direct candidates. No implementation, tests, DB writes, or server restart were performed for this follow-up.`

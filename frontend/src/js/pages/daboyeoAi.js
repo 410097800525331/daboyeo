@@ -12,9 +12,27 @@ const MAIN_PAGE_URL = "../../index.html";
 const SEAT_RECOMMEND_URL = "./seatRecommendMbti.html?flow=ai-result";
 const POSTER_LIMIT = 18;
 const POSTER_BATCH_SIZE = 6;
+const POSTER_IMAGE_HINTS = Object.freeze({
+  seed: {
+    width: 320,
+    height: 480,
+    sizes: "(max-width: 430px) 190px, (max-width: 680px) 174px, 160px",
+    fetchPriority: "low",
+  },
+  result: {
+    width: 420,
+    height: 600,
+    sizes: "(max-width: 430px) 212px, (max-width: 680px) 96px, 212px",
+    fetchPriority: "auto",
+  },
+});
+const SMALL_SOURCE_POSTER_WIDTH = 220;
 const MIN_LIKED_POSTERS = 3;
 const LIKE_LIMIT = 5;
-const GENRE_LIMIT = 1;
+const GENRE_LIMIT = 3;
+const RESULT_SCROLL_ANIMATION_MS = 300;
+const RESULT_SCROLL_WHEEL_THRESHOLD = 6;
+const RESULT_SCROLL_WHEEL_RESET_MS = 80;
 const AUTO_ADVANCE_MS = 320;
 const DEFAULT_AI_PROVIDER = "codex";
 const PROVIDER_BOOKING_URLS = {
@@ -110,8 +128,8 @@ const progressText = {
   audience: "1 / 6 상황",
   mood: "2 / 6 컨디션",
   avoid: "3 / 6 상황",
-  genres: "4 / 6 장르",
-  posters: "5 / 6 포스터",
+  posters: "4 / 6 포스터",
+  genres: "5 / 6 장르",
   mode: "6 / 6 방식",
   loading: "분석 중",
   results: "추천 완료",
@@ -123,9 +141,9 @@ const progressText = {
 const stepBackMap = {
   mood: "audience",
   avoid: "mood",
-  genres: "avoid",
-  posters: "genres",
-  mode: "posters",
+  posters: "avoid",
+  genres: "posters",
+  mode: "genres",
 };
 
 const timeRangeLabels = {
@@ -364,7 +382,7 @@ function scheduleStep(nextStep, delay = AUTO_ADVANCE_MS) {
 }
 
 function clearStateFromStep(stepToClear) {
-  const steps = ["audience", "mood", "avoid", "genres", "posters", "mode"];
+  const steps = ["audience", "mood", "avoid", "posters", "genres", "mode"];
   const startIndex = steps.indexOf(stepToClear);
   if (startIndex === -1) return;
 
@@ -459,16 +477,9 @@ async function ensureSession() {
   render();
 }
 
-function selectedGenreKey(genres = selectedGenres()) {
-  return (Array.isArray(genres) ? genres : [])
-    .map((genre) => normalizeGenreValue(genre))
-    .filter(Boolean)
-    .join("|");
-}
-
 async function ensurePostersLoaded(force = false) {
-  const genres = selectedGenres();
-  const genresKey = selectedGenreKey(genres);
+  const genres = [];
+  const genresKey = "balanced";
   if (!force && ["loading", "ready"].includes(state.posters.status) && state.posters.genresKey === genresKey) {
     return;
   }
@@ -672,40 +683,8 @@ function normalizeGenreValue(value) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
-function movieGenreValues(movie) {
-  return Array.isArray(movie?.genres)
-    ? movie.genres.map(normalizeGenreValue).filter(Boolean)
-    : [];
-}
-
-function movieMatchesSelectedGenre(movie) {
-  const selected = new Set(selectedGenres());
-  if (selected.size === 0) {
-    return true;
-  }
-  return movieGenreValues(movie).some((genre) => selected.has(genre));
-}
-
-function genreMatchedPosterItems() {
-  if (selectedGenres().length === 0) {
-    return state.posters.items;
-  }
-  return state.posters.items.filter(movieMatchesSelectedGenre);
-}
-
 function posterDisplayItems() {
-  const matched = genreMatchedPosterItems();
-  if (selectedGenres().length === 0 || matched.length >= MIN_LIKED_POSTERS) {
-    return matched;
-  }
-
-  const matchedIds = new Set(matched.map((movie) => String(movie.id)));
-  const fallback = state.posters.items.filter((movie) => !matchedIds.has(String(movie.id)));
-  return [...matched, ...fallback];
-}
-
-function posterGenreFallbackActive() {
-  return selectedGenres().length > 0 && genreMatchedPosterItems().length < MIN_LIKED_POSTERS;
+  return state.posters.items;
 }
 
 function toggleGenre(value) {
@@ -716,10 +695,19 @@ function toggleGenre(value) {
 
   const selected = selectedGenres();
   const exists = selected.includes(normalized);
-  state.survey.preferredGenres = exists ? [] : [normalized];
+  if (exists) {
+    state.survey.preferredGenres = selected.filter((genre) => genre !== normalized);
+    render();
+    return;
+  }
 
-  state.posterChoices.likedSeedMovieIds = [];
-  state.posters.activeBatchIndex = 0;
+  if (selected.length >= GENRE_LIMIT) {
+    showToast(`장르는 최대 ${GENRE_LIMIT}개까지 고를 수 있어.`);
+    return;
+  }
+
+  state.survey.preferredGenres = [...selected, normalized];
+
   render();
 }
 
@@ -776,7 +764,7 @@ function renderAvoidStep() {
       if (option.value === "none") {
         state.survey.avoid = ["none"];
         render();
-        setStep("genres");
+        setStep("posters");
       } else {
         state.survey.avoid = state.survey.avoid.filter(v => v !== "none");
         toggleAvoid(option.value);
@@ -788,14 +776,14 @@ function renderAvoidStep() {
   panel.appendChild(grid);
 
   const ctaRow = createElement("div", "ai-cta-row");
-  const completeBtn = createElement("button", "ai-primary-cta", "선택 완료");
+  const completeBtn = createElement("button", "ai-primary-cta", "포스터 고르기");
   completeBtn.type = "button";
   completeBtn.addEventListener("click", () => {
-    setStep("genres");
+    setStep("posters");
   });
   ctaRow.appendChild(completeBtn);
 
-  const hint = createElement("p", "ai-avoid-cta-hint", "여러 개 선택하실 수 있습니다. 해당 없음을 선택하시면 바로 다음 단계로 넘어갑니다.");
+  const hint = createElement("p", "ai-avoid-cta-hint", "여러 개 선택할 수 있어. 다음 단계에서는 장르를 정하지 않고 끌리는 포스터부터 고릅니다.");
   ctaRow.appendChild(hint);
 
   panel.appendChild(ctaRow);
@@ -827,29 +815,29 @@ function renderGenreStep() {
 
   const ctaRow = createElement("div", "ai-cta-row");
   const isSatisfied = selectedGenres().length > 0;
-  const completeBtn = createElement("button", ["ai-primary-cta", isSatisfied ? "is-active" : null], "포스터 고르기");
+  const completeBtn = createElement("button", ["ai-primary-cta", isSatisfied ? "is-active" : null], "분석 방식 고르기");
   completeBtn.type = "button";
   completeBtn.disabled = !isSatisfied;
   completeBtn.setAttribute("aria-disabled", String(!isSatisfied));
   completeBtn.addEventListener("click", () => {
     if (!isSatisfied) {
-      showToast("먼저 장르를 하나 골라줘.");
+      showToast("보고 싶은 장르를 하나 이상 골라줘.");
       return;
     }
-    setStep("posters");
+    setStep("mode");
   });
   ctaRow.appendChild(completeBtn);
 
-  const hint = createElement("p", "ai-avoid-cta-hint", "장르는 하나만 선택할 수 있어. 선택한 장르 기준으로 포스터를 먼저 보여줄게.");
+  const hint = createElement("p", "ai-avoid-cta-hint", `오늘 보고 싶은 장르를 최대 ${GENRE_LIMIT}개까지 고를 수 있어.`);
   ctaRow.appendChild(hint);
   panel.appendChild(ctaRow);
 
   return renderSplitLayout({
-    kicker: "AI GUIDE 04",
+    kicker: "AI GUIDE 05",
     titleParts: [
-      { text: "먼저 보고 싶은\n장르 하나를 골라주세요." },
+      { text: "이제 보고 싶은\n장르를 골라주세요." },
     ],
-    description: "포스터만 보고 고르기 전에 방향을 먼저 잡을게요. 장르 신호가 추천 점수와 GPT 분석에 같이 반영됩니다.",
+    description: "포스터 취향은 이미 잡았고, 여기서는 오늘 실제로 보고 싶은 장르를 따로 반영할게요.",
     content: panel,
   });
 }
@@ -894,6 +882,46 @@ function renderPosterPageIndicator() {
   return indicator;
 }
 
+function tmdbPosterSrcSet(sourceUrl) {
+  const url = safeUrl(sourceUrl);
+  if (!url) {
+    return "";
+  }
+
+  const match = url.match(/^(https:\/\/image\.tmdb\.org\/t\/p\/)w\d+(\/.+)$/i);
+  if (!match) {
+    return "";
+  }
+
+  return ["w342", "w500", "w780"]
+    .map((size) => `${match[1]}${size}${match[2]} ${size.slice(1)}w`)
+    .join(", ");
+}
+
+function applyPosterImageHints(image, sourceUrl, { alt, variant = "seed", loading = "lazy" } = {}) {
+  const hints = POSTER_IMAGE_HINTS[variant] || POSTER_IMAGE_HINTS.seed;
+  const srcSet = tmdbPosterSrcSet(sourceUrl);
+
+  image.alt = alt || "";
+  image.loading = loading;
+  image.decoding = "async";
+  image.width = hints.width;
+  image.height = hints.height;
+  image.sizes = hints.sizes;
+  image.fetchPriority = hints.fetchPriority;
+
+  if (srcSet) {
+    image.srcset = srcSet;
+  }
+
+  image.src = sourceUrl;
+  image.addEventListener("load", () => {
+    if (variant === "result" && image.naturalWidth > 0 && image.naturalWidth < SMALL_SOURCE_POSTER_WIDTH) {
+      image.classList.add("is-source-small");
+    }
+  });
+}
+
 function renderPosterCard(movie) {
   const id = String(movie.id);
   const isLiked = state.posterChoices.likedSeedMovieIds.includes(id);
@@ -909,9 +937,10 @@ function renderPosterCard(movie) {
 
   if (movie.posterUrl) {
     const image = createElement("img");
-    image.alt = `${title} 포스터`;
-    image.loading = "lazy";
-    image.src = movie.posterUrl;
+    applyPosterImageHints(image, movie.posterUrl, {
+      alt: `${title} 포스터`,
+      variant: "seed",
+    });
     image.addEventListener("load", () => card.classList.add("has-image"));
     image.addEventListener("error", () => {
       image.remove();
@@ -944,8 +973,8 @@ function renderPosterStep() {
 
   const displayItems = posterDisplayItems();
   if (displayItems.length === 0) {
-    return renderErrorPanel("보여줄 포스터가 없어", "선택한 장르에 맞는 포스터를 찾지 못했어. 장르를 다시 골라줘.",
-      [{ label: "장르 다시 선택", onClick: () => setStep("genres") }, { label: "처음부터", onClick: () => setStep("audience"), secondary: true }]);
+    return renderErrorPanel("보여줄 포스터가 없어", "포스터 후보를 아직 가져오지 못했어. 다시 시도해줘.",
+      [{ label: "다시 시도", onClick: () => ensurePostersLoaded(true) }, { label: "처음부터", onClick: () => setStep("audience"), secondary: true }]);
   }
 
   const activeBatch = currentPosterBatch();
@@ -984,27 +1013,20 @@ function renderPosterStep() {
   completeBtn.setAttribute("aria-disabled", String(!isSatisfied));
   completeBtn.addEventListener("click", () => {
     if (isSatisfied) {
-      setStep("mode");
+      setStep("genres");
     } else {
       showToast(`포스터는 최소 ${MIN_LIKED_POSTERS}개만 고르면 다음으로 갈 수 있어.`);
     }
   });
   ctaRow.appendChild(completeBtn);
 
-  const matchedCount = genreMatchedPosterItems().length;
-  const selectedGenreText = optionLabels(genreOptions, selectedGenres());
-  const hintText = posterGenreFallbackActive()
-    ? `선택 장르 포스터가 ${matchedCount}개라서, 비슷한 후보도 뒤에 섞었어.`
-    : selectedGenreText
-      ? `${selectedGenreText} 장르 포스터를 기준으로 보여주는 중이야.`
-      : "전체 장르 포스터를 보여주는 중이야.";
-  ctaRow.appendChild(createElement("p", "ai-avoid-cta-hint", `최소 ${MIN_LIKED_POSTERS}개, 최대 ${LIKE_LIMIT}개 선택. ${hintText}`));
+  ctaRow.appendChild(createElement("p", "ai-avoid-cta-hint", `최소 ${MIN_LIKED_POSTERS}개, 최대 ${LIKE_LIMIT}개 선택. 장르와 무관하게 끌리는 포스터를 먼저 고르는 단계야.`));
 
   const content = createElement("div", "ai-poster-pane");
   content.style.position = "relative";
   content.style.width = "100%";
 
-  const fakeKicker = createElement("p", "ai-kicker", "AI GUIDE 05");
+  const fakeKicker = createElement("p", "ai-kicker", "AI GUIDE 04");
   fakeKicker.style.visibility = "hidden";
   fakeKicker.setAttribute("aria-hidden", "true");
 
@@ -1017,15 +1039,11 @@ function renderPosterStep() {
   const span = createElement("span", null, "선택");
   extraLeft.appendChild(span);
   extraLeft.appendChild(document.createTextNode(` ${state.posterChoices.likedSeedMovieIds.length} / ${MIN_LIKED_POSTERS}+`));
-  if (selectedGenreText) {
-    extraLeft.appendChild(document.createElement("br"));
-    extraLeft.appendChild(createElement("small", null, `${selectedGenreText} 기준`));
-  }
 
   return renderSplitLayout({
-    kicker: "AI GUIDE 05",
-    titleParts: [{ text: "선택한 장르 안에서,\n끌리는 포스터를 골라주세요.", style: "font-size: 30px;" }],
-    description: "여기서 고른 포스터는 장르 선택보다 더 세밀한 취향 신호로 쓰입니다.",
+    kicker: "AI GUIDE 04",
+    titleParts: [{ text: "장르를 정하기 전에,\n끌리는 포스터를 골라주세요.", style: "font-size: 30px;" }],
+    description: "포스터 취향을 먼저 잡고, 다음 단계에서 오늘 보고 싶은 장르를 따로 고릅니다.",
     extraLeft,
     content,
   });
@@ -1256,17 +1274,59 @@ function providerBookingUrl(providerCode) {
 
 function priceInfo(item) {
   const hasPrice = item.minPriceAmount !== null && item.minPriceAmount !== undefined && item.minPriceAmount !== "";
+  const fallbackValue = [item.screenName, formatShowtime(item)].filter(Boolean).join(" · ");
   return {
     label: hasPrice ? "추천 항목 가격" : "가격 대신 확인",
     value: hasPrice
       ? formatPrice(item.minPriceAmount, item.currencyCode)
-      : [item.screenName, formatShowtime(item)].filter(Boolean).join(" · ") || "상영 시간과 지점 먼저 확인",
+      : fallbackValue || "상영 시간과 지점 먼저 확인",
   };
 }
 
 function formatShowtime(item) {
-  const parts = [item.showDate, item.startsAt].filter(Boolean);
-  return parts.length > 0 ? parts.join(" ") : "시간 정보 없음";
+  const startLabel = formatDateTimeLabel(item.startsAt);
+  if (startLabel) {
+    return startLabel;
+  }
+
+  return formatDateLabel(item.showDate) || "시간 정보 없음";
+}
+
+function formatDateTimeLabel(value) {
+  if (!value) {
+    return "";
+  }
+
+  const raw = String(value).trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+  if (match) {
+    return `${Number(match[2])}월 ${Number(match[3])}일 ${match[4]}:${match[5]}`;
+  }
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    const month = parsed.getMonth() + 1;
+    const day = parsed.getDate();
+    const hours = String(parsed.getHours()).padStart(2, "0");
+    const minutes = String(parsed.getMinutes()).padStart(2, "0");
+    return `${month}월 ${day}일 ${hours}:${minutes}`;
+  }
+
+  return raw.replace("T", " ").replace(/:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/, "");
+}
+
+function formatDateLabel(value) {
+  if (!value) {
+    return "";
+  }
+
+  const raw = String(value).trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    return `${Number(match[2])}월 ${Number(match[3])}일`;
+  }
+
+  return raw;
 }
 
 function feedbackKey(item) {
@@ -1329,6 +1389,8 @@ function renderShowtimeItem(label, value) {
 
 function renderResultCard(item, index, context = {}) {
   const card = createElement("article", "ai-result-card");
+  card.setAttribute("role", "listitem");
+  card.setAttribute("aria-label", `${index + 1}번째 추천 영화`);
   const isAiBacked = context.isAiBacked !== false;
   const isGptResult = isAiBacked && context.providerValue === "codex";
   const isFallbackResult = !isAiBacked;
@@ -1342,9 +1404,10 @@ function renderResultCard(item, index, context = {}) {
 
   if (imageUrl) {
     const image = createElement("img");
-    image.src = imageUrl;
-    image.alt = `${item.title || "영화"} 포스터`;
-    image.loading = "lazy";
+    applyPosterImageHints(image, imageUrl, {
+      alt: `${item.title || "영화"} 포스터`,
+      variant: "result",
+    });
     poster.appendChild(image);
   } else {
     poster.appendChild(createElement("div", "ai-poster-fallback", item.title || "포스터 없음"));
@@ -1409,6 +1472,164 @@ function renderResultCard(item, index, context = {}) {
   return card;
 }
 
+function resultScrollCardCount(list) {
+  return list.querySelectorAll(".ai-result-card").length;
+}
+
+function resultScrollViewportHeight(list) {
+  return Math.max(1, list.clientHeight || 1);
+}
+
+function resultScrollIndex(list) {
+  return Math.round(list.scrollTop / resultScrollViewportHeight(list));
+}
+
+function easeResultScroll(progress) {
+  return 1 - Math.pow(1 - progress, 3);
+}
+
+function jumpResultListToIndex(list, index) {
+  const maxIndex = resultScrollCardCount(list) - 1;
+  if (maxIndex < 0) {
+    return;
+  }
+
+  const targetIndex = Math.min(Math.max(index, 0), maxIndex);
+  list.scrollTop = targetIndex * resultScrollViewportHeight(list);
+}
+
+function animateResultListToIndex(list, index) {
+  const maxIndex = resultScrollCardCount(list) - 1;
+  if (maxIndex < 0) {
+    return;
+  }
+
+  const targetIndex = Math.min(Math.max(index, 0), maxIndex);
+  const targetTop = targetIndex * resultScrollViewportHeight(list);
+  const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+
+  if (prefersReducedMotion) {
+    jumpResultListToIndex(list, targetIndex);
+    return;
+  }
+
+  if (list._resultScrollFrame) {
+    window.cancelAnimationFrame(list._resultScrollFrame);
+  }
+
+  const startTop = list.scrollTop;
+  const distance = targetTop - startTop;
+  if (Math.abs(distance) < 1) {
+    jumpResultListToIndex(list, targetIndex);
+    return;
+  }
+
+  list.dataset.resultScrollAnimating = "true";
+  list.style.scrollSnapType = "none";
+  const startedAt = window.performance.now();
+
+  const step = (now) => {
+    const progress = Math.min((now - startedAt) / RESULT_SCROLL_ANIMATION_MS, 1);
+    list.scrollTop = startTop + distance * easeResultScroll(progress);
+
+    if (progress < 1) {
+      list._resultScrollFrame = window.requestAnimationFrame(step);
+      return;
+    }
+
+    list.scrollTop = targetTop;
+    list.style.scrollSnapType = "";
+    list.dataset.resultScrollAnimating = "false";
+    list._resultScrollFrame = null;
+  };
+
+  list._resultScrollFrame = window.requestAnimationFrame(step);
+}
+
+function setupResultListScrollAnimation(list) {
+  const cardCount = resultScrollCardCount(list);
+  if (cardCount <= 1 || list.scrollHeight <= list.clientHeight + 2) {
+    return;
+  }
+
+  list.dataset.resultScrollAnimating = "false";
+  let wheelDelta = 0;
+  let wheelResetTimer = null;
+
+  const resetWheelDelta = () => {
+    wheelDelta = 0;
+    if (wheelResetTimer) {
+      window.clearTimeout(wheelResetTimer);
+    }
+    wheelResetTimer = null;
+  };
+
+  const scheduleWheelReset = () => {
+    if (wheelResetTimer) {
+      window.clearTimeout(wheelResetTimer);
+    }
+    wheelResetTimer = window.setTimeout(resetWheelDelta, RESULT_SCROLL_WHEEL_RESET_MS);
+  };
+
+  list.addEventListener("wheel", (event) => {
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (list.dataset.resultScrollAnimating === "true") {
+      return;
+    }
+
+    wheelDelta += event.deltaY;
+    scheduleWheelReset();
+
+    if (Math.abs(wheelDelta) < RESULT_SCROLL_WHEEL_THRESHOLD) {
+      return;
+    }
+
+    const direction = wheelDelta > 0 ? 1 : -1;
+    resetWheelDelta();
+    animateResultListToIndex(list, resultScrollIndex(list) + direction);
+  }, { passive: false });
+
+  list.addEventListener("keydown", (event) => {
+    const fromInteractive = event.target instanceof Element
+      && event.target.closest("button, a, input, textarea, select");
+    if (fromInteractive) {
+      return;
+    }
+
+    const currentIndex = resultScrollIndex(list);
+    let targetIndex = null;
+
+    switch (event.key) {
+      case "ArrowDown":
+      case "PageDown":
+      case " ":
+      case "Spacebar":
+        targetIndex = currentIndex + 1;
+        break;
+      case "ArrowUp":
+      case "PageUp":
+        targetIndex = currentIndex - 1;
+        break;
+      case "Home":
+        targetIndex = 0;
+        break;
+      case "End":
+        targetIndex = cardCount - 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    animateResultListToIndex(list, targetIndex);
+  });
+}
+
 function renderResultsStep() {
   const response = state.run.response || {};
   const recommendations = Array.isArray(response.recommendations) ? response.recommendations : [];
@@ -1420,6 +1641,7 @@ function renderResultsStep() {
     ? `${providerInfo.title} · ${modeLabel}`
     : "코드 점수 기반 fallback";
   const layout = createElement("section", "ai-result-layout");
+  layout.classList.toggle("has-multiple-results", recommendations.length > 1);
   const side = createElement("aside", "ai-result-side");
 
   side.appendChild(createElement("p", "ai-kicker", "AI RESULT"));
@@ -1452,11 +1674,11 @@ function renderResultsStep() {
     const avoidLabel = state.survey.avoid.map((value) => optionLabel(avoidOptions, value)).join(", ");
     addSummaryRow("보고 싶지 않은 요소", avoidLabel);
   }
-  if (state.survey.preferredGenres.length > 0) {
-    addSummaryRow("선호 장르", optionLabels(genreOptions, state.survey.preferredGenres));
-  }
   if (state.posterChoices.likedSeedMovieIds.length) {
     addSummaryRow("포스터 취향", `${state.posterChoices.likedSeedMovieIds.length} / ${MIN_LIKED_POSTERS}+`);
+  }
+  if (state.survey.preferredGenres.length > 0) {
+    addSummaryRow("보고 싶은 장르", optionLabels(genreOptions, state.survey.preferredGenres));
   }
   addSummaryRow("추천 방식", modeLabel);
   addSummaryRow("요청 엔진", `${providerInfo.title} · ${model}`);
@@ -1491,6 +1713,12 @@ function renderResultsStep() {
   side.appendChild(actions);
 
   const list = createElement("div", "ai-result-list");
+  list.setAttribute("role", "list");
+  if (recommendations.length > 1) {
+    list.classList.add("has-multiple-results");
+    list.tabIndex = 0;
+    list.setAttribute("aria-label", "추천 영화 목록. 위아래로 스크롤해 다른 추천을 볼 수 있어.");
+  }
   recommendations.forEach((item, index) => {
     list.appendChild(renderResultCard(item, index, {
       providerValue,
@@ -1498,6 +1726,7 @@ function renderResultsStep() {
       isAiBacked,
     }));
   });
+  setupResultListScrollAnimation(list);
 
   layout.appendChild(side);
   layout.appendChild(list);
@@ -1550,7 +1779,7 @@ function render() {
 
   const progressLine = document.getElementById("aiProgressLine");
   if (progressLine) {
-    const stepOrder = ["audience", "mood", "avoid", "genres", "posters", "mode"];
+    const stepOrder = ["audience", "mood", "avoid", "posters", "genres", "mode"];
     let idx = stepOrder.indexOf(state.step);
     if (idx !== -1) {
       progressLine.style.width = `${((idx + 1) / stepOrder.length) * 100}%`;
@@ -1569,11 +1798,11 @@ function render() {
     case "avoid":
       screen.appendChild(renderAvoidStep());
       break;
-    case "genres":
-      screen.appendChild(renderGenreStep());
-      break;
     case "posters":
       screen.appendChild(renderPosterStep());
+      break;
+    case "genres":
+      screen.appendChild(renderGenreStep());
       break;
     case "mode":
       screen.appendChild(renderModeStep());
@@ -1602,7 +1831,12 @@ function render() {
 backButton.addEventListener("click", () => {
   const previousStep = stepBackMap[state.step];
   if (previousStep) {
-    clearStateFromStep(previousStep);
+    const resetFromStep = state.step === "genres" && previousStep === "posters"
+      ? "genres"
+      : state.step === "mode" && previousStep === "genres"
+        ? "mode"
+        : previousStep;
+    clearStateFromStep(resetFromStep);
     setStep(previousStep);
     return;
   }

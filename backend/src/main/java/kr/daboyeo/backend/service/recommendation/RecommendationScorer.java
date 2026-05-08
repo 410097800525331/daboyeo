@@ -16,6 +16,8 @@ public class RecommendationScorer {
 
     private static final int BASE_SCORE = 46;
     private static final int NO_DIRECT_TASTE_MATCH_CAP = 68;
+    private static final int NO_DIRECT_TASTE_MATCH_FLOOR = 42;
+    private static final double NO_DIRECT_TASTE_MATCH_SPREAD = 0.45d;
 
     public List<ScoredCandidate> score(TagProfile profile, List<ShowtimeCandidate> candidates) {
         return score(profile, candidates, null);
@@ -75,9 +77,24 @@ public class RecommendationScorer {
 
         int bounded = Math.max(0, Math.min(100, score));
         if (hasTasteAnchor && !hasDirectTasteMatch) {
-            bounded = Math.min(bounded, NO_DIRECT_TASTE_MATCH_CAP);
+            bounded = reserveScoreForNoDirectTasteMatch(bounded, penalties.contains("taste_mismatch"));
         }
         return Optional.of(new ScoredCandidate(candidate, bounded, matchedTags, penalties));
+    }
+
+    static int reserveScoreForNoDirectTasteMatch(int referenceScore, boolean tasteMismatchPenalty) {
+        int boundedReference = clampScore(referenceScore);
+        int spread = (int) Math.round(Math.max(0, boundedReference - NO_DIRECT_TASTE_MATCH_FLOOR)
+            * NO_DIRECT_TASTE_MATCH_SPREAD);
+        int adjusted = NO_DIRECT_TASTE_MATCH_FLOOR + spread;
+        if (tasteMismatchPenalty) {
+            adjusted -= 5;
+        }
+        return Math.max(0, Math.min(NO_DIRECT_TASTE_MATCH_CAP, adjusted));
+    }
+
+    private static int clampScore(int score) {
+        return Math.max(0, Math.min(100, score));
     }
 
     private boolean hasDirectTasteAnchorMatch(TagProfile profile, ShowtimeCandidate candidate) {
