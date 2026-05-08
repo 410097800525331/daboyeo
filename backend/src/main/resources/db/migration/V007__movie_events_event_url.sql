@@ -1,0 +1,2 @@
+ALTER TABLE movie_events
+    ADD COLUMN IF NOT EXISTS event_url VARCHAR(500) NULL;

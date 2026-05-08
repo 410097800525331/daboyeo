@@ -7,6 +7,7 @@ CREATE TABLE movie_events (
     image_url VARCHAR(1000),
     start_date DATE,
     end_date DATE,
+    event_url VARCHAR(500),
     d_day VARCHAR(50),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_title_start_category (title(255), start_date, category),
