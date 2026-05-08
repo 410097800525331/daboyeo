@@ -240,6 +240,10 @@ body.ai-guide-page a {
   position: relative;
 }
 
+.is-poster-screen .ai-split-left {
+  margin-top: 108px;
+}
+
 .ai-split-right {
   flex: 1;
   display: flex;
@@ -957,6 +961,10 @@ body.ai-guide-page a {
   .ai-split-left {
     flex: none;
     align-items: flex-start;
+  }
+
+  .is-poster-screen .ai-split-left {
+    margin-top: 0;
   }
 
   .ai-title {

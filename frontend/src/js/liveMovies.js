@@ -358,7 +358,7 @@ async function loadLiveMovies(options = {}) {
       ...item,
       normalized: {
         title: item.movie_name || item.movie_nm || '제목 없음',
-        provider: (item.provider === 'LOTTE_CINEMA' ? 'LOTTE' : item.provider) || 'ETC',
+        provider: item.provider === 'LOTTE_CINEMA' ? 'LOTTE' : item.provider === 'MEGABOX' ? 'MEGA' : item.provider || 'ETC',
         format: item.format_name || item.screen_name || item.screen_division_name || '2D',
         theater: item.theater_name || item.cinema_name || '미정',
         rating: item.age_rating || item.age_rating_name || 'ALL',

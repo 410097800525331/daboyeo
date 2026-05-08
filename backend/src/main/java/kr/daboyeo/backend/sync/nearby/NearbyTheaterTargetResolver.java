@@ -1,11 +1,6 @@
 package kr.daboyeo.backend.sync.nearby;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -13,39 +8,33 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import kr.daboyeo.backend.config.CollectorSyncProperties;
-import kr.daboyeo.backend.config.RootDotenvLoader;
 import kr.daboyeo.backend.domain.LiveMovieSearchCriteria;
+import kr.daboyeo.backend.service.TheaterMapService;
+import kr.daboyeo.backend.service.TheaterMapService.TheaterSyncSource;
 import kr.daboyeo.backend.sync.bridge.CollectorProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class NearbyTheaterTargetResolver {
 
-    private static final Logger logger = LoggerFactory.getLogger(NearbyTheaterTargetResolver.class);
-    private static final TypeReference<List<Map<String, Object>>> LOCATION_ROWS = new TypeReference<>() {
-    };
     private static final double EARTH_RADIUS_KM = 6371.0d;
 
     private final CollectorSyncProperties properties;
-    private final List<TheaterMapEntry> theaterMapEntries;
+    private final TheaterMapService theaterMapService;
 
-    @Autowired
-    public NearbyTheaterTargetResolver(CollectorSyncProperties properties, ObjectMapper objectMapper) {
-        this(properties, loadEntries(objectMapper));
-    }
-
-    NearbyTheaterTargetResolver(CollectorSyncProperties properties, List<TheaterMapEntry> theaterMapEntries) {
+    public NearbyTheaterTargetResolver(CollectorSyncProperties properties, TheaterMapService theaterMapService) {
         this.properties = properties;
-        this.theaterMapEntries = theaterMapEntries;
+        this.theaterMapService = theaterMapService;
     }
 
     public Resolution resolve(LiveMovieSearchCriteria criteria) {
         Map<CollectorProvider, List<TheaterMapEntry>> grouped = new LinkedHashMap<>();
         double refreshRadiusKm = refreshRadiusKm(criteria);
-        for (TheaterMapEntry entry : theaterMapEntries) {
+        for (TheaterSyncSource source : theaterMapService.findAllSyncSources()) {
+            TheaterMapEntry entry = toEntry(source);
+            if (entry == null) {
+                continue;
+            }
             if (!supports(entry.provider())) {
                 continue;
             }
@@ -61,6 +50,10 @@ public class NearbyTheaterTargetResolver {
         }
 
         int perProviderLimit = Math.max(1, properties.getShowtimes().getNearbyRefreshMaxTheatersPerProvider());
+        List<TheaterMapEntry> cgvEntries = grouped.getOrDefault(CollectorProvider.CGV, List.of()).stream()
+            .sorted(Comparator.comparingDouble(TheaterMapEntry::distanceKm))
+            .limit(perProviderLimit)
+            .toList();
         List<TheaterMapEntry> lotteEntries = grouped.getOrDefault(CollectorProvider.LOTTE_CINEMA, List.of()).stream()
             .sorted(Comparator.comparingDouble(TheaterMapEntry::distanceKm))
             .limit(perProviderLimit)
@@ -70,53 +63,28 @@ public class NearbyTheaterTargetResolver {
             .limit(perProviderLimit)
             .toList();
 
-        return new Resolution(lotteEntries, megaboxEntries);
+        return new Resolution(cgvEntries, lotteEntries, megaboxEntries);
     }
 
-    private static List<TheaterMapEntry> loadEntries(ObjectMapper objectMapper) {
-        Path mapPath = resolveTheaterMapPath();
-        if (mapPath == null || !Files.isRegularFile(mapPath)) {
-            logger.warn("Theater map file was not found, so nearby refresh target resolution is disabled.");
-            return List.of();
-        }
-        try {
-            List<Map<String, Object>> rows = objectMapper.readValue(mapPath.toFile(), LOCATION_ROWS);
-            return rows.stream()
-                .map(NearbyTheaterTargetResolver::toEntry)
-                .filter(entry -> entry != null)
-                .toList();
-        } catch (IOException exception) {
-            logger.warn("Failed to load theater map for nearby refresh target resolution from {}.", mapPath, exception);
-            return List.of();
-        }
-    }
-
-    private static TheaterMapEntry toEntry(Map<String, Object> row) {
+    private static TheaterMapEntry toEntry(TheaterSyncSource row) {
         CollectorProvider provider;
         try {
-            provider = CollectorProvider.fromValue(text(row.get("provider")));
+            provider = CollectorProvider.fromValue(row.providerCode());
         } catch (IllegalArgumentException exception) {
             return null;
         }
-        BigDecimal latitude = decimalOrNull(row.get("lat"));
-        BigDecimal longitude = decimalOrNull(row.get("lng"));
-        String code = text(row.get("code"));
-        String name = text(row.get("name"));
+        BigDecimal latitude = row.latitude();
+        BigDecimal longitude = row.longitude();
+        String code = text(row.externalTheaterId());
+        String name = text(row.name());
         if (latitude == null || longitude == null || code.isBlank() || name.isBlank()) {
             return null;
         }
         return new TheaterMapEntry(provider, code, name, latitude.doubleValue(), longitude.doubleValue(), Double.MAX_VALUE);
     }
 
-    private static Path resolveTheaterMapPath() {
-        Path start = Path.of(System.getProperty("user.dir", "."));
-        Path dotenv = RootDotenvLoader.findDotenvPath(start);
-        Path workspaceRoot = dotenv != null && dotenv.getParent() != null ? dotenv.getParent() : start.toAbsolutePath();
-        return workspaceRoot.resolve("frontend").resolve("src").resolve("map").resolve("theaters.json");
-    }
-
     private static boolean supports(CollectorProvider provider) {
-        return provider == CollectorProvider.LOTTE_CINEMA || provider == CollectorProvider.MEGABOX;
+        return provider == CollectorProvider.CGV || provider == CollectorProvider.LOTTE_CINEMA || provider == CollectorProvider.MEGABOX;
     }
 
     private double refreshRadiusKm(LiveMovieSearchCriteria criteria) {
@@ -134,6 +102,7 @@ public class NearbyTheaterTargetResolver {
         return requestedProviders.stream()
             .map(value -> value == null ? "" : value.trim().toUpperCase(Locale.ROOT))
             .map(value -> switch (value) {
+                case "CGV" -> "CGV";
                 case "LOTTE", "LOTTE_CINEMA" -> "LOTTE_CINEMA";
                 case "MEGA", "MEGABOX" -> "MEGABOX";
                 default -> value;
@@ -155,25 +124,14 @@ public class NearbyTheaterTargetResolver {
         return value == null ? "" : String.valueOf(value).trim();
     }
 
-    private static BigDecimal decimalOrNull(Object value) {
-        String text = text(value);
-        if (text.isBlank()) {
-            return null;
-        }
-        try {
-            return new BigDecimal(text);
-        } catch (NumberFormatException exception) {
-            return null;
-        }
-    }
-
     public record Resolution(
+        List<TheaterMapEntry> cgvEntries,
         List<TheaterMapEntry> lotteEntries,
         List<TheaterMapEntry> megaboxEntries
     ) {
 
         public boolean isEmpty() {
-            return lotteEntries.isEmpty() && megaboxEntries.isEmpty();
+            return cgvEntries.isEmpty() && lotteEntries.isEmpty() && megaboxEntries.isEmpty();
         }
     }
 

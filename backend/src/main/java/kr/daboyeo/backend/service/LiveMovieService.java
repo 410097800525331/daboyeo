@@ -6,9 +6,11 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import kr.daboyeo.backend.domain.LiveMovieSchedule;
 import kr.daboyeo.backend.domain.LiveMovieSearchCriteria;
@@ -177,7 +179,42 @@ public class LiveMovieService {
     }
 
     private List<LiveMovieScheduleItem> findNearbyItems(LiveMovieSearchCriteria criteria) {
-        return toItems(repository.findNearbySchedules(criteria), criteria);
+        return keepNearestTheaterPerProvider(toItems(repository.findNearbySchedules(criteria), criteria));
+    }
+
+    private List<LiveMovieScheduleItem> keepNearestTheaterPerProvider(List<LiveMovieScheduleItem> items) {
+        if (items.isEmpty()) {
+            return items;
+        }
+
+        Map<String, LiveMovieScheduleItem> nearestByProvider = new LinkedHashMap<>();
+        for (LiveMovieScheduleItem item : items) {
+            nearestByProvider.putIfAbsent(normalizeProviderValue(item.provider()), item);
+        }
+
+        return items.stream()
+            .filter(item -> sameTheater(item, nearestByProvider.get(normalizeProviderValue(item.provider()))))
+            .toList();
+    }
+
+    private boolean sameTheater(LiveMovieScheduleItem left, LiveMovieScheduleItem right) {
+        if (left == null || right == null) {
+            return false;
+        }
+        if (hasText(left.provider_code()) && hasText(left.theater_id()) && hasText(right.provider_code()) && hasText(right.theater_id())) {
+            return left.provider_code().equalsIgnoreCase(right.provider_code())
+                && left.theater_id().equalsIgnoreCase(right.theater_id());
+        }
+        return normalizeText(left.provider()).equals(normalizeText(right.provider()))
+            && normalizeText(left.theater_name()).equals(normalizeText(right.theater_name()));
+    }
+
+    private String normalizeText(String value) {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private List<LiveMovieScheduleItem> toItems(List<LiveMovieSchedule> schedules, LiveMovieSearchCriteria criteria) {
@@ -221,13 +258,14 @@ public class LiveMovieService {
     private Set<String> expectedRefreshBackedProviders(LiveMovieSearchCriteria criteria) {
         Set<String> selectedProviders = new LinkedHashSet<>();
         if (criteria.providers().isEmpty()) {
+            selectedProviders.add("CGV");
             selectedProviders.add("LOTTE");
             selectedProviders.add("MEGA");
             return selectedProviders;
         }
         criteria.providers().stream()
             .map(this::normalizeProviderValue)
-            .filter(value -> value.equals("LOTTE") || value.equals("MEGA"))
+            .filter(value -> value.equals("CGV") || value.equals("LOTTE") || value.equals("MEGA"))
             .forEach(selectedProviders::add);
         return selectedProviders;
     }

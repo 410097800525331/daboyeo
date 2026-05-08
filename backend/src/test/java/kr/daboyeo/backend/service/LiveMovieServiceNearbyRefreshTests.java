@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Locale;
 import java.util.List;
 import kr.daboyeo.backend.domain.LiveMovieSchedule;
 import kr.daboyeo.backend.domain.LiveMovieSearchCriteria;
@@ -48,6 +49,38 @@ class LiveMovieServiceNearbyRefreshTests {
         verify(refreshService, times(1)).requestRefresh(criteria);
         assertThat(response.results()).hasSize(1);
         assertThat(response.search().databaseAvailable()).isTrue();
+    }
+
+    @Test
+    void nearbySearchKeepsOnlyNearestTheaterForEachProvider() {
+        LiveMovieRepository repository = mock(LiveMovieRepository.class);
+        NearbyShowtimeRefreshService refreshService = mock(NearbyShowtimeRefreshService.class);
+        LiveMovieSearchCriteria criteria = sampleCriteria(List.of("LOTTE", "MEGA"));
+        when(repository.findNearbySchedules(criteria)).thenReturn(List.of(
+            sampleSchedule("LOTTE_CINEMA", "LOTTE", "lotte-gangnam", "LOTTE Gangnam", "08:20", "1.23"),
+            sampleSchedule("LOTTE_CINEMA", "LOTTE", "lotte-gangnam", "LOTTE Gangnam", "10:40", "1.23"),
+            sampleSchedule("LOTTE_CINEMA", "LOTTE", "lotte-world", "LOTTE World", "11:15", "2.10"),
+            sampleSchedule("MEGABOX", "MEGA", "mega-coex", "MEGA COEX", "09:10", "1.80"),
+            sampleSchedule("MEGABOX", "MEGA", "mega-coex", "MEGA COEX", "12:20", "1.80"),
+            sampleSchedule("MEGABOX", "MEGA", "mega-sinsa", "MEGA Sinsa", "13:50", "2.70")
+        ));
+
+        LiveMovieService service = new LiveMovieService(
+            repository,
+            new SeatStateCalculator(),
+            new LiveMovieDemoDataService(),
+            refreshService,
+            false,
+            Duration.ZERO,
+            FIXED_CLOCK
+        );
+
+        LiveMovieService.LiveMovieResponse response = service.findNearby(criteria);
+
+        assertThat(response.results()).hasSize(4);
+        assertThat(response.results())
+            .extracting(LiveMovieService.LiveMovieScheduleItem::theater_id)
+            .containsExactly("lotte-gangnam", "lotte-gangnam", "mega-coex", "mega-coex");
     }
 
     @Test
@@ -132,19 +165,81 @@ class LiveMovieServiceNearbyRefreshTests {
         assertThat(response.search().warning()).contains("MEGA");
     }
 
+    @Test
+    void nearbySearchTreatsCgvAsRefreshBackedWhenExplicitlyRequested() {
+        LiveMovieRepository repository = mock(LiveMovieRepository.class);
+        NearbyShowtimeRefreshService refreshService = mock(NearbyShowtimeRefreshService.class);
+        LiveMovieSearchCriteria criteria = sampleCriteria(List.of("CGV"));
+        when(repository.findNearbySchedules(criteria)).thenReturn(List.of(sampleCgvSchedule()));
+
+        LiveMovieService service = new LiveMovieService(
+            repository,
+            new SeatStateCalculator(),
+            new LiveMovieDemoDataService(),
+            refreshService,
+            false,
+            Duration.ZERO,
+            FIXED_CLOCK
+        );
+
+        LiveMovieService.LiveMovieResponse response = service.findNearby(criteria);
+
+        verify(refreshService, times(1)).requestRefresh(criteria);
+        assertThat(response.results()).hasSize(1);
+        assertThat(response.search().databaseAvailable()).isTrue();
+    }
+
     private static LiveMovieSchedule sampleSchedule() {
+        return sampleSchedule("LOTTE_CINEMA", "LOTTE", "lotte-gangnam", "LOTTE Gangnam", "08:20", "1.23");
+    }
+
+    private static LiveMovieSchedule sampleSchedule(
+        String providerCode,
+        String provider,
+        String theaterId,
+        String theaterName,
+        String startTime,
+        String distanceKm
+    ) {
         return new LiveMovieSchedule(
-            "LOTTE_CINEMA:123",
+            providerCode + ":123",
             "Movie",
-            "LOTTE",
-            "LOTTE_CINEMA",
-            "lotte-gangnam",
-            "LOTTE Gangnam",
+            provider,
+            providerCode,
+            theaterId,
+            theaterName,
             "screen-1",
             "Recliner",
             "Recliner",
             List.of("RECLINER"),
             "12",
+            startTime,
+            "10:30",
+            LocalDate.of(2026, 4, 30),
+            100,
+            60,
+            60,
+            new BigDecimal("0.600"),
+            "",
+            new BigDecimal(distanceKm),
+            "https://booking.example/" + provider.toLowerCase(Locale.ROOT) + "/123",
+            null
+        );
+    }
+
+    private static LiveMovieSchedule sampleCgvSchedule() {
+        return new LiveMovieSchedule(
+            "CGV:30001067",
+            "Movie",
+            "CGV",
+            "CGV",
+            "0056",
+            "CGV Gangnam",
+            "001",
+            "1관",
+            "2D",
+            List.of(),
+            "ALL",
             "08:20",
             "10:30",
             LocalDate.of(2026, 4, 30),
@@ -154,7 +249,7 @@ class LiveMovieServiceNearbyRefreshTests {
             new BigDecimal("0.600"),
             "",
             new BigDecimal("1.23"),
-            "https://booking.example/lotte/123",
+            "https://booking.example/cgv/123",
             null
         );
     }

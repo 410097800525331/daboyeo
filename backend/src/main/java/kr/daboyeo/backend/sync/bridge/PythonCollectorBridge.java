@@ -38,7 +38,6 @@ public class PythonCollectorBridge {
         Map<String, String> env = switch (request.provider()) {
             case CGV -> Map.of(
                 "SITE_NO", request.siteNo(),
-                "MOVIE_NO", request.movieNo(),
                 "PLAY_DATE", request.playDate().toString().replace("-", "")
             );
             case LOTTE_CINEMA -> Map.of(
@@ -49,7 +48,8 @@ public class PythonCollectorBridge {
             case MEGABOX -> Map.of(
                 "PLAY_DATE", request.playDate().toString().replace("-", ""),
                 "MOVIE_NO", request.movieNo(),
-                "AREA_CODE", request.areaCode()
+                "AREA_CODE", request.areaCode(),
+                "MEGABOX_SKIP_MASTER", request.areaCode() != null && !request.areaCode().isBlank() ? "1" : ""
             );
         };
         return executeJsonScript(script, env);
@@ -192,14 +192,7 @@ public class PythonCollectorBridge {
             case CGV -> """
                 import json, os
                 from pathlib import Path
-                from collectors.cgv.collector import CgvCollector
-                bundle = CgvCollector().collect_bundle(
-                    site_no=os.environ['SITE_NO'],
-                    mov_no=os.environ['MOVIE_NO'],
-                    scn_ymd=os.environ.get('PLAY_DATE') or None,
-                    scns_no=None,
-                    scn_sseq=None,
-                )
+                bundle = {'movies': [], 'theaters': [], 'showtimes': []}
                 Path(os.environ['OUTPUT_JSON_PATH']).write_text(json.dumps(bundle, ensure_ascii=False), encoding='utf-8')
                 """;
             case LOTTE_CINEMA -> """
@@ -217,11 +210,59 @@ public class PythonCollectorBridge {
                 import json, os
                 from pathlib import Path
                 from collectors.megabox.collector import MegaboxCollector
-                bundle = MegaboxCollector().collect_bundle(
-                    play_de=os.environ['PLAY_DATE'],
-                    movie_no=os.environ['MOVIE_NO'],
-                    area_cd=os.environ['AREA_CODE'],
-                )
+                collector = MegaboxCollector()
+                if os.environ.get('MEGABOX_SKIP_MASTER') == '1':
+                    schedules = collector.build_schedule_records(
+                        movie_no=os.environ['MOVIE_NO'],
+                        play_de=os.environ['PLAY_DATE'],
+                        area_cd=os.environ['AREA_CODE'],
+                    )
+                    movies = []
+                    seen_movie_ids = set()
+                    for schedule in schedules:
+                        movie_no = str(schedule.get('movie_no') or '').strip()
+                        if movie_no and movie_no not in seen_movie_ids:
+                            seen_movie_ids.add(movie_no)
+                            movies.append({
+                                'provider': 'MEGABOX',
+                                'movie_no': movie_no,
+                                'representative_movie_no': schedule.get('representative_movie_no'),
+                                'movie_name': schedule.get('movie_name'),
+                                'movie_name_en': schedule.get('movie_name_en'),
+                                'age_rating': schedule.get('age_rating'),
+                                'poster_url': schedule.get('poster_url'),
+                            })
+                    areas = []
+                    seen_branch_ids = set()
+                    for schedule in schedules:
+                        branch_no = str(schedule.get('branch_no') or '').strip()
+                        if branch_no and branch_no not in seen_branch_ids:
+                            seen_branch_ids.add(branch_no)
+                            areas.append({
+                                'provider': 'MEGABOX',
+                                'area_code': schedule.get('area_code'),
+                                'area_name': schedule.get('area_name'),
+                                'branch_no': branch_no,
+                                'branch_name': schedule.get('branch_name'),
+                            })
+                    bundle = {
+                        'play_de': os.environ['PLAY_DATE'],
+                        'movie_count': len(movies),
+                        'area_branch_count': len(areas),
+                        'schedule_count': len(schedules),
+                        'seat_count': 0,
+                        'movies': movies,
+                        'areas': areas,
+                        'schedules': schedules,
+                        'seat_records': [],
+                        'seat_summary': None,
+                    }
+                else:
+                    bundle = collector.collect_bundle(
+                        play_de=os.environ['PLAY_DATE'],
+                        movie_no=os.environ['MOVIE_NO'],
+                        area_cd=os.environ['AREA_CODE'],
+                    )
                 Path(os.environ['OUTPUT_JSON_PATH']).write_text(json.dumps(bundle, ensure_ascii=False), encoding='utf-8')
                 """;
         };
@@ -407,22 +448,8 @@ public class PythonCollectorBridge {
             case CGV -> """
                 import json, os
                 from pathlib import Path
-                from collectors.cgv.collector import CgvCollector
-                collector = CgvCollector()
-                summary = collector.summarize_seat_map(
-                    site_no=os.environ['SITE_NO'],
-                    scn_ymd=os.environ['SCN_YMD'],
-                    scns_no=os.environ['SCNS_NO'],
-                    scn_sseq=os.environ['SCN_SSEQ'],
-                )
-                seats = collector.build_seat_records(
-                    site_no=os.environ['SITE_NO'],
-                    scn_ymd=os.environ['SCN_YMD'],
-                    scns_no=os.environ['SCNS_NO'],
-                    scn_sseq=os.environ['SCN_SSEQ'],
-                )
                 Path(os.environ['OUTPUT_JSON_PATH']).write_text(
-                    json.dumps({'summary': summary, 'seats': seats}, ensure_ascii=False),
+                    json.dumps({'summary': {}, 'seats': []}, ensure_ascii=False),
                     encoding='utf-8'
                 )
                 """;

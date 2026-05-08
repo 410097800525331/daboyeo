@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 
 <head>
@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="./src/css/style.css">
   <link rel="stylesheet" href="./src/css/kakaoMap.css">
+  <link rel="stylesheet" href="./src/css/events.css">
 </head>
 
 <body>
@@ -290,6 +291,24 @@
       </div>
     </div>
 
+    <!-- Popular Events Section -->
+    <section class="main-event-section" id="events">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-title-group">
+            <h2 class="section-title">지금 인기 이벤트</h2>
+            <p class="section-subtitle">놓치면 후회할 영화관별 핫 이벤트를 만나보세요.</p>
+          </div>
+          <a href="./src/pages/events.html" class="more-link">
+            모두보기 <i class="fas fa-arrow-right"></i>
+          </a>
+        </div>
+        <div id="main-event-grid" class="event-grid">
+          <!-- TOP 4 events will be rendered here -->
+        </div>
+      </div>
+    </section>
+
     <!-- Seat Recommendation Section -->
     <div class="ai-recommendation-section" id="ai">
       <div class="ai-section-label">성향 좌석 추천</div>
@@ -365,6 +384,9 @@
 
   <script src="./src/js/include.js"></script>
   <script src="./src/js/pages/common.js"></script>
+  <script src="./js/api.js"></script>
+  <script src="./js/render.js"></script>
+  <script src="./js/main.js"></script>
   <script type="module">
     import { REGIONS } from './src/js/constants/regions.js';
 

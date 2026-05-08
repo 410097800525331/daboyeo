@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 public class NearbyShowtimeRefreshService {
 
     private static final Logger logger = LoggerFactory.getLogger(NearbyShowtimeRefreshService.class);
+    private static final int MEGABOX_NEARBY_TARGET_LIMIT = 8;
 
     private final CollectorSyncProperties properties;
     private final NearbyTheaterTargetResolver resolver;
@@ -124,8 +125,9 @@ public class NearbyShowtimeRefreshService {
         }
 
         logger.info(
-            "Nearby refresh requested date={} lotteCandidates={} megaboxCandidates={} radiusKm={}",
+            "Nearby refresh requested date={} cgvCandidates={} lotteCandidates={} megaboxCandidates={} radiusKm={}",
             criteria.date(),
+            resolution.cgvEntries().size(),
             resolution.lotteEntries().size(),
             resolution.megaboxEntries().size(),
             criteria.radiusKm()
@@ -147,6 +149,11 @@ public class NearbyShowtimeRefreshService {
 
     private void refreshNearby(LiveMovieSearchCriteria criteria, NearbyTheaterTargetResolver.Resolution resolution) {
         try {
+            refreshCgv(criteria.date(), resolution.cgvEntries());
+        } catch (Exception exception) {
+            logger.warn("Nearby refresh failed for provider={} date={}", CollectorProvider.CGV, criteria.date(), exception);
+        }
+        try {
             refreshLotte(criteria.date(), resolution.lotteEntries());
         } catch (Exception exception) {
             logger.warn("Nearby refresh failed for provider={} date={}", CollectorProvider.LOTTE_CINEMA, criteria.date(), exception);
@@ -155,6 +162,53 @@ public class NearbyShowtimeRefreshService {
             refreshMegabox(criteria.date(), resolution.megaboxEntries());
         } catch (Exception exception) {
             logger.warn("Nearby refresh failed for provider={} date={}", CollectorProvider.MEGABOX, criteria.date(), exception);
+        }
+    }
+
+    private void refreshCgv(LocalDate showDate, List<NearbyTheaterTargetResolver.TheaterMapEntry> entries) {
+        if (entries.isEmpty()) {
+            return;
+        }
+        Map<String, LocalDateTime> latestCollectedAt = repository.findLatestShowtimeCollectedAt(
+            CollectorProvider.CGV,
+            showDate,
+            entries.stream().map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId).toList()
+        );
+        List<NearbyTheaterTargetResolver.TheaterMapEntry> staleTheaters = new ArrayList<>();
+        for (NearbyTheaterTargetResolver.TheaterMapEntry item : entries) {
+            if (!isStale(showDate, latestCollectedAt.get(item.externalTheaterId()))) {
+                logger.info("Nearby refresh skipped provider={} theater={} date={} reason=fresh", CollectorProvider.CGV, item.externalTheaterId(), showDate);
+                continue;
+            }
+            if (!acquire(inFlightKey(CollectorProvider.CGV, item.externalTheaterId(), showDate))) {
+                logger.info("Nearby refresh skipped provider={} theater={} date={} reason=in_flight", CollectorProvider.CGV, item.externalTheaterId(), showDate);
+                continue;
+            }
+            staleTheaters.add(item);
+        }
+        if (staleTheaters.isEmpty()) {
+            return;
+        }
+        try {
+            for (NearbyTheaterTargetResolver.TheaterMapEntry theater : staleTheaters) {
+                logger.info(
+                    "Nearby refresh collecting provider={} theater={} date={}",
+                    CollectorProvider.CGV,
+                    theater.externalTheaterId(),
+                    showDate
+                );
+                persistCollectedBundle(new ShowtimeCollectionRequest(
+                    CollectorProvider.CGV,
+                    showDate,
+                    theater.externalTheaterId(),
+                    null,
+                    null,
+                    null,
+                    null
+                ));
+            }
+        } finally {
+            releaseForTheaters(CollectorProvider.CGV, showDate, staleTheaters.stream().map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId).toList());
         }
     }
 
@@ -234,6 +288,13 @@ public class NearbyShowtimeRefreshService {
         if (entries.isEmpty()) {
             return;
         }
+        Map<String, NearbyTheaterTargetResolver.TheaterMapEntry> entriesById = entries.stream()
+            .collect(java.util.stream.Collectors.toMap(
+                NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId,
+                entry -> entry,
+                (left, right) -> left,
+                LinkedHashMap::new
+            ));
         List<NearbyRefreshRepository.TheaterSyncMetadata> metadata = repository.findTheaterSyncMetadata(
             CollectorProvider.MEGABOX,
             entries.stream().map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId).toList()
@@ -277,6 +338,13 @@ public class NearbyShowtimeRefreshService {
         try {
             for (Map.Entry<String, List<NearbyRefreshRepository.TheaterSyncMetadata>> areaEntry : acquiredAreas.entrySet()) {
                 String areaCode = areaEntry.getKey();
+                List<String> allowedTheaterIds = areaEntry.getValue().stream()
+                    .map(NearbyRefreshRepository.TheaterSyncMetadata::externalTheaterId)
+                    .toList();
+                List<NearbyTheaterTargetResolver.TheaterMapEntry> allowedEntries = allowedTheaterIds.stream()
+                    .map(entriesById::get)
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
                 logger.info(
                     "Nearby refresh discovery starting provider={} areaCode={} date={} theaters={}",
                     CollectorProvider.MEGABOX,
@@ -284,26 +352,36 @@ public class NearbyShowtimeRefreshService {
                     showDate,
                     areaEntry.getValue().size()
                 );
-                PythonCollectorBridge.ProviderDiscoveryPayload discovery = collectorBridge.collectMegaboxNearbyDiscovery(showDate, areaCode);
+                List<Map<String, Object>> targets = prioritizeMegaboxTargets(
+                    resolveMegaboxTargets(showDate, areaCode, allowedTheaterIds)
+                );
                 logger.info(
                     "Nearby refresh discovered provider={} areaCode={} date={} matchedTargets={}",
                     CollectorProvider.MEGABOX,
                     areaCode,
                     showDate,
-                    discovery.targets().size()
+                    targets.size()
                 );
-                for (Map<String, Object> target : discovery.targets()) {
-                    persistCollectedBundle(new ShowtimeCollectionRequest(
-                        CollectorProvider.MEGABOX,
-                        showDate,
-                        null,
-                        text(target.get("movie_no")),
-                        null,
-                        null,
-                        text(target.get("area_code"))
-                    ), areaEntry.getValue().stream()
-                        .map(NearbyRefreshRepository.TheaterSyncMetadata::externalTheaterId)
-                        .toList());
+                for (Map<String, Object> target : targets) {
+                    try {
+                        persistCollectedBundle(new ShowtimeCollectionRequest(
+                            CollectorProvider.MEGABOX,
+                            showDate,
+                            null,
+                            text(target.get("movie_no")),
+                            null,
+                            null,
+                            text(target.get("area_code"))
+                        ), allowedTheaterIds, allowedEntries);
+                    } catch (Exception exception) {
+                        logger.warn(
+                            "Nearby refresh skipped MEGABOX target areaCode={} date={} movieNo={} reason=target_failed",
+                            areaCode,
+                            showDate,
+                            text(target.get("movie_no")),
+                            exception
+                        );
+                    }
                 }
             }
         } finally {
@@ -311,14 +389,79 @@ public class NearbyShowtimeRefreshService {
         }
     }
 
+    private List<Map<String, Object>> resolveMegaboxTargets(LocalDate showDate, String areaCode, List<String> allowedTheaterIds) {
+        try {
+            PythonCollectorBridge.ProviderDiscoveryPayload discovery = collectorBridge.collectMegaboxNearbyDiscovery(showDate, areaCode);
+            if (!discovery.targets().isEmpty()) {
+                return discovery.targets();
+            }
+            logger.info(
+                "Nearby refresh discovery fallback provider={} areaCode={} date={} reason=no_targets",
+                CollectorProvider.MEGABOX,
+                areaCode,
+                showDate
+            );
+        } catch (Exception exception) {
+            logger.warn(
+                "Nearby refresh discovery fallback provider={} areaCode={} date={} reason=discovery_failed",
+                CollectorProvider.MEGABOX,
+                areaCode,
+                showDate,
+                exception
+            );
+        }
+
+        List<String> fallbackMovieIds = repository.findRecentExternalMovieIds(
+            CollectorProvider.MEGABOX,
+            allowedTheaterIds,
+            showDate.minusDays(7),
+            showDate,
+            12
+        );
+        if (fallbackMovieIds.isEmpty()) {
+            return List.of();
+        }
+        logger.info(
+            "Nearby refresh using fallback targets provider={} areaCode={} date={} fallbackMovieIds={}",
+            CollectorProvider.MEGABOX,
+            areaCode,
+            showDate,
+            fallbackMovieIds.size()
+        );
+        return fallbackMovieIds.stream()
+            .map(movieNo -> Map.<String, Object>of(
+                "movie_no", movieNo,
+                "area_code", areaCode
+            ))
+            .toList();
+    }
+
+    private List<Map<String, Object>> prioritizeMegaboxTargets(List<Map<String, Object>> targets) {
+        if (targets == null || targets.isEmpty()) {
+            return List.of();
+        }
+        return targets.stream()
+            .filter(target -> !text(target.get("movie_no")).isBlank())
+            .limit(MEGABOX_NEARBY_TARGET_LIMIT)
+            .toList();
+    }
+
     private void persistCollectedBundle(ShowtimeCollectionRequest request) {
-        persistCollectedBundle(request, List.of());
+        persistCollectedBundle(request, List.of(), List.of());
     }
 
     private void persistCollectedBundle(ShowtimeCollectionRequest request, Collection<String> allowedExternalTheaterIds) {
+        persistCollectedBundle(request, allowedExternalTheaterIds, List.of());
+    }
+
+    private void persistCollectedBundle(
+        ShowtimeCollectionRequest request,
+        Collection<String> allowedExternalTheaterIds,
+        Collection<NearbyTheaterTargetResolver.TheaterMapEntry> allowedTheaterEntries
+    ) {
         Map<String, Object> bundle = collectorBridge.collectShowtimeBundle(request);
         Map<String, Object> scopedBundle = request.provider() == CollectorProvider.MEGABOX
-            ? filterMegaboxBundleForTheaters(bundle, allowedExternalTheaterIds)
+            ? filterMegaboxBundleForTheaters(bundle, allowedExternalTheaterIds, allowedTheaterEntries)
             : bundle;
         CollectorBundleIngestCommand.IngestResult result = persistenceService.persist(request.provider().name(), scopedBundle, false);
         logger.info(
@@ -331,7 +474,11 @@ public class NearbyShowtimeRefreshService {
         );
     }
 
-    private Map<String, Object> filterMegaboxBundleForTheaters(Map<String, Object> bundle, Collection<String> allowedExternalTheaterIds) {
+    private Map<String, Object> filterMegaboxBundleForTheaters(
+        Map<String, Object> bundle,
+        Collection<String> allowedExternalTheaterIds,
+        Collection<NearbyTheaterTargetResolver.TheaterMapEntry> allowedTheaterEntries
+    ) {
         Set<String> allowedIds = allowedExternalTheaterIds == null
             ? Set.of()
             : allowedExternalTheaterIds.stream()
@@ -341,6 +488,15 @@ public class NearbyShowtimeRefreshService {
         if (allowedIds.isEmpty()) {
             return bundle;
         }
+        Map<String, NearbyTheaterTargetResolver.TheaterMapEntry> coordsById = allowedTheaterEntries == null
+            ? Map.of()
+            : allowedTheaterEntries.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                    NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId,
+                    entry -> entry,
+                    (left, right) -> left,
+                    LinkedHashMap::new
+                ));
 
         List<Map<String, Object>> schedules = listOfMaps(bundle.get("schedules")).stream()
             .filter(schedule -> allowedIds.contains(text(schedule.get("branch_no"))))
@@ -355,6 +511,7 @@ public class NearbyShowtimeRefreshService {
             .toList();
         List<Map<String, Object>> areas = listOfMaps(bundle.get("areas")).stream()
             .filter(area -> allowedIds.contains(text(area.get("branch_no"))))
+            .map(area -> enrichMegaboxArea(area, coordsById.get(text(area.get("branch_no")))))
             .toList();
         List<Map<String, Object>> seatRecords = listOfMaps(bundle.get("seat_records")).stream()
             .filter(seat -> {
@@ -373,6 +530,22 @@ public class NearbyShowtimeRefreshService {
         scopedBundle.put("schedule_count", schedules.size());
         scopedBundle.put("seat_count", seatRecords.size());
         return scopedBundle;
+    }
+
+    private static Map<String, Object> enrichMegaboxArea(
+        Map<String, Object> area,
+        NearbyTheaterTargetResolver.TheaterMapEntry theaterEntry
+    ) {
+        if (theaterEntry == null) {
+            return area;
+        }
+        Map<String, Object> enriched = new LinkedHashMap<>(area);
+        enriched.put("latitude", theaterEntry.latitude());
+        enriched.put("longitude", theaterEntry.longitude());
+        if (text(enriched.get("branch_name")).isBlank()) {
+            enriched.put("branch_name", theaterEntry.name());
+        }
+        return enriched;
     }
 
     private boolean isStale(LocalDate showDate, LocalDateTime lastCollectedAt) {
@@ -417,12 +590,17 @@ public class NearbyShowtimeRefreshService {
             .distinct()
             .sorted()
             .toList();
+        List<String> cgvIds = resolution.cgvEntries().stream()
+            .map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId)
+            .distinct()
+            .sorted()
+            .toList();
         List<String> megaboxIds = resolution.megaboxEntries().stream()
             .map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId)
             .distinct()
             .sorted()
             .toList();
-        return showDate + "|LOTTE:" + String.join(",", lotteIds) + "|MEGA:" + String.join(",", megaboxIds);
+        return showDate + "|CGV:" + String.join(",", cgvIds) + "|LOTTE:" + String.join(",", lotteIds) + "|MEGA:" + String.join(",", megaboxIds);
     }
 
     private static String text(Object value) {

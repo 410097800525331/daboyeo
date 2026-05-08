@@ -80,6 +80,40 @@ public class NearbyRefreshRepository {
         );
     }
 
+    public List<String> findRecentExternalMovieIds(
+        CollectorProvider provider,
+        Collection<String> externalTheaterIds,
+        LocalDate fromDate,
+        LocalDate toDate,
+        int limit
+    ) {
+        if (externalTheaterIds == null || externalTheaterIds.isEmpty() || limit <= 0) {
+            return List.of();
+        }
+        String sql = """
+            SELECT external_movie_id
+            FROM showtimes
+            WHERE provider_code = :providerCode
+              AND external_theater_id IN (:externalTheaterIds)
+              AND show_date BETWEEN :fromDate AND :toDate
+              AND external_movie_id IS NOT NULL
+              AND external_movie_id <> ''
+            GROUP BY external_movie_id
+            ORDER BY MAX(last_collected_at) DESC, COUNT(*) DESC, external_movie_id ASC
+            LIMIT :limit
+            """;
+        return jdbcTemplate.query(
+            sql,
+            new MapSqlParameterSource()
+                .addValue("providerCode", provider.name())
+                .addValue("externalTheaterIds", externalTheaterIds)
+                .addValue("fromDate", fromDate)
+                .addValue("toDate", toDate)
+                .addValue("limit", limit),
+            (rs, rowNum) -> rs.getString("external_movie_id")
+        );
+    }
+
     record TheaterSyncMetadata(
         CollectorProvider provider,
         String externalTheaterId,

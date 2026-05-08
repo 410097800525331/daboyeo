@@ -44,6 +44,7 @@ class NearbyShowtimeRefreshServiceTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
 
         when(resolver.resolve(criteria)).thenReturn(new NearbyTheaterTargetResolver.Resolution(
+            List.of(),
             List.of(new NearbyTheaterTargetResolver.TheaterMapEntry(CollectorProvider.LOTTE_CINEMA, "1003", "Test", 37.0d, 127.0d, 1.0d)),
             List.of()
         ));
@@ -93,6 +94,7 @@ class NearbyShowtimeRefreshServiceTests {
 
         when(resolver.resolve(criteria)).thenReturn(new NearbyTheaterTargetResolver.Resolution(
             List.of(),
+            List.of(),
             List.of(new NearbyTheaterTargetResolver.TheaterMapEntry(CollectorProvider.MEGABOX, "1372", "Gangnam", 37.0d, 127.0d, 1.0d))
         ));
         when(repository.findTheaterSyncMetadata(eq(CollectorProvider.MEGABOX), any()))
@@ -133,6 +135,7 @@ class NearbyShowtimeRefreshServiceTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
 
         when(resolver.resolve(criteria)).thenReturn(new NearbyTheaterTargetResolver.Resolution(
+            List.of(),
             List.of(),
             List.of(
                 new NearbyTheaterTargetResolver.TheaterMapEntry(CollectorProvider.MEGABOX, "1372", "Gangnam", 37.0d, 127.0d, 1.0d),
@@ -219,6 +222,7 @@ class NearbyShowtimeRefreshServiceTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
 
         when(resolver.resolve(criteria)).thenReturn(new NearbyTheaterTargetResolver.Resolution(
+            List.of(),
             List.of(new NearbyTheaterTargetResolver.TheaterMapEntry(CollectorProvider.LOTTE_CINEMA, "1003", "Test", 37.0d, 127.0d, 1.0d)),
             List.of()
         ));
