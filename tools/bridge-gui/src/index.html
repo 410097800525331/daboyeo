@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DABOYEO Bridge</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>DABOYEO Bridge</h1>
+          <p id="repoPath" class="muted"></p>
+        </div>
+        <strong id="stateBadge" class="badge">stopped</strong>
+      </header>
+
+      <section class="status-grid" aria-label="bridge status">
+        <div>
+          <span class="label">Server</span>
+          <strong id="serverValue">-</strong>
+        </div>
+        <div>
+          <span class="label">Token</span>
+          <strong id="tokenValue">-</strong>
+        </div>
+        <div>
+          <span class="label">Providers</span>
+          <strong id="providersValue">-</strong>
+        </div>
+        <div>
+          <span class="label">PID</span>
+          <strong id="pidValue">-</strong>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="bridge controls">
+        <button id="startButton" type="button">Start bridge</button>
+        <button id="killButton" type="button" class="danger">Kill bridge</button>
+        <button id="healthButton" type="button" class="secondary">Refresh health</button>
+      </section>
+
+      <section class="health" aria-label="provider health">
+        <span class="label">Provider health</span>
+        <pre id="healthOutput">not checked</pre>
+      </section>
+
+      <section class="logs" aria-label="bridge logs">
+        <div class="section-title">
+          <span>Logs</span>
+          <button id="clearLogButton" type="button" class="icon-button" title="Clear logs">Clear</button>
+        </div>
+        <pre id="logOutput"></pre>
+      </section>
+    </main>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

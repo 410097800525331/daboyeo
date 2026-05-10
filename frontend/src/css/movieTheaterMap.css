@@ -1,0 +1,299 @@
+@charset "utf-8";
+@import url(./common.css);
+
+/* 내 주변 영화관 찾기 컨테이너 */
+.nearby-theater-container {
+  width: 100%;
+  max-width: 1000px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--gray50);
+  border-radius: 20px;
+  padding: 40px;
+  margin: 80px 0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  color: var(--white0);
+}
+
+/* 헤더 영역 */
+.nearby-header {
+  margin-bottom: 30px;
+}
+
+/* .nearby-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--white0);
+} */
+
+.nearby-subtitle {
+  font-size: 15px;
+  color: var(--gray100);
+}
+
+/* 지도 영역 */
+.map-section {
+  position: relative;
+  width: 100%;
+  height: 450px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gray50);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+.map-canvas {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image:
+    linear-gradient(rgba(114, 100, 233, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(114, 100, 233, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.map-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  color: var(--gray100);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(114, 100, 233, 0.2);
+  border-top: 3px solid var(--purple0);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-relocate {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: var(--purple0);
+  color: var(--white0);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-relocate:hover {
+  background: var(--purple50);
+  transform: translateY(-2px);
+}
+
+/* 정보 영역 */
+.info-section {
+  border-top: 1px solid var(--gray50);
+  padding-top: 25px;
+}
+
+.info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.count-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--white0);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: var(--purple0);
+  border-radius: 50%;
+}
+
+.count-num {
+  font-weight: 600;
+}
+
+.brand-filters {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gray50);
+  transition: all 0.2s ease;
+}
+
+.filter-btn.cgv {
+  color: #ff4444;
+}
+
+.filter-btn.lotte {
+  color: #3388ff;
+}
+
+.filter-btn.mega {
+  color: #00bb77;
+}
+
+.filter-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--gray100);
+}
+
+.filter-btn.active {
+  background: rgba(124, 107, 255, 0.18);
+  border-color: var(--purple0);
+  color: var(--white0);
+}
+
+.theater-list {
+  display: grid;
+  gap: 12px;
+}
+
+.place-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "brand name action"
+    "brand address action"
+    "brand distance action";
+  align-items: center;
+  gap: 4px 14px;
+  padding: 16px;
+  border: 1px solid var(--gray50);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.place-brand {
+  grid-area: brand;
+  min-width: 74px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.brand-cgv {
+  color: #ff6b6b;
+}
+
+.brand-lotte {
+  color: #6aa8ff;
+}
+
+.brand-mega {
+  color: #54d89a;
+}
+
+.place-name {
+  grid-area: name;
+  margin: 0;
+  font-size: 16px;
+  color: var(--white0);
+}
+
+.place-address,
+.place-distance {
+  margin: 0;
+  font-size: 13px;
+  color: var(--gray100);
+}
+
+.place-address {
+  grid-area: address;
+}
+
+.place-distance {
+  grid-area: distance;
+}
+
+.btn-booking {
+  grid-area: action;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--purple0);
+  color: var(--white0);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* 목록 비어있음 */
+.theater-list-empty {
+  width: 100%;
+  padding: 40px;
+  border: 1px dashed var(--gray50);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--gray100);
+  font-size: 14px;
+}
+
+/* 반응형 대응 */
+@media (max-width: 768px) {
+  .nearby-theater-container {
+    padding: 20px;
+  }
+
+  .info-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .brand-filters {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .map-section {
+    height: 350px;
+  }
+
+  .place-item {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "brand"
+      "name"
+      "address"
+      "distance"
+      "action";
+    align-items: flex-start;
+  }
+}

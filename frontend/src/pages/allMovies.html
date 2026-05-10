@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>다보여 | DABOYEO</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/allMovies.css?v=20260511-ranked-upcoming">
+  <link rel="stylesheet" href="../css/responsive.css?v=20260510-real-responsive">
+</head>
+
+<body class="basic-page">
+  <main class="main-content">
+    <section class="discovery-hero">
+      <div class="discovery-hero-inner">
+        <a class="seat-back-link" href="../../index.html#movies" aria-label="뒤로가기">
+          <span aria-hidden="true">←</span>뒤로가기
+        </a>
+        <h1 class="discovery-title">
+          당신이 몰랐던<br>
+          <span>영화의 세계</span>를 발견하세요
+        </h1>
+        <p class="discovery-desc">
+          현재 수집된 영화, 상영, 태그 데이터를 기준으로 지금 볼 만한 작품을 다시 묶어 보여드립니다.
+        </p>
+      </div>
+    </section>
+
+    <section class="discovery-section section-trending-list">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-icon top3-icon"><i class="fa-solid fa-crown"></i></div>
+          <div>
+            <h2 class="section-title">오늘의 TOP 3</h2>
+            <p class="section-subtitle">지금 가장 많은 사람들이 선택한 영화</p>
+          </div>
+        </div>
+      </div>
+      <div class="trending-list-container">
+        <div class="catalog-loading-card">영화 데이터를 불러오는 중</div>
+      </div>
+    </section>
+
+    <section class="discovery-section ai-pick-section" id="ai-pick">
+      <div class="ai-pick-inner">
+        <div class="ai-pick-header">
+          <div class="ai-pick-label">
+            <i class="fas fa-robot"></i> AI PICK
+          </div>
+          <h2 class="ai-pick-title">오늘의 추천 한 편</h2>
+          <p class="ai-pick-subtitle">
+            현재 상영 데이터와 예매 흐름을 기준으로 한 편을 고릅니다.
+          </p>
+        </div>
+
+        <div class="ai-pick-card">
+          <div class="ai-pick-poster-wrap">
+            <div class="ai-pick-poster">
+              <div class="ai-poster-placeholder">
+                <i class="fas fa-film"></i>
+                <span>추천 준비 중</span>
+              </div>
+              <div class="ai-pick-glow"></div>
+            </div>
+            <div class="ai-pick-reason-bubble">
+              <i class="fas fa-robot"></i>
+              <span>현재 수집된 영화 데이터를 분석하고 있습니다</span>
+            </div>
+          </div>
+
+          <div class="ai-pick-detail">
+            <div class="ai-pick-movie-title">추천 준비 중</div>
+            <div class="ai-pick-movie-meta">
+              <span>상영중</span>
+              <span>예매율 -%</span>
+              <span>ALL</span>
+              <span>상영 0건</span>
+            </div>
+
+            <div class="ai-analysis">
+              <div class="ai-analysis-title">
+                <i class="fas fa-chart-bar"></i> 데이터 기준
+              </div>
+              <div class="ai-analysis-items">
+                <div class="ai-analysis-item">
+                  <span class="analysis-label">예매 흐름</span>
+                  <div class="analysis-bar-wrap">
+                    <div class="analysis-bar" style="width:72%"></div>
+                  </div>
+                  <span class="analysis-val">API</span>
+                </div>
+                <div class="ai-analysis-item">
+                  <span class="analysis-label">상영 데이터</span>
+                  <div class="analysis-bar-wrap">
+                    <div class="analysis-bar highlight-bar" style="width:86%"></div>
+                  </div>
+                  <span class="analysis-val highlight-val">LIVE</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-pick-actions">
+              <button class="ai-book-btn" type="button">
+                <i class="fas fa-ticket-alt"></i> 상영 정보 보기
+              </button>
+              <button class="ai-refresh-btn" type="button">
+                <i class="fas fa-sync-alt"></i> 다른 영화 추천받기
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="discovery-section" id="hidden-gems" data-static-demo="true">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-icon gem-icon">
+            <i class="fas fa-gem"></i>
+          </div>
+          <div>
+            <h2 class="section-title">숨은 명작 추천</h2>
+            <p class="section-subtitle">포트폴리오 시연용 더미 큐레이션입니다</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="gem-cards-grid">
+        <div class="gem-card">
+          <div class="gem-poster">
+            <div class="poster-placeholder-lg">
+              <i class="fas fa-film"></i>
+            </div>
+            <div class="gem-badge">
+              <i class="fas fa-gem"></i> DEMO
+            </div>
+            <div class="gem-rating">★ 9.1</div>
+          </div>
+          <div class="gem-info">
+            <div class="gem-title">퍼펙트 데이즈</div>
+            <div class="gem-meta">더미 큐레이션 · 드라마</div>
+            <p class="gem-desc">시연 화면의 구성을 보여주기 위한 고정 샘플입니다.</p>
+            <div class="gem-price-row">
+              <span class="gem-price">시연용 <strong>DEMO</strong></span>
+              <button class="gem-btn" type="button">보기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="gem-card">
+          <div class="gem-poster">
+            <div class="poster-placeholder-lg"><i class="fas fa-film"></i></div>
+            <div class="gem-badge"><i class="fas fa-gem"></i> DEMO</div>
+            <div class="gem-rating">★ 8.9</div>
+          </div>
+          <div class="gem-info">
+            <div class="gem-title">아프터 선</div>
+            <div class="gem-meta">더미 큐레이션 · 감성</div>
+            <p class="gem-desc">실제 API 데이터가 아닌 의도된 포트폴리오 샘플입니다.</p>
+            <div class="gem-price-row">
+              <span class="gem-price">시연용 <strong>DEMO</strong></span>
+              <button class="gem-btn" type="button">보기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="gem-card">
+          <div class="gem-poster">
+            <div class="poster-placeholder-lg"><i class="fas fa-film"></i></div>
+            <div class="gem-badge"><i class="fas fa-gem"></i> DEMO</div>
+            <div class="gem-rating">★ 8.7</div>
+          </div>
+          <div class="gem-info">
+            <div class="gem-title">패스트 라이브즈</div>
+            <div class="gem-meta">더미 큐레이션 · 로맨스</div>
+            <p class="gem-desc">숨은 명작 영역만 더미로 유지한다는 요구에 맞춘 샘플입니다.</p>
+            <div class="gem-price-row">
+              <span class="gem-price">시연용 <strong>DEMO</strong></span>
+              <button class="gem-btn" type="button">보기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="discovery-section" id="genre-curation">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-icon genre-icon">
+            <i class="fas fa-layer-group"></i>
+          </div>
+          <div>
+            <h2 class="section-title">장르별 큐레이션</h2>
+            <p class="section-subtitle">취향에 맞는 장르를 골라 지금 바로 탐색하세요</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="genre-tabs">
+        <button class="genre-tab active" data-genre="action" type="button"><span class="genre-tab-icon">⚡</span><span>액션</span></button>
+        <button class="genre-tab" data-genre="sf" type="button"><span class="genre-tab-icon">🚀</span><span>SF</span></button>
+        <button class="genre-tab" data-genre="romance" type="button"><span class="genre-tab-icon">💕</span><span>로맨스</span></button>
+        <button class="genre-tab" data-genre="thriller" type="button"><span class="genre-tab-icon">🔪</span><span>스릴러</span></button>
+        <button class="genre-tab" data-genre="animation" type="button"><span class="genre-tab-icon">🎨</span><span>애니메이션</span></button>
+        <button class="genre-tab" data-genre="horror" type="button"><span class="genre-tab-icon">👻</span><span>공포</span></button>
+        <button class="genre-tab" data-genre="comedy" type="button"><span class="genre-tab-icon">😂</span><span>코미디</span></button>
+      </div>
+
+      <div class="genre-movie-row" id="genreMovieRow">
+        <div class="catalog-loading-card">장르별 영화를 불러오는 중</div>
+      </div>
+    </section>
+
+    <section class="discovery-section" id="solo">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-icon solo-icon">
+            <i class="fas fa-user"></i>
+          </div>
+          <div>
+            <h2 class="section-title">혼자 보기 좋은 영화</h2>
+            <p class="section-subtitle">혼영 태그와 예매 흐름을 기준으로 고른 리스트</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mood-cards-grid">
+        <div class="catalog-loading-card">혼영 추천 데이터를 불러오는 중</div>
+      </div>
+    </section>
+
+    <section class="discovery-section" id="couple">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-icon couple-icon">
+            <i class="fas fa-heart"></i>
+          </div>
+          <div>
+            <h2 class="section-title">연인과 보기 좋은 영화</h2>
+            <p class="section-subtitle">로맨스 태그와 현재 예매 흐름을 기준으로 랜덤 추천</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="couple-banner">
+        <div class="catalog-loading-card">데이트 추천 영화를 불러오는 중</div>
+      </div>
+
+      <div class="couple-sub-grid">
+        <div class="catalog-loading-card">추가 추천 영화를 불러오는 중</div>
+      </div>
+    </section>
+  </main>
+
+  <div id="topButton"></div>
+  <div id="footer"></div>
+
+  <script src="../js/include.js"></script>
+  <script src="../js/pages/common.js"></script>
+  <script src="../js/pages/script.js"></script>
+  <script type="module" src="../js/pages/allMovies.js?v=20260511-ranked-upcoming"></script>
+</body>
+
+</html>

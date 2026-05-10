@@ -1,0 +1,164 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", sans-serif;
+  background: #f4f6f8;
+  color: #17212b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 760px;
+  min-height: 620px;
+  background: #f4f6f8;
+}
+
+button {
+  border: 1px solid #233142;
+  border-radius: 6px;
+  background: #233142;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+}
+
+.topbar {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+h1 {
+  font-size: 22px;
+  line-height: 1.2;
+  margin: 0 0 6px;
+}
+
+.muted {
+  color: #5f6f80;
+  font-size: 13px;
+  margin: 0;
+}
+
+.badge {
+  border-radius: 999px;
+  background: #d8dee6;
+  color: #17212b;
+  font-size: 13px;
+  line-height: 1;
+  min-width: 96px;
+  padding: 9px 12px;
+  text-align: center;
+}
+
+.badge.running {
+  background: #d7f2df;
+  color: #145c2e;
+}
+
+.badge.error {
+  background: #ffe0dd;
+  color: #8f1d16;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.status-grid > div,
+.health,
+.logs {
+  background: #ffffff;
+  border: 1px solid #d7dde5;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.label {
+  color: #617080;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.status-grid strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.35;
+  min-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.danger {
+  background: #9e2a2b;
+  border-color: #9e2a2b;
+}
+
+.secondary,
+.icon-button {
+  background: #ffffff;
+  color: #233142;
+}
+
+.health pre,
+.logs pre {
+  background: #101820;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  overflow: auto;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
+.health pre {
+  max-height: 112px;
+}
+
+.logs pre {
+  height: 260px;
+}
+
+.section-title {
+  align-items: center;
+  display: flex;
+  font-weight: 800;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.icon-button {
+  min-height: 30px;
+  padding: 0 10px;
+}

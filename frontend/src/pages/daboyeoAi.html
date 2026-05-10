@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DABOYEO AI 영화 취향 가이드</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="../css/daboyeoAi.css?v=20260510-motion-loading">
+  <link rel="stylesheet" href="../css/responsive.css?v=20260510-real-responsive">
+</head>
+<body class="ai-guide-page">
+  <div class="ai-shell">
+    <header class="ai-topbar" aria-label="AI 가이드 진행 상태">
+      <div class="ai-topbar-left">
+        <button class="ai-back-button" id="aiBackButton" type="button">이전</button>
+        <a class="ai-brand" href="../../index.html" aria-label="DABOYEO 홈으로 이동">DABOYEO</a>
+      </div>
+      <div class="ai-progress" id="aiProgress">1 / 6 상황</div>
+    </header>
+
+    <main class="ai-screen" id="aiScreen" tabindex="-1" aria-live="polite"></main>
+    <div class="ai-toast" id="aiToast" role="status" aria-live="polite"></div>
+  </div>
+
+  <script type="module" src="../js/pages/daboyeoAi.js?v=20260510-motion-loading"></script>
+</body>
+</html>

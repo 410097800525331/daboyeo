@@ -2,10 +2,17 @@ import base64
 import hashlib
 import hmac
 import json
-import os
+import sys
 import time
+from pathlib import Path
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from collectors.cgv.api import load_cgv_api_secret
 
 
 API_BASE = "https://api.cgv.co.kr"
@@ -23,9 +30,9 @@ DEFAULT_HEADERS = {
 
 
 def build_signature(pathname: str, body: str, timestamp: str) -> str:
-    api_secret = os.environ.get("CGV_API_SECRET", "")
+    api_secret = load_cgv_api_secret()
     if not api_secret:
-        raise RuntimeError("CGV_API_SECRET 환경변수가 필요함")
+        raise RuntimeError("CGV_API_SECRET 환경변수 또는 루트 .env 값이 필요함")
 
     payload = f"{timestamp}|{pathname}|{body}"
     digest = hmac.new(
@@ -153,4 +160,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        raise SystemExit(1)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from html import unescape
 from typing import Any
@@ -10,6 +11,7 @@ from .api import MEGABOX_BASE_URL, MegaboxApiClient
 @dataclass
 class MegaboxCollector:
     api: MegaboxApiClient | None = None
+    _movie_detail_cache: dict[str, dict[str, Any]] | None = None
 
     def __post_init__(self) -> None:
         if self.api is None:
@@ -29,24 +31,38 @@ class MegaboxCollector:
                 merged[key] = row
         return list(merged.values())
 
-    def build_movie_records(self, play_de: str) -> list[dict[str, Any]]:
+    def fetch_movie_detail(self, movie_no: Any) -> dict[str, Any]:
+        code = "" if movie_no is None else str(movie_no).strip()
+        if not code:
+            return {}
+        if self._movie_detail_cache is None:
+            self._movie_detail_cache = {}
+        if code not in self._movie_detail_cache:
+            html_text = self.api.fetch_movie_detail_html(code) if self.api else ""
+            self._movie_detail_cache[code] = self._parse_movie_detail_html(code, html_text)
+        return self._movie_detail_cache[code]
+
+    def build_movie_records(self, play_de: str, include_details: bool = True) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         for row in self.fetch_movies(play_de):
+            detail = self.fetch_movie_detail(row.get("rpstMovieNo") or row.get("movieNo")) if include_details else {}
+            raw = {**row, "movieDetail": detail} if detail else row
             records.append(
                 {
                     "provider": "MEGABOX",
                     "movie_no": row.get("movieNo"),
                     "representative_movie_no": row.get("rpstMovieNo"),
-                    "movie_name": row.get("movieNm"),
+                    "movie_name": row.get("movieNm") or detail.get("title"),
                     "movie_name_en": row.get("movieEngNm"),
                     "age_rating": row.get("admisClassCdNm"),
                     "runtime_minutes": row.get("playTime"),
                     "booking_rate": row.get("bookRate"),
                     "box_office_rank": row.get("boxoRank"),
                     "release_date": row.get("openDt"),
+                    "genre_name": detail.get("genre_name"),
                     "screening_type": row.get("screenType"),
                     "poster_url": self._build_poster_url(row.get("movieImgPath")),
-                    "raw": row,
+                    "raw": raw,
                 }
             )
         return records
@@ -101,6 +117,7 @@ class MegaboxCollector:
         play_de: str,
         area_cd: str,
         first_at: str = "Y",
+        include_details: bool = True,
     ) -> list[dict[str, Any]]:
         rows = self.fetch_schedules(
             movie_no=movie_no,
@@ -110,6 +127,12 @@ class MegaboxCollector:
         )
         records: list[dict[str, Any]] = []
         for row in rows:
+            detail = (
+                self.fetch_movie_detail(row.get("rpstMovieNo") or row.get("movieNo") or movie_no)
+                if include_details
+                else {}
+            )
+            raw = {**row, "movieDetail": detail} if detail else row
             records.append(
                 {
                     "provider": "MEGABOX",
@@ -119,6 +142,7 @@ class MegaboxCollector:
                     "movie_name_en": row.get("movieEngNm"),
                     "movie_status": row.get("movieStatCdNm"),
                     "age_rating": row.get("admisClassCdNm"),
+                    "genre_name": detail.get("genre_name"),
                     "area_code": row.get("areaCd"),
                     "area_name": row.get("areaCdNm"),
                     "branch_no": row.get("brchNo"),
@@ -141,7 +165,7 @@ class MegaboxCollector:
                         f"{MEGABOX_BASE_URL}/on/oh/ohz/PcntSeatChoi/"
                         f"selectPcntSeatChoi.do?playSchdlNo={row.get('playSchdlNo')}"
                     ),
-                    "raw": row,
+                    "raw": raw,
                 }
             )
         return records
@@ -254,3 +278,25 @@ class MegaboxCollector:
     @staticmethod
     def _clean_text(value: Any) -> str:
         return unescape(str(value or "")).strip()
+
+    @classmethod
+    def _parse_movie_detail_html(cls, movie_no: str, html_text: str) -> dict[str, Any]:
+        title_match = re.search(
+            r'<meta\s+property="name"[^>]*content="\[메가박스\]([^"]*)"',
+            html_text,
+        )
+        return {
+            "movieNo": movie_no,
+            "detailUrl": f"https://m.megabox.co.kr/movie-detail?rpstMovieNo={movie_no}",
+            "title": cls._clean_text(title_match.group(1)) if title_match else "",
+            "genre_name": cls._extract_detail_item(html_text, "장르"),
+        }
+
+    @classmethod
+    def _extract_detail_item(cls, html_text: str, label: str) -> str:
+        marker = f"<span>{label}</span>"
+        if marker not in html_text:
+            return ""
+        value = html_text.split(marker, 1)[1].split("</li>", 1)[0]
+        value = re.sub(r"<[^>]*>", " ", value)
+        return cls._clean_text(value)

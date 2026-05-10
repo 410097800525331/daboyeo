@@ -1,0 +1,103 @@
+{
+  "source": {
+    "version": "2026-05-06",
+    "source": "curated_current_metadata",
+    "confidence": "0.9900",
+    "policy": "Exact provider_code plus external_movie_id matches only. Do not infer genres from title substrings.",
+    "notes": [
+      "Provider showtime APIs often expose generic labels such as 일반콘텐트 instead of recommendation genres.",
+      "Entries here are small, auditable overrides for currently showing movies with direct external or curated evidence.",
+      "Ambiguous title-only cases stay untagged until a reliable movie identity is confirmed."
+    ]
+  },
+  "movies": [
+    {
+      "providerCode": "LOTTE_CINEMA",
+      "externalMovieId": "23865",
+      "titleKo": "슈퍼 마리오 갤럭시",
+      "tags": {
+        "genre": ["animation"]
+      },
+      "evidenceNotes": [
+        "The Super Mario Galaxy Movie is an animated film from the Nintendo/Illumination Mario film line."
+      ]
+    },
+    {
+      "providerCode": "MEGABOX",
+      "externalMovieId": "25094501",
+      "titleKo": "슈퍼 마리오 갤럭시",
+      "tags": {
+        "genre": ["animation"]
+      },
+      "evidenceNotes": [
+        "Megabox subtitle variant for The Super Mario Galaxy Movie."
+      ]
+    },
+    {
+      "providerCode": "MEGABOX",
+      "externalMovieId": "25094502",
+      "titleKo": "(더빙) 슈퍼 마리오 갤럭시",
+      "tags": {
+        "genre": ["animation"]
+      },
+      "evidenceNotes": [
+        "Megabox dubbed variant for The Super Mario Galaxy Movie."
+      ]
+    },
+    {
+      "providerCode": "MEGABOX",
+      "externalMovieId": "25094506",
+      "titleKo": "슈퍼 마리오 갤럭시",
+      "tags": {
+        "genre": ["animation"]
+      },
+      "evidenceNotes": [
+        "Megabox premium-format variant for The Super Mario Galaxy Movie."
+      ]
+    },
+    {
+      "providerCode": "MEGABOX",
+      "externalMovieId": "015777",
+      "titleKo": "마녀배달부 키키",
+      "tags": {
+        "genre": ["animation"]
+      },
+      "evidenceNotes": [
+        "Kiki's Delivery Service is a Studio Ghibli animated film."
+      ]
+    },
+    {
+      "providerCode": "MEGABOX",
+      "externalMovieId": "26020502",
+      "titleKo": "극장판 총집편 걸즈 밴드 크라이 있잖아, 미래.",
+      "tags": {
+        "genre": ["animation"]
+      },
+      "evidenceNotes": [
+        "Girls Band Cry movie compilation is part of the Girls Band Cry anime film line."
+      ]
+    },
+    {
+      "providerCode": "MEGABOX",
+      "externalMovieId": "25065201",
+      "titleKo": "극장판 체인소 맨: 레제편",
+      "tags": {
+        "genre": ["animation"]
+      },
+      "evidenceNotes": [
+        "Chainsaw Man - The Movie: Reze Arc is an anime film."
+      ]
+    },
+    {
+      "providerCode": "MEGABOX",
+      "externalMovieId": "26025401",
+      "titleKo": "사랑의 하츄핑 특별판",
+      "tags": {
+        "genre": ["animation"]
+      },
+      "evidenceNotes": [
+        "Heartsping: Teenieping of Love is a Korean animated film."
+      ]
+    }
+  ]
+}

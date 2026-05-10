@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import time
 import urllib.parse
 from typing import Any
 from urllib.request import Request, urlopen
 
 
 LOTTE_TICKETING_URL = "https://www.lottecinema.co.kr/LCWS/Ticketing/TicketingData.aspx"
+LOTTE_MOVIE_URL = "https://www.lottecinema.co.kr/LCWS/Movie/MovieData.aspx"
 
 DEFAULT_BASE_PAYLOAD = {
     "channelType": "HO",
@@ -30,21 +32,33 @@ class LotteCinemaApiClient:
         self.base_payload = {**DEFAULT_BASE_PAYLOAD, **(base_payload or {})}
         self.headers = {**DEFAULT_HEADERS, **(headers or {})}
 
-    def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def _post_to(self, url: str, payload: dict[str, Any]) -> dict[str, Any]:
         merged = {**self.base_payload, **payload}
         body = urllib.parse.urlencode(
             {"paramList": json.dumps(merged, ensure_ascii=False)}
         ).encode("utf-8")
-        request = Request(
-            LOTTE_TICKETING_URL,
-            data=body,
-            headers=self.headers,
-            method="POST",
-        )
-        with urlopen(request, timeout=30) as response:
-            charset = response.headers.get_content_charset() or "utf-8"
-            text = response.read().decode(charset, errors="replace")
-        return json.loads(text)
+        last_error: Exception | None = None
+        for attempt in range(3):
+            request = Request(
+                url,
+                data=body,
+                headers=self.headers,
+                method="POST",
+            )
+            try:
+                with urlopen(request, timeout=30) as response:
+                    charset = response.headers.get_content_charset() or "utf-8"
+                    text = response.read().decode(charset, errors="replace")
+                return json.loads(text)
+            except OSError as exc:
+                last_error = exc
+                if attempt == 2:
+                    break
+                time.sleep(0.5 * (attempt + 1))
+        raise last_error or RuntimeError("Lotte API request failed")
+
+    def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return self._post_to(LOTTE_TICKETING_URL, payload)
 
     def fetch_ticketing_page(self, member_on_no: str = "0") -> dict[str, Any]:
         return self._post(
@@ -52,6 +66,22 @@ class LotteCinemaApiClient:
                 "MethodName": "GetTicketingPageTOBE",
                 "memberOnNo": member_on_no,
             }
+        )
+
+    def fetch_movie_detail(
+        self,
+        representation_movie_code: str,
+        member_on_no: str = "0",
+    ) -> dict[str, Any]:
+        return self._post_to(
+            LOTTE_MOVIE_URL,
+            {
+                "MethodName": "GetMovieDetailTOBE",
+                "multiLanguageID": "KR",
+                "representationMovieCode": representation_movie_code,
+                "memberOnNo": member_on_no,
+                "imgdivcd": 3,
+            },
         )
 
     def fetch_play_sequences(

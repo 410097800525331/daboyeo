@@ -1,13 +1,13 @@
 server:
-  port: ${DABOYEO_BACKEND_PORT:8080}
+  port: ${DABOYEO_BACKEND_PORT:5500}
 
 spring:
   application:
     name: daboyeo-backend
   datasource:
-    url: ${DABOYEO_DB_URL:jdbc:mysql://localhost:4000/daboyeo?serverTimezone=Asia/Seoul&characterEncoding=utf8&useSSL=false}
-    username: ${DABOYEO_DB_USERNAME:root}
-    password: ${DABOYEO_DB_PASSWORD:}
+    url: jdbc:mysql://${TIDB_HOST:localhost}:${TIDB_PORT:4000}/${TIDB_DATABASE:daboyeo}?serverTimezone=Asia/Seoul&characterEncoding=utf8&useSSL=${TIDB_SSL:false}
+    username: ${TIDB_USER:root}
+    password: ${TIDB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       initialization-fail-timeout: -1
@@ -21,3 +21,74 @@ spring:
 logging:
   level:
     kr.daboyeo: INFO
+
+daboyeo:
+  cors:
+    allowed-origins: ${DABOYEO_FRONTEND_ORIGINS:http://localhost:4173,http://127.0.0.1:4173,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080,http://127.0.0.1:8080}
+  security:
+    admin-token: ${DABOYEO_ADMIN_TOKEN:}
+    public-collection-enabled: ${DABOYEO_PUBLIC_COLLECTION_ENABLED:false}
+    public-nearby-refresh-enabled: ${DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED:false}
+    public-seat-layout-enabled: ${DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED:false}
+  demo:
+    live-fallback-enabled: ${DABOYEO_DEMO_LIVE_FALLBACK_ENABLED:true}
+  recommendation:
+    provider: ${DABOYEO_RECOMMEND_PROVIDER:fallback}
+    openai-model: ${DABOYEO_RECOMMEND_OPENAI_MODEL:}
+    poster-public-base-url: ${DABOYEO_POSTER_PUBLIC_BASE_URL:${R2_PUBLIC_BASE_URL:}}
+    codex-model: ${DABOYEO_RECOMMEND_CODEX_MODEL:}
+    codex-fast-model: ${DABOYEO_RECOMMEND_CODEX_FAST_MODEL:gpt-5.4-mini}
+    codex-precise-model: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MODEL:gpt-5.4}
+    codex-fast-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_FAST_REASONING_EFFORT:}
+    codex-precise-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_PRECISE_REASONING_EFFORT:medium}
+    codex-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_FAST_AI_CANDIDATE_LIMIT:12}
+    codex-precise-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_PRECISE_AI_CANDIDATE_LIMIT:20}
+    codex-fast-max-tokens: ${DABOYEO_RECOMMEND_CODEX_FAST_MAX_TOKENS:420}
+    codex-precise-max-tokens: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MAX_TOKENS:900}
+    bridge-token: ${DABOYEO_AI_BRIDGE_TOKEN:}
+    bridge-result-timeout-seconds: ${DABOYEO_AI_BRIDGE_RESULT_TIMEOUT_SECONDS:75}
+    bridge-heartbeat-ttl-seconds: ${DABOYEO_AI_BRIDGE_HEARTBEAT_TTL_SECONDS:45}
+    bridge-job-ttl-seconds: ${DABOYEO_AI_BRIDGE_JOB_TTL_SECONDS:90}
+    min-start-buffer-minutes: ${DABOYEO_RECOMMEND_MIN_START_BUFFER_MINUTES:20}
+    frontend-origins: ${DABOYEO_FRONTEND_ORIGINS:http://localhost:4173,http://127.0.0.1:4173,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5500,http://127.0.0.1:5500}
+  sync:
+    enabled: ${DABOYEO_SYNC_ENABLED:true}
+    timezone: ${DABOYEO_SYNC_TIMEZONE:Asia/Seoul}
+    python-executable: ${DABOYEO_SYNC_PYTHON:python}
+    process-timeout-seconds: ${DABOYEO_SYNC_TIMEOUT_SECONDS:180}
+    showtimes:
+      enabled: ${DABOYEO_SHOWTIME_SYNC_ENABLED:true}
+      cron: ${DABOYEO_SHOWTIME_SYNC_CRON:0 0 * * * *}
+      startup-enabled: ${DABOYEO_SHOWTIME_STARTUP_ENABLED:true}
+      include-cgv: ${DABOYEO_SHOWTIME_INCLUDE_CGV:false}
+      date-offset-days: ${DABOYEO_SHOWTIME_DATE_OFFSETS:0,1,2}
+      cleanup-enabled: ${DABOYEO_SHOWTIME_CLEANUP_ENABLED:true}
+      retention-days: ${DABOYEO_SHOWTIME_RETENTION_DAYS:3}
+      auto-discovery-enabled: ${DABOYEO_SHOWTIME_AUTO_DISCOVERY_ENABLED:true}
+      discovery-movie-limit: ${DABOYEO_SHOWTIME_DISCOVERY_MOVIE_LIMIT:5}
+      discovery-lotte-cinema-limit: ${DABOYEO_SHOWTIME_DISCOVERY_LOTTE_CINEMA_LIMIT:3}
+      discovery-lotte-movie-target-limit: ${DABOYEO_SHOWTIME_DISCOVERY_LOTTE_MOVIE_TARGET_LIMIT:1}
+      discovery-lotte-total-target-limit: ${DABOYEO_SHOWTIME_DISCOVERY_LOTTE_TOTAL_TARGET_LIMIT:2}
+      discovery-megabox-bundle-limit: ${DABOYEO_SHOWTIME_DISCOVERY_MEGABOX_BUNDLE_LIMIT:2}
+      entry-refresh-enabled: ${DABOYEO_SHOWTIME_ENTRY_REFRESH_ENABLED:true}
+      entry-refresh-ttl-minutes: ${DABOYEO_SHOWTIME_ENTRY_REFRESH_TTL_MINUTES:10}
+      entry-refresh-max-wait-millis: ${DABOYEO_SHOWTIME_ENTRY_REFRESH_MAX_WAIT_MILLIS:8000}
+      entry-refresh-max-dates: ${DABOYEO_SHOWTIME_ENTRY_REFRESH_MAX_DATES:1}
+      entry-refresh-max-schedules-per-bundle: ${DABOYEO_SHOWTIME_ENTRY_REFRESH_MAX_SCHEDULES_PER_BUNDLE:40}
+      nearby-refresh-enabled: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_ENABLED:true}
+      nearby-refresh-max-theaters-per-provider: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_MAX_THEATERS_PER_PROVIDER:6}
+      nearby-refresh-radius-km: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_RADIUS_KM:3}
+      nearby-refresh-wait-millis: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_WAIT_MILLIS:2500}
+      nearby-refresh-today-ttl-minutes: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_TODAY_TTL_MINUTES:60}
+      nearby-refresh-next-day-ttl-minutes: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_NEXT_DAY_TTL_MINUTES:360}
+      nearby-refresh-future-ttl-minutes: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_FUTURE_TTL_MINUTES:1440}
+      persistence-max-retries: ${DABOYEO_SHOWTIME_PERSISTENCE_MAX_RETRIES:2}
+      persistence-retry-backoff-millis: ${DABOYEO_SHOWTIME_PERSISTENCE_RETRY_BACKOFF_MILLIS:1000}
+      lotte-preferred-cinema-ids: []
+      lotte-preferred-cinema-names: []
+      megabox-area-codes: []
+    seats:
+      enabled: ${DABOYEO_SEAT_SYNC_ENABLED:false}
+      cron: ${DABOYEO_SEAT_SYNC_CRON:0 0/30 * * * *}
+      lookahead-hours: ${DABOYEO_SEAT_SYNC_LOOKAHEAD_HOURS:6}
+      limit: ${DABOYEO_SEAT_SYNC_LIMIT:100}

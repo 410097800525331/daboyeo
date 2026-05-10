@@ -1,0 +1,1470 @@
+{
+  "source": {
+    "checkedAt": "2026-05-06",
+    "titleSources": [
+      "KOBIS movie search pages",
+      "Wikipedia/Wikidata public film records"
+    ],
+    "tagPolicy": "genres/moods/audiences/avoid are normalized to the local recommendation taxonomy from public title and genre research plus conservative film-content interpretation",
+    "duplicatePolicy": "movieCd overlaps with the anime poster pool were removed from this general movie tag file",
+    "removedMoviePoolMovieCds": [
+      "20136803",
+      "20197803",
+      "20235974",
+      "20252432"
+    ]
+  },
+  "movies": {
+    "20129370": {
+      "titleEn": "The Admiral: Roaring Currents",
+      "genres": [
+        "history",
+        "action",
+        "drama"
+      ],
+      "moods": [
+        "heroic",
+        "tense",
+        "immersive",
+        "exciting",
+        "visual",
+        "serious"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20182530": {
+      "titleEn": "Extreme Job",
+      "genres": [
+        "comedy",
+        "action",
+        "crime"
+      ],
+      "moods": [
+        "funny",
+        "light",
+        "exciting",
+        "visual",
+        "tense",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20150976": {
+      "titleEn": "Along with the Gods: The Two Worlds",
+      "genres": [
+        "fantasy",
+        "drama",
+        "adventure"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "sad",
+        "exciting",
+        "serious",
+        "immersive"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "sad_ending",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20137048": {
+      "titleEn": "Ode to My Father",
+      "genres": [
+        "drama",
+        "history",
+        "family"
+      ],
+      "moods": [
+        "warm",
+        "sad",
+        "immersive",
+        "serious",
+        "comfort",
+        "heroic"
+      ],
+      "pace": "slow",
+      "audiences": [
+        "family",
+        "alone",
+        "child"
+      ],
+      "avoid": [
+        "sad_ending",
+        "violence"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20184889": {
+      "titleEn": "Avengers: Endgame",
+      "genres": [
+        "action",
+        "sf",
+        "adventure",
+        "fantasy"
+      ],
+      "moods": [
+        "exciting",
+        "heroic",
+        "visual",
+        "warm"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "too_long",
+        "violence",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20148048": {
+      "titleEn": "Veteran",
+      "genres": [
+        "action",
+        "drama",
+        "crime",
+        "comedy"
+      ],
+      "moods": [
+        "exciting",
+        "funny",
+        "tense",
+        "visual",
+        "light",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20212866": {
+      "titleEn": "12.12: The Day",
+      "genres": [
+        "history",
+        "drama",
+        "thriller"
+      ],
+      "moods": [
+        "tense",
+        "serious",
+        "immersive",
+        "dark",
+        "heroic"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "dark",
+        "violence",
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20124034": {
+      "titleEn": "The Thieves",
+      "genres": [
+        "crime",
+        "action",
+        "comedy"
+      ],
+      "moods": [
+        "funny",
+        "exciting",
+        "tense",
+        "visual",
+        "light",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20127593": {
+      "titleEn": "Miracle in Cell No. 7",
+      "genres": [
+        "drama",
+        "comedy",
+        "family"
+      ],
+      "moods": [
+        "warm",
+        "sad",
+        "comfort",
+        "funny",
+        "light",
+        "serious"
+      ],
+      "pace": "slow",
+      "audiences": [
+        "family",
+        "alone",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20148851": {
+      "titleEn": "Assassination",
+      "genres": [
+        "action",
+        "drama",
+        "history",
+        "thriller"
+      ],
+      "moods": [
+        "tense",
+        "heroic",
+        "immersive",
+        "exciting",
+        "visual",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20204548": {
+      "titleEn": "The Roundup",
+      "genres": [
+        "crime",
+        "action",
+        "thriller",
+        "comedy"
+      ],
+      "moods": [
+        "exciting",
+        "tense",
+        "funny",
+        "visual",
+        "light",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20183867": {
+      "titleEn": "Aladdin",
+      "genres": [
+        "adventure",
+        "family",
+        "fantasy",
+        "musical",
+        "romance"
+      ],
+      "moods": [
+        "light",
+        "warm",
+        "funny",
+        "exciting",
+        "visual",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "date",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20124079": {
+      "titleEn": "Masquerade",
+      "genres": [
+        "history",
+        "drama"
+      ],
+      "moods": [
+        "immersive",
+        "serious",
+        "warm",
+        "heroic"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "complex",
+        "violence",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20186202": {
+      "titleEn": "Along with the Gods: The Last 49 Days",
+      "genres": [
+        "fantasy",
+        "drama",
+        "adventure"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "immersive",
+        "exciting",
+        "serious"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "sad_ending",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20162869": {
+      "titleEn": "A Taxi Driver",
+      "genres": [
+        "drama",
+        "history"
+      ],
+      "moods": [
+        "warm",
+        "sad",
+        "immersive",
+        "serious",
+        "heroic"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "sad_ending",
+        "violence"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20234675": {
+      "titleEn": "Exhuma",
+      "genres": [
+        "mystery",
+        "horror",
+        "thriller"
+      ],
+      "moods": [
+        "tense",
+        "dark",
+        "immersive"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "dark",
+        "violence"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20156564": {
+      "titleEn": "Train to Busan",
+      "genres": [
+        "action",
+        "thriller",
+        "horror"
+      ],
+      "moods": [
+        "tense",
+        "dark",
+        "exciting",
+        "visual",
+        "heroic"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20228797": {
+      "titleEn": "The Roundup: Punishment",
+      "genres": [
+        "action",
+        "crime",
+        "thriller",
+        "comedy"
+      ],
+      "moods": [
+        "exciting",
+        "tense",
+        "funny",
+        "visual",
+        "light",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20134803": {
+      "titleEn": "The Attorney",
+      "genres": [
+        "drama",
+        "history"
+      ],
+      "moods": [
+        "serious",
+        "immersive",
+        "warm",
+        "heroic"
+      ],
+      "pace": "slow",
+      "audiences": [
+        "alone"
+      ],
+      "avoid": [
+        "complex",
+        "violence",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20177478": {
+      "titleEn": "Avengers: Infinity War",
+      "genres": [
+        "action",
+        "adventure",
+        "fantasy",
+        "sf"
+      ],
+      "moods": [
+        "exciting",
+        "heroic",
+        "visual",
+        "warm"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20225061": {
+      "titleEn": "Avatar: The Way of Water",
+      "genres": [
+        "action",
+        "adventure",
+        "sf",
+        "thriller",
+        "fantasy"
+      ],
+      "moods": [
+        "visual",
+        "immersive",
+        "exciting",
+        "tense",
+        "dark",
+        "warm"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "too_long",
+        "loud",
+        "violence",
+        "dark"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20226411": {
+      "titleEn": "The Roundup: No Way Out",
+      "genres": [
+        "crime",
+        "action",
+        "thriller",
+        "comedy"
+      ],
+      "moods": [
+        "exciting",
+        "tense",
+        "funny",
+        "visual",
+        "light",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20148493": {
+      "titleEn": "Avengers: Age of Ultron",
+      "genres": [
+        "action",
+        "adventure",
+        "fantasy",
+        "sf"
+      ],
+      "moods": [
+        "exciting",
+        "heroic",
+        "visual",
+        "warm"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20183782": {
+      "titleEn": "Parasite",
+      "genres": [
+        "drama",
+        "thriller",
+        "comedy"
+      ],
+      "moods": [
+        "tense",
+        "dark",
+        "serious",
+        "funny",
+        "light",
+        "immersive"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "complex",
+        "dark",
+        "violence",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20149120": {
+      "titleEn": "Interstellar",
+      "genres": [
+        "sf",
+        "adventure",
+        "drama"
+      ],
+      "moods": [
+        "immersive",
+        "visual",
+        "serious",
+        "exciting"
+      ],
+      "pace": "slow",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "too_long",
+        "complex",
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20185485": {
+      "titleEn": "Bohemian Rhapsody",
+      "genres": [
+        "drama",
+        "music"
+      ],
+      "moods": [
+        "exciting",
+        "warm",
+        "immersive",
+        "serious",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "alone",
+        "date"
+      ],
+      "avoid": [
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20145507": {
+      "titleEn": "A Violent Prosecutor",
+      "genres": [
+        "crime",
+        "comedy",
+        "drama"
+      ],
+      "moods": [
+        "funny",
+        "light",
+        "exciting",
+        "tense",
+        "dark",
+        "serious"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20184621": {
+      "titleEn": "Exit",
+      "genres": [
+        "comedy",
+        "action",
+        "adventure"
+      ],
+      "moods": [
+        "exciting",
+        "funny",
+        "light",
+        "visual",
+        "heroic"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family"
+      ],
+      "avoid": [
+        "loud",
+        "violence"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20126674": {
+      "titleEn": "Snowpiercer",
+      "genres": [
+        "sf",
+        "action",
+        "drama",
+        "thriller"
+      ],
+      "moods": [
+        "tense",
+        "dark",
+        "immersive",
+        "exciting",
+        "visual",
+        "serious"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "dark",
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20126091": {
+      "titleEn": "The Face Reader",
+      "genres": [
+        "history",
+        "drama"
+      ],
+      "moods": [
+        "serious",
+        "immersive",
+        "tense",
+        "heroic"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "complex",
+        "violence",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20121621": {
+      "titleEn": "Iron Man 3",
+      "genres": [
+        "action",
+        "sf",
+        "adventure"
+      ],
+      "moods": [
+        "exciting",
+        "heroic",
+        "visual"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20159364": {
+      "titleEn": "Captain America: Civil War",
+      "genres": [
+        "action",
+        "sf",
+        "thriller",
+        "adventure"
+      ],
+      "moods": [
+        "exciting",
+        "tense",
+        "heroic",
+        "visual",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20136064": {
+      "titleEn": "The Pirates",
+      "genres": [
+        "adventure",
+        "action",
+        "comedy",
+        "history"
+      ],
+      "moods": [
+        "exciting",
+        "funny",
+        "light",
+        "visual",
+        "serious",
+        "immersive"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20131102": {
+      "titleEn": "Miss Granny",
+      "genres": [
+        "drama",
+        "comedy",
+        "fantasy",
+        "music"
+      ],
+      "moods": [
+        "warm",
+        "funny",
+        "light",
+        "serious",
+        "immersive",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "friends",
+        "date",
+        "alone"
+      ],
+      "avoid": [
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20192206": {
+      "titleEn": "Ashfall",
+      "genres": [
+        "adventure",
+        "drama",
+        "action",
+        "thriller"
+      ],
+      "moods": [
+        "tense",
+        "exciting",
+        "serious",
+        "visual",
+        "dark",
+        "immersive"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark",
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20194376": {
+      "titleEn": "Top Gun: Maverick",
+      "genres": [
+        "action",
+        "drama",
+        "adventure"
+      ],
+      "moods": [
+        "exciting",
+        "heroic",
+        "visual",
+        "serious",
+        "immersive"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "loud",
+        "violence",
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20196309": {
+      "titleEn": "Spider-Man: Far From Home",
+      "genres": [
+        "action",
+        "adventure",
+        "comedy",
+        "sf"
+      ],
+      "moods": [
+        "exciting",
+        "funny",
+        "heroic",
+        "visual",
+        "light"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20151228": {
+      "titleEn": "Confidential Assignment",
+      "genres": [
+        "action",
+        "comedy",
+        "crime"
+      ],
+      "moods": [
+        "funny",
+        "exciting",
+        "light",
+        "visual",
+        "tense",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20110659": {
+      "titleEn": "Transformers: Dark of the Moon",
+      "genres": [
+        "action",
+        "adventure",
+        "sf"
+      ],
+      "moods": [
+        "exciting",
+        "visual",
+        "loud",
+        "heroic"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "loud",
+        "violence"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20136068": {
+      "titleEn": "The Himalayas",
+      "genres": [
+        "drama",
+        "adventure"
+      ],
+      "moods": [
+        "immersive",
+        "warm",
+        "heroic",
+        "exciting",
+        "visual",
+        "serious"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "sad_ending",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20242837": {
+      "titleEn": "The King's Warden",
+      "genres": [
+        "history",
+        "drama"
+      ],
+      "moods": [
+        "warm",
+        "sad",
+        "immersive",
+        "serious",
+        "heroic"
+      ],
+      "pace": "slow",
+      "audiences": [
+        "date",
+        "alone"
+      ],
+      "avoid": [
+        "sad_ending",
+        "violence"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20112207": {
+      "titleEn": "Mission: Impossible - Ghost Protocol",
+      "genres": [
+        "action",
+        "adventure",
+        "thriller"
+      ],
+      "moods": [
+        "exciting",
+        "tense",
+        "visual",
+        "dark",
+        "heroic"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20210028": {
+      "titleEn": "Spider-Man: No Way Home",
+      "genres": [
+        "action",
+        "adventure",
+        "sf",
+        "fantasy"
+      ],
+      "moods": [
+        "exciting",
+        "heroic",
+        "warm",
+        "visual"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "family",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20239670": {
+      "titleEn": "I, the Executioner",
+      "genres": [
+        "crime",
+        "action",
+        "thriller",
+        "comedy"
+      ],
+      "moods": [
+        "exciting",
+        "tense",
+        "funny",
+        "visual",
+        "light",
+        "dark"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20159646": {
+      "titleEn": "The Age of Shadows",
+      "genres": [
+        "action",
+        "history",
+        "thriller",
+        "drama"
+      ],
+      "moods": [
+        "tense",
+        "serious",
+        "immersive",
+        "exciting",
+        "visual",
+        "dark"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "alone",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "dark",
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20110302": {
+      "titleEn": "War of the Arrows",
+      "genres": [
+        "history",
+        "action",
+        "drama"
+      ],
+      "moods": [
+        "heroic",
+        "tense",
+        "immersive",
+        "exciting",
+        "visual",
+        "serious"
+      ],
+      "pace": "fast",
+      "audiences": [
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    }
+  }
+}

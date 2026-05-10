@@ -1,0 +1,1026 @@
+{
+  "source": {
+    "checkedAt": "2026-05-06",
+    "titleSources": [
+      "KOBIS movie search pages",
+      "Wikipedia/Wikidata public film records"
+    ],
+    "tagPolicy": "animation tags are enriched with subgenres and poster-taste signals so the poster choice step carries stronger preference analysis",
+    "duplicatePolicy": "anime tag file owns movieCd overlaps with the general movie poster pool"
+  },
+  "movies": {
+    "20197803": {
+      "titleEn": "Frozen II",
+      "genres": [
+        "animation",
+        "fantasy",
+        "adventure",
+        "family",
+        "musical"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "date",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20136803": {
+      "titleEn": "Frozen",
+      "genres": [
+        "animation",
+        "adventure",
+        "comedy",
+        "fantasy",
+        "family",
+        "musical"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "date",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20235974": {
+      "titleEn": "Inside Out 2",
+      "genres": [
+        "animation",
+        "comedy",
+        "drama",
+        "family"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "funny",
+        "light",
+        "serious",
+        "immersive"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "sad_ending"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20252432": {
+      "titleEn": "Zootopia 2",
+      "genres": [
+        "animation",
+        "adventure",
+        "comedy",
+        "family",
+        "mystery",
+        "crime"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "funny",
+        "light",
+        "tense"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20228930": {
+      "titleEn": "Elemental",
+      "genres": [
+        "animation",
+        "romance",
+        "comedy",
+        "drama",
+        "family",
+        "fantasy"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "funny",
+        "light",
+        "serious",
+        "immersive"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "date",
+        "friends"
+      ],
+      "avoid": [
+        "sad_ending"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20253289": {
+      "titleEn": "Demon Slayer: Kimetsu no Yaiba - The Movie: Infinity Castle",
+      "genres": [
+        "animation",
+        "action",
+        "fantasy",
+        "adventure",
+        "thriller"
+      ],
+      "moods": [
+        "visual",
+        "exciting",
+        "tense",
+        "dark",
+        "warm",
+        "heroic"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "family",
+        "child",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20226270": {
+      "titleEn": "Suzume",
+      "genres": [
+        "animation",
+        "adventure",
+        "fantasy",
+        "drama",
+        "romance"
+      ],
+      "moods": [
+        "visual",
+        "exciting",
+        "serious",
+        "immersive",
+        "warm",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "family",
+        "child",
+        "date"
+      ],
+      "avoid": [
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20110511": {
+      "titleEn": "Kung Fu Panda 2",
+      "genres": [
+        "animation",
+        "adventure",
+        "action",
+        "comedy",
+        "family"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20151225": {
+      "titleEn": "Inside Out",
+      "genres": [
+        "animation",
+        "comedy",
+        "drama",
+        "family",
+        "fantasy"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "light",
+        "serious",
+        "immersive"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "sad_ending"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20228555": {
+      "titleEn": "The First Slam Dunk",
+      "genres": [
+        "animation",
+        "drama"
+      ],
+      "moods": [
+        "visual",
+        "serious",
+        "immersive",
+        "warm"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "family",
+        "child",
+        "alone"
+      ],
+      "avoid": [
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20155501": {
+      "titleEn": "Zootopia",
+      "genres": [
+        "animation",
+        "adventure",
+        "action",
+        "comedy",
+        "family",
+        "crime",
+        "mystery"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "funny",
+        "light",
+        "tense"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20080653": {
+      "titleEn": "Kung Fu Panda",
+      "genres": [
+        "animation",
+        "action",
+        "comedy",
+        "family",
+        "adventure"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20151803": {
+      "titleEn": "Kung Fu Panda 3",
+      "genres": [
+        "animation",
+        "adventure",
+        "action",
+        "comedy",
+        "family"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "funny",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20161872": {
+      "titleEn": "Your Name.",
+      "genres": [
+        "animation",
+        "drama",
+        "romance",
+        "fantasy"
+      ],
+      "moods": [
+        "visual",
+        "serious",
+        "immersive",
+        "warm",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "family",
+        "child",
+        "date"
+      ],
+      "avoid": [
+        "sad_ending"
+      ],
+      "ageRating": "12",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20240737": {
+      "titleEn": "Moana 2",
+      "genres": [
+        "animation",
+        "adventure",
+        "family",
+        "fantasy",
+        "musical"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "date",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20179985": {
+      "titleEn": "Coco",
+      "genres": [
+        "animation",
+        "family",
+        "fantasy",
+        "music",
+        "drama"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "serious",
+        "immersive",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "date",
+        "alone"
+      ],
+      "avoid": [
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20256757": {
+      "titleEn": "Chainsaw Man - The Movie: Reze Arc",
+      "genres": [
+        "animation",
+        "adventure",
+        "action",
+        "fantasy",
+        "horror",
+        "romance",
+        "thriller"
+      ],
+      "moods": [
+        "visual",
+        "exciting",
+        "tense",
+        "dark",
+        "warm",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "friends",
+        "family",
+        "child",
+        "date"
+      ],
+      "avoid": [
+        "violence",
+        "loud",
+        "dark"
+      ],
+      "ageRating": "15",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20184047": {
+      "titleEn": "Toy Story 4",
+      "genres": [
+        "animation",
+        "adventure",
+        "comedy",
+        "family",
+        "fantasy"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20173403": {
+      "titleEn": "Despicable Me 3",
+      "genres": [
+        "animation",
+        "comedy",
+        "adventure",
+        "family"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "funny",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20040566": {
+      "titleEn": "Shrek 2",
+      "genres": [
+        "animation",
+        "comedy",
+        "adventure",
+        "family",
+        "fantasy",
+        "romance"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "funny",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "date",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20183361": {
+      "titleEn": "Incredibles 2",
+      "genres": [
+        "animation",
+        "adventure",
+        "action",
+        "comedy",
+        "family",
+        "sf"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20040756": {
+      "titleEn": "Howl's Moving Castle",
+      "genres": [
+        "animation",
+        "fantasy",
+        "adventure",
+        "romance",
+        "drama"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "serious",
+        "immersive",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "date",
+        "friends"
+      ],
+      "avoid": [
+        "loud",
+        "sad_ending"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20131248": {
+      "titleEn": "How to Train Your Dragon 2",
+      "genres": [
+        "animation",
+        "adventure",
+        "action",
+        "family",
+        "fantasy"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "comfort",
+        "heroic"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20070116": {
+      "titleEn": "Shrek the Third",
+      "genres": [
+        "animation",
+        "adventure",
+        "comedy",
+        "fantasy",
+        "family"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20149951": {
+      "titleEn": "Big Hero 6",
+      "genres": [
+        "animation",
+        "action",
+        "comedy",
+        "adventure",
+        "family",
+        "sf"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends",
+        "alone"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20145361": {
+      "titleEn": "Minions",
+      "genres": [
+        "animation",
+        "comedy",
+        "adventure",
+        "family"
+      ],
+      "moods": [
+        "visual",
+        "warm",
+        "exciting",
+        "funny",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20100190": {
+      "titleEn": "How to Train Your Dragon",
+      "genres": [
+        "animation",
+        "adventure",
+        "comedy",
+        "family",
+        "action",
+        "fantasy"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "violence",
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20159058": {
+      "titleEn": "Finding Dory",
+      "genres": [
+        "animation",
+        "adventure",
+        "comedy",
+        "family"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20156082": {
+      "titleEn": "The Secret Life of Pets",
+      "genres": [
+        "animation",
+        "comedy",
+        "family",
+        "adventure"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "exciting",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [
+        "loud"
+      ],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    },
+    "20174061": {
+      "titleEn": "The Boss Baby",
+      "genres": [
+        "animation",
+        "comedy",
+        "family",
+        "fantasy"
+      ],
+      "moods": [
+        "visual",
+        "funny",
+        "warm",
+        "light",
+        "comfort"
+      ],
+      "pace": "medium",
+      "audiences": [
+        "family",
+        "child",
+        "friends"
+      ],
+      "avoid": [],
+      "ageRating": "all",
+      "tagSources": [
+        "KOBIS movie metadata/search pages",
+        "Wikipedia/Wikidata public film title and genre summaries",
+        "Conservative local recommendation taxonomy normalization"
+      ]
+    }
+  }
+}

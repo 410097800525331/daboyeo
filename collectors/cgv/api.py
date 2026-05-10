@@ -6,12 +6,15 @@ import hmac
 import json
 import os
 import time
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 
 API_BASE = "https://api.cgv.co.kr"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
 DEFAULT_HEADERS = {
     "Accept": "application/json",
     "Accept-Language": "ko-KR",
@@ -25,6 +28,24 @@ DEFAULT_HEADERS = {
 }
 
 
+def parse_env_file(path: Path = DEFAULT_ENV_PATH) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not path.exists():
+        return values
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    return values
+
+
+def load_cgv_api_secret(env_path: Path = DEFAULT_ENV_PATH) -> str:
+    return os.environ.get("CGV_API_SECRET", parse_env_file(env_path).get("CGV_API_SECRET", ""))
+
+
 class CgvApiClient:
     def __init__(
         self,
@@ -33,9 +54,9 @@ class CgvApiClient:
         headers: dict[str, str] | None = None,
     ) -> None:
         self.api_base = api_base
-        self.api_secret = api_secret or os.environ.get("CGV_API_SECRET", "")
+        self.api_secret = api_secret or load_cgv_api_secret()
         if not self.api_secret:
-            raise RuntimeError("CGV_API_SECRET 환경변수가 필요함")
+            raise RuntimeError("CGV_API_SECRET 환경변수 또는 루트 .env 값이 필요함")
         self.headers = {**DEFAULT_HEADERS, **(headers or {})}
 
     def _build_signature(self, pathname: str, body: str, timestamp: str) -> str:

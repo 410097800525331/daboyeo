@@ -1,0 +1,382 @@
+@charset "utf-8";
+@import url(./css/common.css);
+
+/* Top Search Bar */
+.search-bar {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  padding: 12px 0;
+  margin-bottom: 20px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.search-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--wight0);
+}
+
+.search-item:last-child {
+  border-right: none;
+}
+
+.search-item i {
+  margin-right: 10px;
+}
+
+/* Time Slider Section */
+.time-filter-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.time-label {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.time-label span {
+  color: var(--purple0);
+  margin-left: 10px;
+}
+
+.slider-container {
+  flex: 1;
+  margin: 0 40px;
+  position: relative;
+  padding-top: 20px;
+}
+
+.slider-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  position: relative;
+}
+
+.slider-active {
+  position: absolute;
+  left: 30%;
+  right: 20%;
+  height: 100%;
+  background: #9d8df1;
+  border-radius: 2px;
+}
+
+.slider-handle {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(157, 141, 241, 0.5);
+}
+
+.handle-left {
+  left: 30%;
+}
+
+.handle-right {
+  left: 80%;
+}
+
+.slider-time {
+  position: absolute;
+  top: -20px;
+  font-size: 10px;
+  color: #666;
+  transform: translateX(-50%);
+}
+
+.search-btn {
+  background: var(--purple0);
+  color: var(--wight0);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Content Layout */
+.content-body {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 40px;
+}
+
+/* Sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.map-placeholder {
+  width: 100%;
+  height: 200px;
+  background: #222;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.map-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #888;
+  text-align: center;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.filter-section h3 {
+  font-size: 15px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  color: #bbb;
+  font-size: 14px;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  margin-right: 12px;
+}
+
+.filter-left {
+  display: flex;
+  align-items: center;
+}
+
+.count {
+  color: #666;
+}
+
+/* Results Area */
+.results-header {
+  margin-bottom: 20px;
+}
+
+.results-count {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.sort-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sort-tab {
+  flex: 1;
+  padding: 15px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #888;
+  cursor: pointer;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sort-tab:last-child {
+  border-right: none;
+}
+
+.sort-tab.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Movie Card */
+.movie-card {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  display: flex;
+  overflow: hidden;
+  height: 320px;
+}
+
+.movie-poster {
+  width: 240px;
+  height: 100%;
+  background-image: url('https://images.unsplash.com/photo-1616530940355-351fabd9524b?q=80&w=1000&auto=format&fit=crop');
+  /* Placeholder */
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.age-rating {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ffcc00;
+  color: #000;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.movie-info {
+  flex: 1;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.movie-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.movie-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.heart-icon {
+  color: #888;
+  font-size: 20px;
+}
+
+.theater-info {
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.genre {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 30px;
+}
+
+.time-info {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: auto;
+}
+
+.time-info span {
+  color: #666;
+  font-weight: 400;
+  margin-left: 5px;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+}
+
+.rating {
+  font-size: 14px;
+  color: #888;
+}
+
+.rating span {
+  color: #fff;
+  font-weight: 600;
+}
+
+.seats {
+  font-size: 12px;
+  color: #9d8df1;
+}
+
+/* Price Area */
+.price-area {
+  width: 220px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  background: #222;
+}
+
+.cgv-logo {
+  color: #e71a0f;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 20px;
+  margin-bottom: auto;
+}
+
+.price-tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(157, 141, 241, 0.5);
+  color: #9d8df1;
+}
+
+.original-price {
+  font-size: 14px;
+  color: #666;
+  text-decoration: line-through;
+  margin-bottom: 5px;
+}
+
+.current-price {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.booking-btn {
+  width: 100%;
+  padding: 15px;
+  background: #9d8df1;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}

@@ -22,9 +22,21 @@ def main() -> None:
     parser.add_argument("--screening-date", default="20260408", help="CGV screening date in YYYYMMDD")
     parser.add_argument("--screen-no", default="002", help="CGV screen number")
     parser.add_argument("--screen-sequence", default="3", help="CGV screen sequence")
+    parser.add_argument("--seat-area-no", default="", help="Optional CGV seat area number")
     parser.add_argument(
         "--mode",
-        choices=["bundle", "movies", "attributes", "regions", "sites", "dates", "schedules", "seats", "seat-summary"],
+        choices=[
+            "bundle",
+            "movies",
+            "attributes",
+            "regions",
+            "sites",
+            "dates",
+            "schedules",
+            "seats",
+            "seat-summary",
+            "seat-layout",
+        ],
         default="bundle",
     )
     parser.add_argument("--output", help="Optional path to save JSON output")
@@ -61,13 +73,23 @@ def main() -> None:
             scn_ymd=args.screening_date,
             scns_no=args.screen_no,
             scn_sseq=args.screen_sequence,
+            seat_area_no=args.seat_area_no,
         )
-    else:
+    elif args.mode == "seat-summary":
         output = collector.summarize_seat_map(
             site_no=args.site_no,
             scn_ymd=args.screening_date,
             scns_no=args.screen_no,
             scn_sseq=args.screen_sequence,
+            seat_area_no=args.seat_area_no,
+        )
+    else:
+        output = collector.build_seat_layout(
+            site_no=args.site_no,
+            scn_ymd=args.screening_date,
+            scns_no=args.screen_no,
+            scn_sseq=args.screen_sequence,
+            seat_area_no=args.seat_area_no,
         )
 
     text = json.dumps(output, ensure_ascii=False, indent=2)
@@ -77,4 +99,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        raise SystemExit(1)
