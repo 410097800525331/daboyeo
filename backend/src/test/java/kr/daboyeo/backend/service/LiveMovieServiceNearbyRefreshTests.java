@@ -5,6 +5,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -49,6 +50,31 @@ class LiveMovieServiceNearbyRefreshTests {
         verify(refreshService, times(1)).requestRefresh(criteria);
         assertThat(response.results()).hasSize(1);
         assertThat(response.search().databaseAvailable()).isTrue();
+    }
+
+    @Test
+    void nearbySearchDoesNotTriggerRefreshWhenPublicRefreshIsDisabled() {
+        LiveMovieRepository repository = mock(LiveMovieRepository.class);
+        NearbyShowtimeRefreshService refreshService = mock(NearbyShowtimeRefreshService.class);
+        LiveMovieSearchCriteria criteria = sampleCriteria(List.of("LOTTE"));
+        when(repository.findNearbySchedules(criteria)).thenReturn(List.of());
+
+        LiveMovieService service = new LiveMovieService(
+            repository,
+            new SeatStateCalculator(),
+            new LiveMovieDemoDataService(),
+            refreshService,
+            false,
+            false,
+            Duration.ofMillis(2500),
+            FIXED_CLOCK
+        );
+
+        LiveMovieService.LiveMovieResponse response = service.findNearby(criteria);
+
+        verifyNoInteractions(refreshService);
+        assertThat(response.results()).isEmpty();
+        assertThat(response.search().pendingRefresh()).isFalse();
     }
 
     @Test

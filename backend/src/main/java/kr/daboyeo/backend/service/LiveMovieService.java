@@ -16,6 +16,7 @@ import kr.daboyeo.backend.domain.LiveMovieSchedule;
 import kr.daboyeo.backend.domain.LiveMovieSearchCriteria;
 import kr.daboyeo.backend.domain.SeatState;
 import kr.daboyeo.backend.repository.LiveMovieRepository;
+import kr.daboyeo.backend.security.PortfolioAccessGate;
 import kr.daboyeo.backend.sync.nearby.NearbyShowtimeRefreshService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,7 @@ public class LiveMovieService {
     private final LiveMovieDemoDataService demoDataService;
     private final NearbyShowtimeRefreshService nearbyShowtimeRefreshService;
     private final boolean liveFallbackEnabled;
+    private final boolean publicNearbyRefreshEnabled;
     private final Duration nearbyRefreshWaitTimeout;
     private final Clock clock;
 
@@ -48,6 +50,7 @@ public class LiveMovieService {
         SeatStateCalculator seatStateCalculator,
         LiveMovieDemoDataService demoDataService,
         NearbyShowtimeRefreshService nearbyShowtimeRefreshService,
+        PortfolioAccessGate accessGate,
         @Value("${daboyeo.demo.live-fallback-enabled:true}") boolean liveFallbackEnabled,
         @Value("${daboyeo.sync.showtimes.nearby-refresh-wait-millis:2500}") long nearbyRefreshWaitMillis
     ) {
@@ -57,6 +60,7 @@ public class LiveMovieService {
             demoDataService,
             nearbyShowtimeRefreshService,
             liveFallbackEnabled,
+            accessGate.publicNearbyRefreshEnabled(),
             Duration.ofMillis(Math.max(0L, nearbyRefreshWaitMillis)),
             Clock.system(ZoneId.of("Asia/Seoul"))
         );
@@ -71,11 +75,34 @@ public class LiveMovieService {
         Duration nearbyRefreshWaitTimeout,
         Clock clock
     ) {
+        this(
+            repository,
+            seatStateCalculator,
+            demoDataService,
+            nearbyShowtimeRefreshService,
+            liveFallbackEnabled,
+            true,
+            nearbyRefreshWaitTimeout,
+            clock
+        );
+    }
+
+    LiveMovieService(
+        LiveMovieRepository repository,
+        SeatStateCalculator seatStateCalculator,
+        LiveMovieDemoDataService demoDataService,
+        NearbyShowtimeRefreshService nearbyShowtimeRefreshService,
+        boolean liveFallbackEnabled,
+        boolean publicNearbyRefreshEnabled,
+        Duration nearbyRefreshWaitTimeout,
+        Clock clock
+    ) {
         this.repository = repository;
         this.seatStateCalculator = seatStateCalculator;
         this.demoDataService = demoDataService;
         this.nearbyShowtimeRefreshService = nearbyShowtimeRefreshService;
         this.liveFallbackEnabled = liveFallbackEnabled;
+        this.publicNearbyRefreshEnabled = publicNearbyRefreshEnabled;
         this.nearbyRefreshWaitTimeout = nearbyRefreshWaitTimeout == null ? Duration.ZERO : nearbyRefreshWaitTimeout;
         this.clock = clock;
     }
@@ -162,6 +189,9 @@ public class LiveMovieService {
     }
 
     private void triggerNearbyRefresh(LiveMovieSearchCriteria criteria) {
+        if (!publicNearbyRefreshEnabled) {
+            return;
+        }
         try {
             nearbyShowtimeRefreshService.requestRefresh(criteria);
         } catch (RuntimeException exception) {
@@ -170,6 +200,9 @@ public class LiveMovieService {
     }
 
     private NearbyShowtimeRefreshService.RefreshWaitOutcome triggerNearbyRefreshAndAwait(LiveMovieSearchCriteria criteria) {
+        if (!publicNearbyRefreshEnabled) {
+            return NearbyShowtimeRefreshService.RefreshWaitOutcome.SKIPPED;
+        }
         try {
             return nearbyShowtimeRefreshService.requestRefreshAndAwait(criteria, nearbyRefreshWaitTimeout);
         } catch (RuntimeException exception) {

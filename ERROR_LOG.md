@@ -836,3 +836,51 @@ Do not rewrite existing entries; append only.
 - summary: `The bridge heartbeat was ready, but a precise Codex job timed out and then failed to report because Spring had already removed the job.`
 - details: `Provider health returned ready, but .local/ai-bridge.err.log showed gpt-5.5 with xhigh reasoning timing out after 180 seconds, followed by HTTP 404 from /api/internal/ai-bridge/jobs/{jobId}/result. The repair lowers local precise defaults to gpt-5.4/medium with fewer candidates and tokens, shortens Spring bridge timeouts, and makes the worker timeout shorter than Spring's result wait so stale job reports do not linger.`
 - status: `resolved`
+
+# 2026-05-09 22:50 +09:00
+
+- time: `2026-05-09 22:50 +09:00`
+- location: `R2 seed poster upload`
+- summary: `The first seed poster upload attempt timed out under sandboxed network restrictions.`
+- details: `scripts/storage/upload_seed_posters_to_r2.py --write timed out after 240 seconds before returning a summary. The command was rerun with approved external network access and completed with configured=true, checked=76, uploaded=76, failed=0. A later sandboxed R2 list check hit the same network restriction, then the approved external-network check returned poster object keys. Upload is idempotent because object keys are deterministic.`
+- status: `resolved`
+
+# 2026-05-10 15:07 +09:00
+
+- time: `2026-05-10 15:07 +09:00`
+- location: `Oracle VM deployment`
+- summary: `Initial Oracle deployment exposed environment and network blockers before the public health check passed.`
+- details: `SSH first failed because the generated private key had overly broad Windows ACLs; the ACL was narrowed and SSH succeeded. The first Spring start failed because the existing TiDB schema was non-empty without Flyway history, so the deployment env was changed to DABOYEO_FLYWAY_ENABLED=false for the existing database. The next start failed because PosterSeedService constructor injection was ambiguous in the executable jar; @Autowired was added, focused recommendation tests and bootJar passed, and the jar was redeployed. Public HTTP still timed out after Nginx worked internally because OCI's Ubuntu iptables only allowed SSH; tcp/80 was inserted before the reject rule and persisted with netfilter-persistent. Final external /api/health returned 200.`
+- status: `resolved`
+
+# 2026-05-10 15:22 +09:00
+
+- time: `2026-05-10 15:22 +09:00`
+- location: `Oracle Codex demo gate deployment`
+- summary: `The first server update assumed a daboyeo Linux user that was not present on the VM.`
+- details: `The jar, server env, and bridge worker upload reached /tmp, but the remote install step failed at install -o daboyeo because the deployed Oracle VM does not have a daboyeo user. The local temporary deploy env was removed without printing secret values. Remote ownership and systemd showed the service runs as ubuntu, so the files were reinstalled as ubuntu:ubuntu and the service restarted successfully.`
+- status: `resolved`
+
+# 2026-05-10 15:34 +09:00
+
+- time: `2026-05-10 15:34 +09:00`
+- location: `Selfdex next-task planning`
+- summary: `Selfdex read-only planner timed out before producing a candidate.`
+- details: `The read-only plan_external_project.py run against D:\git\daboyeo exceeded the 120 second command timeout, then a narrower --limit 1 run exceeded 180 seconds. The follow-up checked the planner help successfully and fell back to local evidence-based task selection: stabilizing the manual Oracle deploy path into a repeatable secret-safe PowerShell script.`
+- status: `resolved-with-fallback`
+
+# 2026-05-10 15:43 +09:00
+
+- time: `2026-05-10 15:43 +09:00`
+- location: `Codex Security deployed-site review`
+- summary: `Default codex-security artifact path under C:\tmp was not writable in this session.`
+- details: `Creating C:\tmp\codex-security-scans\daboyeo\<scan-id>\artifacts failed with access denied. The scan continues with ignored local artifacts under .local/security-scans/daboyeo instead.`
+- status: `resolved-with-local-artifact-path`
+
+# 2026-05-10 19:49 +09:00
+
+- time: `2026-05-10 19:49 +09:00`
+- location: `goal commit staging`
+- summary: `Sandboxed git add could not create .git/index.lock.`
+- details: `The first git add -A failed with permission denied while creating D:/git/daboyeo/.git/index.lock. The staging command was rerun with approved external permission and completed with CRLF warnings only.`
+- status: `resolved`

@@ -42,14 +42,34 @@ public final class RecommendationModels {
     }
 
     public enum AiProvider {
-        CODEX;
+        FALLBACK("fallback"),
+        CODEX("codex"),
+        OPENAI_API("openai-api");
+
+        private final String wireValue;
+
+        AiProvider(String wireValue) {
+            this.wireValue = wireValue;
+        }
 
         public static AiProvider from(String value) {
             if (value == null || value.isBlank()) {
-                return CODEX;
+                return FALLBACK;
             }
             String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
+            if ("FALLBACK".equals(normalized)
+                || "LOCAL_SCORE".equals(normalized)
+                || "SCORER".equals(normalized)
+                || "FREE".equals(normalized)) {
+                return FALLBACK;
+            }
+            if ("OPENAI".equals(normalized)
+                || "OPENAI_API".equals(normalized)
+                || "API".equals(normalized)) {
+                return OPENAI_API;
+            }
             if ("CODEX".equals(normalized)
+                || "CODEX_DEMO".equals(normalized)
                 || "CODEX_BRIDGE".equals(normalized)
                 || "CODEX_WORKER".equals(normalized)
                 || "GPT".equals(normalized)
@@ -63,7 +83,7 @@ public final class RecommendationModels {
         }
 
         public String wireValue() {
-            return "codex";
+            return wireValue;
         }
     }
 

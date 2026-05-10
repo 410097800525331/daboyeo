@@ -19,7 +19,32 @@ from urllib import error, request
 TOKEN_HEADER = "X-DABOYEO-BRIDGE-TOKEN"
 
 
+def load_dotenv_defaults() -> None:
+    """repo/server .env 값을 기본 환경변수로만 로드한다."""
+    candidates = [
+        Path.cwd() / ".env",
+        Path(__file__).resolve().parents[1] / ".env",
+    ]
+    for env_path in candidates:
+        if not env_path.exists():
+            continue
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if not key or key in os.environ:
+                continue
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+                value = value[1:-1]
+            os.environ[key] = value
+        return
+
+
 def parse_args() -> argparse.Namespace:
+    load_dotenv_defaults()
     parser = argparse.ArgumentParser(description="Run the DABOYEO AI bridge worker.")
     parser.add_argument("--server", default=os.getenv("DABOYEO_BRIDGE_SERVER", "http://127.0.0.1:5500"))
     parser.add_argument("--token", default=os.getenv("DABOYEO_AI_BRIDGE_TOKEN", ""))

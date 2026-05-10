@@ -8,6 +8,9 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding;
 
 @ConfigurationProperties(prefix = "daboyeo.recommendation")
 public record RecommendationProperties(
+    String provider,
+    String openaiModel,
+    String posterPublicBaseUrl,
     String codexModel,
     String codexFastModel,
     String codexPreciseModel,
@@ -34,6 +37,9 @@ public record RecommendationProperties(
         List<String> frontendOrigins
     ) {
         this(
+            "codex",
+            "",
+            "",
             null,
             null,
             null,
@@ -52,8 +58,50 @@ public record RecommendationProperties(
         );
     }
 
+    public RecommendationProperties(
+        String codexModel,
+        String codexFastModel,
+        String codexPreciseModel,
+        String codexFastReasoningEffort,
+        String codexPreciseReasoningEffort,
+        Integer codexFastAiCandidateLimit,
+        Integer codexPreciseAiCandidateLimit,
+        Integer codexFastMaxTokens,
+        Integer codexPreciseMaxTokens,
+        String bridgeToken,
+        Integer bridgeResultTimeoutSeconds,
+        Integer bridgeHeartbeatTtlSeconds,
+        Integer bridgeJobTtlSeconds,
+        Integer minStartBufferMinutes,
+        List<String> frontendOrigins
+    ) {
+        this(
+            "codex",
+            "",
+            "",
+            codexModel,
+            codexFastModel,
+            codexPreciseModel,
+            codexFastReasoningEffort,
+            codexPreciseReasoningEffort,
+            codexFastAiCandidateLimit,
+            codexPreciseAiCandidateLimit,
+            codexFastMaxTokens,
+            codexPreciseMaxTokens,
+            bridgeToken,
+            bridgeResultTimeoutSeconds,
+            bridgeHeartbeatTtlSeconds,
+            bridgeJobTtlSeconds,
+            minStartBufferMinutes,
+            frontendOrigins
+        );
+    }
+
     @ConstructorBinding
     public RecommendationProperties {
+        provider = normalizeProvider(provider, "fallback");
+        openaiModel = defaultString(openaiModel, "");
+        posterPublicBaseUrl = trimTrailingSlash(defaultString(posterPublicBaseUrl, ""));
         codexModel = defaultString(codexModel, "");
         codexFastModel = defaultString(codexFastModel, codexModel.isBlank() ? "gpt-5.4-mini" : codexModel);
         codexPreciseModel = defaultString(codexPreciseModel, codexModel.isBlank() ? "gpt-5.5" : codexModel);
@@ -69,7 +117,7 @@ public record RecommendationProperties(
         bridgeJobTtlSeconds = clamp(bridgeJobTtlSeconds, 180, 30, 600);
         minStartBufferMinutes = minStartBufferMinutes == null ? 20 : Math.max(0, minStartBufferMinutes);
         if (frontendOrigins == null || frontendOrigins.isEmpty()) {
-            frontendOrigins = List.of("http://localhost:5173", "http://127.0.0.1:5173", "http://*:5173");
+            frontendOrigins = List.of("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5500", "http://127.0.0.1:5500");
         }
     }
 
@@ -77,8 +125,16 @@ public record RecommendationProperties(
         return mode == RecommendationMode.FAST ? codexFastModel : codexPreciseModel;
     }
 
+    public AiProvider defaultProvider() {
+        return AiProvider.from(provider);
+    }
+
     public String modelFor(AiProvider provider, RecommendationMode mode) {
-        return modelFor(mode);
+        return switch (provider) {
+            case FALLBACK -> "fallback-score-v1";
+            case OPENAI_API -> openaiModel.isBlank() ? "openai-api-disabled" : openaiModel;
+            case CODEX -> modelFor(mode);
+        };
     }
 
     public String reasoningEffortFor(RecommendationMode mode) {
@@ -86,21 +142,31 @@ public record RecommendationProperties(
     }
 
     public String reasoningEffortFor(AiProvider provider, RecommendationMode mode) {
-        return reasoningEffortFor(mode);
+        return provider == AiProvider.CODEX ? reasoningEffortFor(mode) : "";
     }
 
     public List<String> expectedModelsFor(AiProvider provider) {
+        if (provider == AiProvider.FALLBACK) {
+            return List.of(modelFor(provider, RecommendationMode.FAST));
+        }
+        if (provider == AiProvider.OPENAI_API && openaiModel.isBlank()) {
+            return List.of("openai-api-disabled");
+        }
         return List.of(
-                modelFor(provider, RecommendationMode.FAST),
-                modelFor(provider, RecommendationMode.PRECISE)
-            ).stream()
-            .filter(model -> model != null && !model.isBlank())
-            .distinct()
-            .toList();
+            modelFor(provider, RecommendationMode.FAST),
+            modelFor(provider, RecommendationMode.PRECISE)
+        ).stream()
+        .filter(model -> model != null && !model.isBlank())
+        .distinct()
+        .toList();
     }
 
     public String providerLabel(AiProvider provider) {
-        return "GPT (Codex)";
+        return switch (provider) {
+            case FALLBACK -> "코드 점수";
+            case CODEX -> "Codex demo";
+            case OPENAI_API -> "OpenAI API";
+        };
     }
 
     public int aiCandidateLimitFor(RecommendationMode mode) {
@@ -108,7 +174,7 @@ public record RecommendationProperties(
     }
 
     public int aiCandidateLimitFor(AiProvider provider, RecommendationMode mode) {
-        return aiCandidateLimitFor(mode);
+        return provider == AiProvider.CODEX ? aiCandidateLimitFor(mode) : 3;
     }
 
     public int maxTokensFor(RecommendationMode mode) {
@@ -116,7 +182,7 @@ public record RecommendationProperties(
     }
 
     public int maxTokensFor(AiProvider provider, RecommendationMode mode) {
-        return maxTokensFor(mode);
+        return provider == AiProvider.CODEX ? maxTokensFor(mode) : 0;
     }
 
     public int responseTextMaxLengthFor(AiProvider provider, RecommendationMode mode) {
@@ -125,6 +191,22 @@ public record RecommendationProperties(
 
     private static String defaultString(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private static String normalizeProvider(String value, String fallback) {
+        try {
+            return AiProvider.from(defaultString(value, fallback)).wireValue();
+        } catch (IllegalArgumentException exception) {
+            return AiProvider.from(fallback).wireValue();
+        }
+    }
+
+    private static String trimTrailingSlash(String value) {
+        String text = value == null ? "" : value.trim();
+        while (text.endsWith("/")) {
+            text = text.substring(0, text.length() - 1);
+        }
+        return text;
     }
 
     private static String normalizeReasoningEffort(String value, String fallback) {

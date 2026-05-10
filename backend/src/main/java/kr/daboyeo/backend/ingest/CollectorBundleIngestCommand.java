@@ -127,6 +127,24 @@ public class CollectorBundleIngestCommand {
         return LocalDate.parse(text, COMPACT_DATE);
     }
 
+    static LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String text = value.trim().replace(' ', 'T');
+        if (text.endsWith("Z")) {
+            text = text.substring(0, text.length() - 1);
+        }
+        if (text.length() >= 19) {
+            text = text.substring(0, 19);
+        }
+        try {
+            return LocalDateTime.parse(text);
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
     static LocalTime parseTime(String value) {
         ParsedShowtimeTime parsed = parseShowtimeTime(value);
         return parsed == null ? null : parsed.time();
@@ -174,9 +192,10 @@ public class CollectorBundleIngestCommand {
         String sql = """
             INSERT INTO movies (
               provider_code, external_movie_id, representative_movie_id, title_ko, title_en, age_rating,
-              runtime_minutes, release_date, booking_rate, box_office_rank, poster_url, raw_json, last_collected_at
+              runtime_minutes, release_date, booking_rate, box_office_rank, poster_url, poster_source_url,
+              poster_r2_key, poster_etag, poster_storage_status, poster_stored_at, raw_json, last_collected_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), CURRENT_TIMESTAMP(3))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), CURRENT_TIMESTAMP(3))
             ON DUPLICATE KEY UPDATE
               representative_movie_id = VALUES(representative_movie_id),
               title_ko = VALUES(title_ko),
@@ -187,6 +206,11 @@ public class CollectorBundleIngestCommand {
               booking_rate = VALUES(booking_rate),
               box_office_rank = VALUES(box_office_rank),
               poster_url = VALUES(poster_url),
+              poster_source_url = VALUES(poster_source_url),
+              poster_r2_key = VALUES(poster_r2_key),
+              poster_etag = VALUES(poster_etag),
+              poster_storage_status = VALUES(poster_storage_status),
+              poster_stored_at = VALUES(poster_stored_at),
               raw_json = VALUES(raw_json),
               last_collected_at = CURRENT_TIMESTAMP(3)
             """;
@@ -206,7 +230,12 @@ public class CollectorBundleIngestCommand {
                 setBigDecimal(statement, 9, movie.bookingRate());
                 setInteger(statement, 10, movie.boxOfficeRank());
                 statement.setString(11, blankToNull(movie.posterUrl()));
-                statement.setString(12, toJson(movie.raw()));
+                statement.setString(12, blankToNull(movie.posterSourceUrl()));
+                statement.setString(13, blankToNull(movie.posterR2Key()));
+                statement.setString(14, blankToNull(movie.posterEtag()));
+                statement.setString(15, blankToDefault(movie.posterStorageStatus(), blankToNull(movie.posterUrl()) == null ? "missing" : "source_only"));
+                setTimestamp(statement, 16, movie.posterStoredAt());
+                statement.setString(17, toJson(movie.raw()));
                 statement.addBatch();
             }
             statement.executeBatch();
@@ -443,6 +472,10 @@ public class CollectorBundleIngestCommand {
         return value == null || value.isBlank() ? null : value;
     }
 
+    private static String blankToDefault(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
     private static Integer integerOrNull(Object value) {
         String text = text(value);
         if (text.isBlank()) {
@@ -562,6 +595,11 @@ public class CollectorBundleIngestCommand {
                     decimalOrNull(movie.get("booking_rate")),
                     null,
                     text(movie.get("poster_filename")),
+                    firstNonBlank(movie.get("poster_source_url"), movie.get("poster_url"), movie.get("poster_filename")),
+                    text(movie.get("poster_r2_key")),
+                    text(movie.get("poster_etag")),
+                    firstNonBlank(movie.get("poster_storage_status"), text(movie.get("poster_filename")).isBlank() ? "missing" : "source_only"),
+                    parseDateTime(text(movie.get("poster_stored_at"))),
                     movie.get("raw")
                 ))
                 .toList();
@@ -665,6 +703,11 @@ public class CollectorBundleIngestCommand {
                     decimalOrNull(movie.get("booking_rate")),
                     null,
                     text(movie.get("poster_url")),
+                    firstNonBlank(movie.get("poster_source_url"), movie.get("poster_url")),
+                    text(movie.get("poster_r2_key")),
+                    text(movie.get("poster_etag")),
+                    firstNonBlank(movie.get("poster_storage_status"), text(movie.get("poster_url")).isBlank() ? "missing" : "source_only"),
+                    parseDateTime(text(movie.get("poster_stored_at"))),
                     movie.get("raw")
                 ))
                 .toList();
@@ -769,6 +812,11 @@ public class CollectorBundleIngestCommand {
                     decimalOrNull(movie.get("booking_rate")),
                     integerOrNull(movie.get("box_office_rank")),
                     text(movie.get("poster_url")),
+                    firstNonBlank(movie.get("poster_source_url"), movie.get("poster_url")),
+                    text(movie.get("poster_r2_key")),
+                    text(movie.get("poster_etag")),
+                    firstNonBlank(movie.get("poster_storage_status"), text(movie.get("poster_url")).isBlank() ? "missing" : "source_only"),
+                    parseDateTime(text(movie.get("poster_stored_at"))),
                     movie.get("raw")
                 ))
                 .toList();
@@ -904,6 +952,11 @@ public class CollectorBundleIngestCommand {
         BigDecimal bookingRate,
         Integer boxOfficeRank,
         String posterUrl,
+        String posterSourceUrl,
+        String posterR2Key,
+        String posterEtag,
+        String posterStorageStatus,
+        LocalDateTime posterStoredAt,
         Object raw
     ) {
     }

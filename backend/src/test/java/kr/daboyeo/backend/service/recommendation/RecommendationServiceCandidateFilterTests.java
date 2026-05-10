@@ -287,6 +287,23 @@ class RecommendationServiceCandidateFilterTests {
     }
 
     @Test
+    void codexProviderFallsBackWhenBridgeTokenIsMissing() {
+        RecommendationService service = serviceWithoutBridgeToken(20);
+        ShowtimeCandidate first = candidate(1, "First");
+        ShowtimeCandidate second = candidate(2, "Second");
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class)))
+            .thenReturn(List.of(first, second));
+        when(scorer.score(any(TagProfile.class), any(), any()))
+            .thenReturn(List.of(scored(first, 90), scored(second, 80)));
+
+        RecommendationResponse response = service.recommend(request("precise", null, "codex"));
+
+        assertThat(response.status()).isEqualTo("fallback");
+        assertThat(response.model()).isEqualTo("fallback-score-v1");
+        verify(codexClient, never()).rankAndExplain(any(), any(), any());
+    }
+
+    @Test
     void selectedGenreMatchesStayFirstAndReservesCanFillFallbackCandidates() {
         RecommendationService service = service(20, 5, 5);
         TagProfile profile = new TagProfile();
@@ -529,6 +546,21 @@ class RecommendationServiceCandidateFilterTests {
     }
 
     private RecommendationService service(int minStartBufferMinutes, int fastAiCandidateLimit, int preciseAiCandidateLimit) {
+        when(codexClient.bridgeTokenConfigured()).thenReturn(true);
+        return service(minStartBufferMinutes, fastAiCandidateLimit, preciseAiCandidateLimit, codexClient);
+    }
+
+    private RecommendationService serviceWithoutBridgeToken(int minStartBufferMinutes) {
+        when(codexClient.bridgeTokenConfigured()).thenReturn(false);
+        return service(minStartBufferMinutes, 5, 5, codexClient);
+    }
+
+    private RecommendationService service(
+        int minStartBufferMinutes,
+        int fastAiCandidateLimit,
+        int preciseAiCandidateLimit,
+        CodexRecommendationClient codexClient
+    ) {
         when(profileRepository.findProfile("anon_test"))
             .thenReturn(Optional.of(new RecommendationProfile("anon_test", Map.of())));
         when(profileBuilder.build(any(), any(), any())).thenReturn(new TagProfile());

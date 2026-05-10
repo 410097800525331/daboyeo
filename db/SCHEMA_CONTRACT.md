@@ -82,7 +82,12 @@ Provider code는 변경하지 않는다.
 | `release_date` | 개봉일 `DATE` |
 | `booking_rate` | 예매율 |
 | `box_office_rank` | 박스오피스/노출 순위 |
-| `poster_url` | 포스터 URL |
+| `poster_url` | 사용자에게 표시할 최종 포스터 URL. R2 공개 URL이 있으면 R2 URL, 없으면 provider 원본 URL |
+| `poster_source_url` | provider 또는 seed 생성기가 처음 발견한 원본 포스터 URL |
+| `poster_r2_key` | R2에 저장된 포스터 object key. R2 저장 전 또는 실패 시 NULL 가능 |
+| `poster_etag` | R2 put 결과 ETag |
+| `poster_storage_status` | `r2_stored`, `r2_stored_private`, `r2_existing`, `r2_unconfigured`, `r2_failed`, `source_only`, `missing` 중 하나 |
+| `poster_stored_at` | R2 포스터 저장 시각, 저장 전이면 NULL |
 | `raw_json` | provider 원본 영화 payload |
 
 ### `theaters`

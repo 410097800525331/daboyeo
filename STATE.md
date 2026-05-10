@@ -2,29 +2,46 @@
 
 ## Current Task
 
-- task: `Refactor movie tag enrichment script boundaries`
-- phase: `implementation`
-- scope: `Proceed with the approved Selfdex /goal candidate: tighten responsibilities inside scripts/ingest/enrich_movie_tags.py without changing runtime behavior or expanding the write set.`
-- verification_target: `Python syntax/compile checks, validate-only override parsing, repository context checks, and diff review.`
-- classification: `score_total=5; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
-- score_breakdown: `single 600-line ingestion script responsibility concentration 2; DB/external API boundaries 1; recommendation metadata path importance 1; narrow single-file write set 1`
-- hard_triggers: `external-source and DB-adjacent enrichment logic, but no live DB writes or public runtime checks are in scope`
-- selected_rules: `freeze single-file contract first; preserve provider raw metadata and movie_tags behavior; do not touch secrets, migrations, runtime config, or live DB; keep verification local/read-only`
-- selected_skills: `selfdex`
-- execution_topology: `single-session`
-- orchestration_value: `low`
+- task: `Portfolio deployment security hardening plus Electron Codex bridge GUI`
+- phase: `verified`
+- previous_task: `Deployed Oracle site security review completed on 2026-05-10.`
+- scope: `Stabilize the existing R2/TiDB/Oracle/Codex bridge work, harden the deployed public API surface found by the security review, narrow production CORS defaults, and add a local Electron GUI that starts and kills the Codex bridge only during demos.`
+- verification_target: `No-secret code review, focused backend tests, JS syntax checks for Electron GUI, PowerShell/deploy script checks where touched, WORKSPACE_CONTEXT checks, git diff --check, and final git status.`
+- classification: `score_total=10; single-session staged; orchestration_value=high; agent_budget=0; evaluation_need=full`
+- score_breakdown: `public auth/security boundary 3; deployed runtime and external service boundary 2; Electron subprocess control 2; existing large dirty deployment/R2/TiDB change set 1; CORS browser trust boundary 1; multi-surface verification 1`
+- hard_triggers: `authentication/authorization boundary, secret/env handling, public external request surface, deployed runtime behavior, Electron subprocess lifecycle, PowerShell/deployment flow`
+- selected_rules: `freeze staged contract before edits; never print or hardcode secrets; no destructive git operations; no live deploy or DB mutation unless separately requested; keep Codex bridge manual-only with no auto-start; preserve existing dirty worktree changes`
+- selected_skills: `none for implementation; prior selfdex planning and codex-security review inform the contract`
+- execution_topology: `single-session staged`
+- orchestration_value: `high`
 - agent_budget: `0`
-- spawn_decision: `no spawn; the user approved a bounded single-file Selfdex candidate and delegation would add handoff cost without disjoint write ownership.`
-- reason: `The approved /goal candidate is a medium-risk single-script maintainability improvement; the hard boundary is preserving movie_tags enrichment behavior while reducing internal responsibility mixing.`
-- write_sets: `STATE.md; scripts/ingest/enrich_movie_tags.py`
-- contract_freeze: `Only scripts/ingest/enrich_movie_tags.py may be changed. Refactor internal boundaries around provider auto tags, provider detail metadata, KOBIS metadata, and curated overrides while keeping CLI args, JSON output shape, DB writes, confidence/source constants, and external request behavior compatible. No live DB writes, secrets, migrations, or frontend/backend runtime files.`
-- evaluation_need: `light; acceptance is concrete and covered by compile, validate-only parsing, diff review, and repository context checks.`
-- project_invariants: `No secrets committed, no destructive reset/checkout/clean, provider-specific raw metadata preservation remains intact, movie_tags semantics stay compatible, and external calls stay opt-in through existing flags/API keys.`
-- task_acceptance: `The enrichment script has clearer internal phase boundaries, unchanged public CLI behavior, local verification passes or gaps are reported, and final git status is explained.`
-- non_goals: `No DB schema changes, no live TiDB mutation, no KOBIS/provider network smoke unless explicitly requested, no commit/push unless asked.`
-- hard_checks: `python -m py_compile scripts/ingest/enrich_movie_tags.py; python scripts/ingest/enrich_movie_tags.py --validate-only; python -m compileall -q scripts/ingest; git diff --check; WORKSPACE_CONTEXT checks.`
-- llm_review_rubric: `Check for changed JSON keys, changed DB write conditions, accidental eager provider/KOBIS calls, lost dry-run behavior, and widened write scope.`
-- evidence_required: `Changed function boundaries, compile/validate outputs, diff check result, WORKSPACE_CONTEXT checks, final git status, and retrospective.`
+- spawn_decision: `no spawn; /goal authorizes the multi-step objective but the current user request did not explicitly request subagents, and the active writes share security/runtime contracts that main should integrate directly.`
+- reason: `The security review found reportable public API and CORS issues after the Oracle deployment, and the user added a demo-only Electron start/kill GUI requirement for the Codex bridge. These are one connected portfolio stabilization goal.`
+- write_sets: `STATE.md; ERROR_LOG.md; backend/src/main/resources/application.yml; backend/src/main/java/kr/daboyeo/backend/config/**; backend/src/main/java/kr/daboyeo/backend/api/**; backend/src/main/java/kr/daboyeo/backend/service/LiveMovieService.java if needed; backend/src/test/**; .env.example; docs/**; scripts/README.md; tools/bridge-gui/**; package metadata under the GUI folder only`
+- contract_freeze: `Stage 1 keeps the existing dirty baseline intact and verifies it before adding more behavior. Stage 2 adds a minimal admin/demo gate or feature flag for public crawl/refresh/collector-trigger endpoints, with default Oracle-safe behavior and no secret exposure. Stage 3 removes wildcard dev-port CORS defaults from production-facing config and leaves exact local origins only unless env overrides. Stage 4 adds an Electron GUI that never auto-starts, reads .env only locally, shows token presence without value, starts scripts/ai_bridge_agent.py as a child process, kills the process tree on demand, and shows sanitized status/log output.`
+- evaluation_need: `full; the work spans public API security, browser CORS policy, local desktop process control, deployment docs, and existing broad uncommitted runtime changes.`
+- project_invariants: `No secrets printed or committed, no OpenAI paid API call, no DB write crawl during verification, no permanent bridge service, no automatic bridge startup, no public deploy mutation without explicit request, and public read APIs should keep working.`
+- task_acceptance: `Security-reviewed public mutation/collector endpoints are gated or disabled by default for portfolio deployment; CORS no longer accepts arbitrary hosts on dev ports by default; Electron GUI can start/kill the bridge and report status without leaking token values; local verification passes or blockers are logged.`
+- non_goals: `No Cloudflare/Oracle HTTPS setup in this stage unless separately requested, no TiDB Flyway baseline execution, no live production deploy, no token rotation, no external provider crawl/write smoke, and no push unless explicitly requested.`
+- hard_checks: `git diff --check; focused backend tests covering admin gate and recommendation/bridge behavior; backend bootJar if feasible; node --check for Electron main/preload/renderer files; WORKSPACE_CONTEXT raw and section checks; git status --short.`
+- llm_review_rubric: `Check for auth bypass, CORS wildcard reintroduction, token/log leakage, Electron command injection, orphan bridge processes, accidental auto-start, broken public read APIs, and docs implying secret values should be shared.`
+- evidence_required: `classification and frozen contract, security/CORS code changes, GUI implementation notes, focused test results, syntax/build checks, final dirty status, and retrospective.`
+- oracle_env_cleanup_contract: `2026-05-10 score_total=4; selected_profile=single-session; hard_trigger=secret/env deployment config; write_sets=STATE.md, backend/src/main/resources/application.yml, .env; reason=the deployment env already contains TIDB_* keys, so Spring should fall back to those instead of requiring duplicated DABOYEO_DB_* mirror keys. Do not print secret values. Acceptance is application.yml resolves DB URL/username/password from DABOYEO_DB_* first and TIDB_* second, .env no longer carries duplicated DABOYEO_DB_* entries, and verification avoids exposing values.`
+- oracle_env_cleanup_evidence: `2026-05-10 changed backend application.yml so Spring datasource resolves DABOYEO_DB_* first and falls back to existing TIDB_HOST, TIDB_PORT, TIDB_DATABASE, TIDB_USER, TIDB_PASSWORD, and TIDB_SSL. Removed duplicated DABOYEO_DB_URL, DABOYEO_DB_USERNAME, and DABOYEO_DB_PASSWORD from .env without printing values. Verification passed: TIDB_* key presence 5/5, DABOYEO_DB_* mirror presence 0/3, application.yml key-only inspection, git diff --check with CRLF warnings only, and backend bootJar exit 0.`
+- oracle_env_minimal_cleanup_evidence: `2026-05-10 pruned .env to the Oracle free fallback minimum without printing values. Removed unused or redundant keys: DATABASE_URL, DABOYEO_RECOMMEND_OPENAI_MODEL, DABOYEO_AI_BRIDGE_TOKEN, DABOYEO_POSTER_PUBLIC_BASE_URL, DABOYEO_SYNC_ENABLED, DABOYEO_SYNC_TIMEOUT_SECONDS, DABOYEO_SHOWTIME_SYNC_ENABLED, DABOYEO_SHOWTIME_INCLUDE_CGV, DABOYEO_SHOWTIME_DATE_OFFSETS, and DABOYEO_SEAT_SYNC_ENABLED. Kept the explicit overrides that matter for deployment: backend port, fallback provider, Flyway enabled, python3 sync executable, startup sync disabled, bounded sync cron, TIDB, and R2 keys. Verification passed: required minimal key presence 18/18 and git diff --check with CRLF warnings only.`
+- oracle_env_tidb_single_source_contract: `2026-05-10 score_total=3; selected_profile=single-session; hard_trigger=secret/env deployment config; write_sets=STATE.md, backend/src/main/resources/application.yml, .env.example/docs if stale examples exist; reason=DABOYEO_DB_* remains a confusing duplicate override even if actual .env no longer has it. Acceptance is Spring datasource uses TIDB_* directly, stale DABOYEO_DB_* examples are removed, actual .env still has no DABOYEO_DB_* keys, and no secret values are printed.`
+- oracle_env_tidb_single_source_evidence: `2026-05-10 removed DABOYEO_DB_* as a supported visible env path for the portfolio deployment. Spring datasource now reads TIDB_HOST, TIDB_PORT, TIDB_DATABASE, TIDB_USER, TIDB_PASSWORD, and TIDB_SSL directly. Removed stale DABOYEO_DB_* and DATABASE_URL examples from .env.example, docs/AI_CODEX_OAUTH_DEPLOYMENT_PLAN.md, and docs/TEAM_DB_SETUP.md. Verification passed: key-only search found no DABOYEO_DB_URL, DABOYEO_DB_USERNAME, DABOYEO_DB_PASSWORD, or DATABASE_URL in env examples/docs/application.yml; actual .env has no DABOYEO_DB_* or DATABASE_URL keys; git diff --check passed with CRLF warnings only; sandbox bootJar failed due known Gradle loopback restriction, and elevated bootJar passed.`
+- oracle_vm_ssh_bootstrap_contract: `2026-05-10 score_total=6; selected_profile=single-session; hard_triggers=deployment/external service connection, secret/env handling, VM bootstrap; write_sets=STATE.md and deployment scripts/docs only if needed; reason=the Oracle VM now exists and .env has ORACLE_HOST, ORACLE_USER, and ORACLE_SSH_KEY_PATH, so the next bounded stage is SSH connectivity and server readiness discovery before any deploy writes. Do not print secret env values or private key contents. Acceptance is SSH connectivity verified or blocked with exact non-secret cause, OS/user detected, and next bootstrap steps identified.`
+- oracle_vm_deploy_evidence: `2026-05-10 deployed the portfolio backend to Oracle Ubuntu 24.04 aarch64. SSH connectivity was verified after narrowing the local private-key ACL. Installed Java 21, Python venv/pip, Nginx, curl, and netfilter-persistent. Uploaded app.jar, sanitized server .env without ORACLE_* keys, collectors, scripts, and requirements.txt to /opt/daboyeo. Installed Python dependencies in /opt/daboyeo/.venv, locked /opt/daboyeo/.env to 600, registered daboyeo.service with systemd, and configured Nginx 80 -> 127.0.0.1:5500. Existing TiDB has no Flyway history table, so deployment env uses DABOYEO_FLYWAY_ENABLED=false until migrations are handled separately. Fixed PosterSeedService constructor injection with @Autowired, then focused recommendation tests and bootJar passed and the jar was redeployed. Opened VM iptables tcp/80 before the Oracle image reject rule and persisted it. Verification passed: daboyeo and nginx active, VM-internal /api/health 200 through both 5500 and Nginx, external public-IP /api/health 200, external root page 200, external /src/pages/daboyeoAi.html 200, and external /api/recommendation/providers/health 200.`
+- oracle_codex_demo_gate_contract: `2026-05-10 score_total=6; selected_profile=single-session; hard_triggers=deployed provider boundary, secret/env handling, external Oracle runtime, local Codex bridge enablement; write_sets=STATE.md, backend recommendation/bridge config and tests, scripts/ai_bridge_agent.py, env examples/docs if needed, Oracle /opt/daboyeo/.env and service state only through SSH; reason=the deployed site must be able to use Codex only during demonstrations, controlled by DABOYEO_AI_BRIDGE_TOKEN. Acceptance is token absent or blank disables Codex provider and rejects bridge work; token present plus bridge heartbeat enables Codex provider; deployed default can be switched to Codex for a demo by env, and removing token returns to fallback/no-Codex behavior without code changes. No secret values are printed.`
+- oracle_codex_demo_gate_evidence: `2026-05-10 implemented and deployed the demo-only Codex gate. RecommendationService now downgrades codex to fallback when the bridge token is missing, CodexRecommendationClient exposes bridge token presence, and scripts/ai_bridge_agent.py loads .env defaults so a demo operator can run the worker without passing secrets on the command line. Oracle /opt/daboyeo/.env was updated without ORACLE_* keys and with provider=codex plus token present, app.jar and ai_bridge_agent.py were redeployed, and daboyeo.service restarted active. Verification passed: focused recommendation tests, bootJar, remote env key-only check, external /api/health 200, external AI page 200, provider health shows codex offline when no worker heartbeat is active, bridge --once makes codex ready, fallback recommendation smoke returns 3 items, a temporary local bridge worker produced an Oracle codex recommendation smoke with status ok, model gpt-5.4-mini, count 3, the worker process was stopped, and provider health returned codex offline again after the heartbeat TTL. The first install attempt assumed a missing daboyeo Linux user and is logged resolved in ERROR_LOG.md. No secret values were printed.`
+- selfdex_oracle_deploy_repeatability_evidence: `2026-05-10 Selfdex read-only planner timed out at 120 seconds and again at 180 seconds with --limit 1, so next-task selection fell back to local evidence from the completed Oracle deployment. Added scripts/deploy/deploy_oracle_portfolio.ps1 to make the manual deploy path repeatable: it reads .env, requires ORACLE_HOST/ORACLE_USER/ORACLE_SSH_KEY_PATH, excludes ORACLE_* keys from the uploaded env, uploads the jar and ai_bridge_agent.py, detects the actual systemd service user or /opt/daboyeo owner, restarts the service in real mode, checks public health, and keeps output to non-secret status values. Updated scripts/README.md and docs/portfolio-free-r2-ai-plan.md with dry-run and deploy commands. Verification passed: PowerShell parser check, deploy script dry-run, temp deploy env absence check, static output review for Write-Host/printf sites, WORKSPACE_CONTEXT raw and section checks, and git diff --check with CRLF warnings only. No live redeploy was executed in this task.`
+- selfdex_oracle_deploy_repeatability_retrospective: `task=Selfdex-selected Oracle deploy repeatability script; score_total=6; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=Selfdex planner timeout forced local evidence fallback; verification_outcome=PowerShell parse, dry-run, temp cleanup, static output review, WORKSPACE_CONTEXT checks, and diff check passed; collisions_or_reclassifications=existing broad dirty worktree was preserved and the new write set stayed in scripts/deploy, scripts/README.md, docs/portfolio-free-r2-ai-plan.md, STATE.md, and ERROR_LOG.md; next_rule_change=Selfdex planner should support a bounded file allowlist or timeout-safe partial candidate mode for very large STATE.md histories.`
+- deployed_site_security_review_contract: `2026-05-10 score_total=7; selected_profile=single-session read-only; hard_triggers=deployed public runtime review, authentication/secret boundary, external request surface, AI bridge internal endpoint exposure; selected_skills=codex-security/security-scan; write_sets=STATE.md and ERROR_LOG.md only if scan errors require logging; reason=user explicitly requested codex-security review of the deployed site. Acceptance is a non-destructive security review covering threat model, public runtime probes, code-supported finding discovery, validation, attack-path analysis, and clear prioritized findings. No secrets are printed, no destructive or load-generating probes are run, and no code/server changes are made in this review task.`
+- deployed_site_security_review_evidence: `2026-05-10 completed non-destructive Codex Security review of the deployed Oracle site. Runtime probes confirmed public HTTP 200 for root, AI page, health, and provider health; HTTPS health unavailable; checked security headers absent except Server; tokenless AI bridge jobs returned 401; non-dev malicious origin preflights returned 403; dev-port wildcard origin http://evil.example:5173 was allowed by CORS; invalid parameter probes returned clean JSON without stack traces. Code-supported findings: public refresh/crawl endpoints can trigger provider collection and TiDB writes, production CORS defaults allow arbitrary hosts on dev ports, public GET routes can trigger collector work, and deployed runtime is HTTP-only with missing browser hardening headers. No live crawl/refresh POSTs or load-generating probes were executed, no secrets were printed, and no app code/server config was changed. Artifacts are under .local/security-scans/daboyeo/3358463_20260510-154338/.`
+- portfolio_security_bridge_gui_evidence: `2026-05-10 implemented the /goal portfolio stabilization stage. Public collection triggers now go through PortfolioAccessGate and are disabled by default unless DABOYEO_PUBLIC_COLLECTION_ENABLED or X-DABOYEO-ADMIN-TOKEN with DABOYEO_ADMIN_TOKEN is used. Public nearby refresh and CGV seat-layout live collector triggers are disabled by default behind DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED and DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED. CORS now uses exact allowedOrigins with no wildcard dev-port defaults and the duplicate CorsConfig was removed. Added tools/bridge-gui Electron app that never auto-starts, reads .env locally, shows only token presence, starts scripts/ai_bridge_agent.py as a child process, kills the process tree, and sanitizes token/password-like log output. Docs and .env.example document exact origins, public trigger flags, admin token, and GUI usage. Verification passed: node --check for Electron main/preload/renderer, wildcard CORS static check found only explanatory docs, focused Gradle tests for security gate/controllers/nearby/bridge/recommendation, backend bootJar, WORKSPACE_CONTEXT checks, and git diff --check with CRLF warnings only. No live deploy, DB mutation, provider crawl write, paid API call, or secret printing was performed.`
+- portfolio_free_r2_ai_evidence: `2026-05-09 implemented the free portfolio contract. Poster binaries now flow to Cloudflare R2 through collectors/common/poster_storage.py and collectors/common/storage.py, with fixed seed upload available at scripts/storage/upload_seed_posters_to_r2.py and crawler-discovered poster URLs mirrored during collect_all_to_tidb.py ingest when R2 config exists. TiDB schema contract and migrations now store poster_url, poster_source_url, poster_r2_key, poster_etag, poster_storage_status, and poster_stored_at. Recommendation provider routing now defaults to free fallback, keeps Codex as local demo-only, and leaves OpenAI API as a disabled future provider boundary. PosterSeedService can rewrite local seed manifest paths to an R2 public base URL when configured. Verification passed: R2 seed poster dry-run configured=true checked=76 planned=76 missing=0; actual R2 seed upload uploaded=76 failed=0; R2 object inspect succeeded; py_compile for touched Python storage/ingest scripts; node --check for frontend and backend static AI JS; focused Gradle recommendation/ingest tests; gradle bootJar; WORKSPACE_CONTEXT raw and section checks; git diff --check with CRLF warnings only. The initial sandbox R2 upload timed out and was logged resolved in ERROR_LOG.md; no secret values were printed in final evidence.`
+- portfolio_free_r2_ai_retrospective: `task=Portfolio-free R2 poster storage and AI provider contract; score_total=10; evaluation_fit=full fit because the work crosses R2 storage, TiDB schema, recommendation provider defaults, frontend copy, static mirrors, docs, and secret-handling boundaries; orchestration_fit=single-session staged because the user authorized /goal execution but not subagents, and the implementation surfaces were highly coupled; predicted_topology=single-session staged; actual_topology=single-session staged; spawn_count=0; rework_or_reclassification=the previous Codex-bridge direction shifted into a free portfolio contract with R2 poster ownership and fallback-first recommendations; reviewer_findings=the stable portfolio shape is R2 for poster binaries, TiDB for metadata, free code-score fallback for deployed demos, Codex only for local recorded demos, and OpenAI API only behind a future opt-in boundary; verification_outcome=passed seed dry-run, actual R2 seed upload, R2 inspect, Python compile, JS syntax checks, focused Gradle tests, bootJar, WORKSPACE_CONTEXT checks, and diff check; next_gate_adjustment=before live deployment, run the SQL migration against the target TiDB and keep DABOYEO_RECOMMEND_PROVIDER=fallback unless a paid API budget is explicitly approved.`
 - enrichment_refactor_evidence: `2026-05-08 completed the approved Selfdex /goal candidate inside scripts/ingest/enrich_movie_tags.py only. The long enrich_movie_tags orchestration was split into explicit phase helpers: new_enrichment_result, movie_tag_report, skipped_movie_report, upsert_planned_genres, enrich_provider_auto_tags, enrich_provider_detail_metadata, enrich_kobis_metadata, and apply_override_tags. Removed the unused apply_genre_tags helper after git grep confirmed no tracked references. CLI arguments, validate-only output, confidence/source constants, dry-run behavior, KOBIS/provider opt-in behavior, and movie_tags upsert calls were preserved. Verification passed: py_compile enrich_movie_tags.py, validate-only override parse with 8 entries/8 tags, compileall scripts/ingest, WORKSPACE_CONTEXT section checks, git diff --check with CRLF warnings only, and final git status shows only STATE.md plus enrich_movie_tags.py modified.`
 - enrichment_refactor_retrospective: `task=Refactor movie tag enrichment script boundaries; score_total=5; evaluation_fit=light fit because compile, validate-only, and diff review cover the bounded behavior contract; orchestration_fit=single-session fit because one script owns the full enrichment sequence and splitting workers would add handoff cost; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=none after /goal approval; reviewer_findings=phase helpers make DB writes and external metadata paths clearer while keeping public CLI/result shape compatible; verification_outcome=all local checks passed with CRLF warnings only; next_gate_adjustment=if this script grows again, split provider detail and KOBIS enrichment into separate modules with tests instead of adding more inline phases.`
 - commit_gate_blocker: `2026-05-08 user asked to keep Selfdex commit gate on and commit. Pre-commit checks for the daboyeo change passed, but C:\lsh\git\selfdex\scripts\check_commit_gate.py blocked the commit because Selfdex root STATE.json still describes the old daboyeo-selfdex-planning-timeout-repair contract and does not include scripts/ingest/enrich_movie_tags.py in its write_sets. First gate attempt also hit Selfdex checkout git dubious-ownership when include-git-diff was enabled, so the retry used --changed-path plus --no-git-diff and failed on budget-out-of-contract-path. No commit was created.`
@@ -379,45 +396,52 @@
 
 ## Orchestration Profile
 
-- score_total: `5`
-- score_breakdown: `single 600-line ingestion script responsibility concentration 2; DB/external API boundaries 1; recommendation metadata path importance 1; narrow single-file write set 1`
-- hard_triggers: `external-source and DB-adjacent enrichment logic, but no live DB writes or public runtime checks are in scope`
-- selected_rules: `freeze single-file contract first; preserve provider raw metadata and movie_tags behavior; do not touch secrets, migrations, runtime config, or live DB; keep verification local/read-only`
-- selected_skills: `selfdex`
-- execution_topology: `single-session`
-- orchestration_value: `low`
+- score_total: `10`
+- score_breakdown: `public auth/security boundary 3; deployed runtime and external service boundary 2; Electron subprocess control 2; existing large dirty deployment/R2/TiDB change set 1; CORS browser trust boundary 1; multi-surface verification 1`
+- hard_triggers: `authentication/authorization boundary; secret/env handling; public external request surface; deployed runtime behavior; Electron subprocess lifecycle; PowerShell/deployment flow`
+- selected_rules: `freeze staged contract before edits; never print or hardcode secrets; no destructive git operations; no live deploy or DB mutation unless separately requested; keep Codex bridge manual-only with no auto-start; preserve existing dirty worktree changes`
+- selected_skills: `none for implementation; prior selfdex planning and codex-security review inform the contract`
+- execution_topology: `single-session staged`
+- orchestration_value: `high`
 - agent_budget: `0`
-- spawn_decision: `no spawn; the user approved a bounded single-file Selfdex candidate and delegation would add handoff cost without disjoint write ownership.`
-- efficiency_basis: `Result construction, provider auto metadata, provider detail metadata, KOBIS metadata, and curated overrides are separable internal phases but share one script-level behavior contract and one write set.`
-- selection_reason: `User approved the Selfdex-selected /goal candidate after read-only planning.`
+- spawn_decision: `no spawn; /goal authorizes the multi-step objective but the current user request did not explicitly request subagents, and the active writes share security/runtime contracts that main should integrate directly.`
+- efficiency_basis: `Security gate, CORS, and Electron bridge GUI are separable implementation slices, but they share the same secret/runtime policy and dirty deployment baseline, so direct staged integration is safer in this session.`
+- selection_reason: `User started the /goal after adding Electron bridge GUI to the previously recommended security and deployment-stabilization work.`
 
 ## Evaluation Plan
 
-- evaluation_need: `light`
+- evaluation_need: `full`
 - project_invariants:
   - `Do not print, commit, or document real DB passwords, OAuth tokens, cookies, API keys, tunnel tokens, or OAuth auth paths.`
-  - `Preserve provider-specific raw metadata and movie_tags semantics.`
+  - `Do not make live crawl/write/provider mutation probes during verification.`
+  - `Keep the Codex bridge manual-only and never auto-start it.`
   - `Do not overwrite unrelated frontend/backend/user edits.`
-  - `Do not mutate live DB tags, crawl data, prices, migrations, runtime config, or frontend assets for this task.`
+  - `Preserve existing public read APIs unless explicitly gated by the security contract.`
 - task_acceptance:
-  - `scripts/ingest/enrich_movie_tags.py has clearer internal phase boundaries.`
-  - `CLI flags, validate-only output, result JSON keys, dry-run behavior, source/confidence constants, and DB upsert conditions remain compatible.`
-  - `No provider/KOBIS network call becomes eager outside the existing options/API-key behavior.`
+  - `Public crawl/refresh/collector-trigger endpoints are gated or disabled by default for portfolio deployment.`
+  - `Default CORS config no longer accepts arbitrary hosts on dev ports.`
+  - `Electron GUI can start and kill scripts/ai_bridge_agent.py, report status, and show sanitized logs.`
   - `Local verification passes or gaps are reported.`
 - non_goals:
-  - `No schema migration, live DB mutation, broad collector refactor, CGV signed API repair, frontend/backend runtime change, or secret/token disclosure.`
+  - `No HTTPS/Cloudflare/Oracle live configuration unless separately requested.`
+  - `No TiDB Flyway baseline execution or live DB mutation.`
+  - `No token rotation, paid API call, or public deploy mutation.`
+  - `No push unless explicitly requested.`
 - hard_checks:
-  - `python -m py_compile scripts/ingest/enrich_movie_tags.py`
-  - `python scripts/ingest/enrich_movie_tags.py --validate-only`
-  - `python -m compileall -q scripts/ingest`
+  - `focused backend tests for security gate and recommendation bridge behavior`
+  - `gradle -p backend bootJar if feasible`
+  - `node --check tools/bridge-gui/src/main.js`
+  - `node --check tools/bridge-gui/src/preload.js`
+  - `node --check tools/bridge-gui/src/renderer.js`
   - `Get-Content -Raw WORKSPACE_CONTEXT.toml`
   - `Select-String -Path WORKSPACE_CONTEXT.toml -Pattern '^\\[workspace\\]','^\\[architecture\\]','^\\[editing_rules\\]','^\\[verification\\]'`
   - `git diff --check`
 - llm_review_rubric:
-  - `Check for changed JSON keys, changed DB write conditions, accidental eager provider/KOBIS calls, lost dry-run behavior, and widened write scope.`
+  - `Check for auth bypass, CORS wildcard reintroduction, token/log leakage, Electron command injection, orphan bridge processes, accidental auto-start, and broken public read APIs.`
 - evidence_required:
-  - `changed function boundaries`
-  - `compile and validate-only results`
+  - `security/CORS implementation summary`
+  - `Electron GUI implementation summary`
+  - `focused backend test and syntax check results`
   - `WORKSPACE_CONTEXT command result`
   - `git diff --check result`
   - `final git status`
@@ -425,23 +449,29 @@
 ## Writer Slot
 
 - writer_slot: `main`
-- write_sets: `STATE.md; scripts/ingest/enrich_movie_tags.py; ERROR_LOG.md only for material failures`
+- write_sets: `STATE.md; ERROR_LOG.md; backend/src/main/resources/application.yml; backend/src/main/java/kr/daboyeo/backend/config/**; backend/src/main/java/kr/daboyeo/backend/api/**; backend/src/main/java/kr/daboyeo/backend/service/LiveMovieService.java if needed; backend/src/test/**; .env.example; docs/**; scripts/README.md; tools/bridge-gui/**`
 
 ## Contract Freeze
 
-- status: `frozen for single-file enrichment script refactor`
-- source_basis: `Selfdex read-only planning selected scripts/ingest/enrich_movie_tags.py responsibility cleanup, and local inspection confirmed one script owns overrides, provider metadata, KOBIS metadata, DB upserts, and CLI flow.`
-- output_code: `Split enrich_movie_tags orchestration into explicit internal phase helpers while preserving CLI, JSON result shape, dry-run semantics, DB upsert conditions, and external call gating.`
-- output_tests: `Python py_compile, validate-only override parsing, compileall scripts/ingest, WORKSPACE_CONTEXT checks, and diff check.`
-- output_docs: `STATE verification note and ERROR_LOG.md only if material failures occur.`
-- write_sets: `STATE.md; scripts/ingest/enrich_movie_tags.py; ERROR_LOG.md if needed`
+- status: `frozen for portfolio security hardening plus Electron Codex bridge GUI`
+- source_basis: `Codex Security deployed-site review found public refresh/crawl/collector-trigger endpoints, wildcard dev-port CORS, and HTTP/header gaps; user added a local Electron start/kill GUI requirement for the demo bridge.`
+- output_code: `Add a minimal portfolio/admin gate for expensive public collection triggers, narrow default CORS origins, and add a GUI that manually starts/kills the Codex bridge child process without exposing token values.`
+- output_tests: `Focused backend tests, bootJar if feasible, Electron JS syntax checks, WORKSPACE_CONTEXT checks, and diff check.`
+- output_docs: `Update env examples and bridge/deploy docs so operators know which flags/tokens enable demo-only behavior without sharing secret values.`
+- write_sets: `STATE.md; ERROR_LOG.md; backend config/API/service/test files; .env.example; docs/**; scripts/README.md; tools/bridge-gui/**`
 
 ## Reviewer
 
 - review_required: `self-review`
-- reviewer_focus: `Confirm JSON keys, DB writes, dry-run behavior, provider/KOBIS gating, and single-file write boundary stayed compatible.`
+- reviewer_focus: `Confirm auth gate coverage, CORS defaults, token/log handling, Electron child-process kill behavior, no accidental auto-start, and no live DB/provider mutation during verification.`
 
 ## Last Update
+
+- timestamp: `2026-05-10 19:47:00 +09:00`
+- note: `Completed local /goal implementation for portfolio security hardening and Electron bridge GUI. Focused backend tests, bootJar, Electron syntax checks, WORKSPACE_CONTEXT checks, and diff check passed; live deploy and DB/provider writes were intentionally skipped.`
+
+- timestamp: `2026-05-10 19:26:25 +09:00`
+- note: `Started /goal for portfolio deployment stabilization. Reclassified current work to score_total=10 single-session staged: public API security hardening, production CORS cleanup, and Electron Codex bridge start/kill GUI. No subagents are used because the user did not explicitly request delegation.`
 
 - timestamp: `2026-05-08 17:23:05 +09:00`
 - note: `Completed approved Selfdex /goal refactor for scripts/ingest/enrich_movie_tags.py. The script now has explicit phase helpers for result setup, provider auto tags, provider detail metadata, KOBIS metadata, and curated overrides; verification passed with CRLF warnings only.`

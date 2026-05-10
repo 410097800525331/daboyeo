@@ -334,6 +334,7 @@ class RecommendationServiceQualityTests {
     }
 
     private RecommendationService service() {
+        when(codexClient.bridgeTokenConfigured()).thenReturn(true);
         when(profileRepository.findProfile("anon_test"))
             .thenReturn(Optional.of(new RecommendationProfile("anon_test", Map.of())));
         TagProfile profile = new TagProfile();

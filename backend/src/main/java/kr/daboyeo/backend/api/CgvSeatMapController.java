@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import kr.daboyeo.backend.security.PortfolioAccessGate;
 import kr.daboyeo.backend.sync.bridge.PythonCollectorBridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,9 +27,11 @@ public class CgvSeatMapController {
     private static final Logger logger = LoggerFactory.getLogger(CgvSeatMapController.class);
 
     private final PythonCollectorBridge collectorBridge;
+    private final PortfolioAccessGate accessGate;
 
-    public CgvSeatMapController(PythonCollectorBridge collectorBridge) {
+    public CgvSeatMapController(PythonCollectorBridge collectorBridge, PortfolioAccessGate accessGate) {
         this.collectorBridge = collectorBridge;
+        this.accessGate = accessGate;
     }
 
     @GetMapping("/seat-layout")
@@ -47,8 +51,10 @@ public class CgvSeatMapController {
         @RequestParam(name = "seatAreaNo", required = false)
         @Pattern(regexp = "\\d{0,12}", message = "seatAreaNo must be numeric.")
         String seatAreaNo,
+        @RequestHeader(name = PortfolioAccessGate.ADMIN_TOKEN_HEADER, required = false) String token,
         HttpServletRequest request
     ) {
+        accessGate.requireSeatLayoutAccess(token);
         String effectiveSeatAreaNo = seatAreaNo == null ? "" : seatAreaNo;
         try {
             Map<String, Object> layout = collectorBridge.collectCgvSeatLayout(

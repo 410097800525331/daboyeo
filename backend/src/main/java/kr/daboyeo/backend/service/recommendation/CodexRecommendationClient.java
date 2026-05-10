@@ -107,6 +107,10 @@ public class CodexRecommendationClient {
         return bridgeJobService.bridgeStatus(AiProvider.CODEX);
     }
 
+    public boolean bridgeTokenConfigured() {
+        return bridgeJobService != null && bridgeJobService.tokenConfigured();
+    }
+
     private List<String> expectedModels() {
         return properties.expectedModelsFor(AiProvider.CODEX);
     }

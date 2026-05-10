@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import gzip
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from .normalize import json_for_db, utc_timestamp_compact
 from .tidb import DEFAULT_ENV_PATH, parse_env_file
@@ -72,6 +74,48 @@ def build_raw_object_key(
     )
 
 
+def public_object_url(object_key: str, config: R2Config | None = None) -> str:
+    effective = config or load_r2_config()
+    if not effective.public_base_url:
+        return ""
+    return effective.public_base_url.rstrip("/") + "/" + quote(object_key.strip("/"), safe="/-_.~")
+
+
+def safe_object_part(value: Any, fallback: str = "unknown") -> str:
+    text = str(value or "").strip().lower()
+    text = re.sub(r"[^a-z0-9._-]+", "-", text)
+    text = text.strip(".-")
+    return text or fallback
+
+
+def extension_for_content_type(content_type: str, fallback: str = ".jpg") -> str:
+    normalized = (content_type or "").split(";", 1)[0].strip().lower()
+    return {
+        "image/jpeg": ".jpg",
+        "image/jpg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
+        "image/avif": ".avif",
+    }.get(normalized, fallback)
+
+
+def build_poster_object_key(
+    provider: str,
+    external_movie_id: str,
+    content_type: str = "",
+    filename_hint: str = "",
+) -> str:
+    extension = Path(filename_hint).suffix.lower()
+    if extension not in {".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"}:
+        extension = extension_for_content_type(content_type)
+    if extension == ".jpeg":
+        extension = ".jpg"
+    provider_part = safe_object_part(provider)
+    movie_part = safe_object_part(external_movie_id)
+    return f"posters/{provider_part}/{movie_part}{extension}"
+
+
 def make_s3_client(config: R2Config | None = None):
     try:
         import boto3
@@ -106,6 +150,32 @@ def put_json_gzip(object_key: str, payload: Any, config: R2Config | None = None)
         "object_key": object_key,
         "etag": str(response.get("ETag") or "").strip('"'),
         "size": len(body),
+    }
+
+
+def put_bytes(
+    object_key: str,
+    body: bytes,
+    content_type: str = "application/octet-stream",
+    config: R2Config | None = None,
+    cache_control: str = "public, max-age=31536000, immutable",
+) -> dict[str, Any]:
+    effective = config or load_r2_config()
+    client = make_s3_client(effective)
+    put_args: dict[str, Any] = {
+        "Bucket": effective.bucket_name,
+        "Key": object_key,
+        "Body": body,
+        "ContentType": content_type or "application/octet-stream",
+    }
+    if cache_control:
+        put_args["CacheControl"] = cache_control
+    response = client.put_object(**put_args)
+    return {
+        "object_key": object_key,
+        "etag": str(response.get("ETag") or "").strip('"'),
+        "size": len(body),
+        "public_url": public_object_url(object_key, effective),
     }
 
 

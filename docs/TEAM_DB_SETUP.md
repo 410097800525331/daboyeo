@@ -62,12 +62,9 @@ TIDB_USER=your-db-user
 TIDB_PASSWORD=your-db-password
 TIDB_DATABASE=daboyeo_lsh
 TIDB_SSL=true
-DATABASE_URL=mysql://your-db-user:your-db-password@your-db-host:4000/daboyeo_lsh
 
 # Spring backend
-DABOYEO_DB_URL=jdbc:mysql://your-db-host:4000/daboyeo_lsh?serverTimezone=Asia/Seoul&characterEncoding=utf8&useSSL=true
-DABOYEO_DB_USERNAME=your-db-user
-DABOYEO_DB_PASSWORD=your-db-password
+# Spring also reads the TIDB_* keys above.
 DABOYEO_FLYWAY_ENABLED=false
 ```
 
@@ -249,7 +246,6 @@ DB 구조를 바꿀 때는 아래 순서를 지킨다.
 
 - `migration files not found`가 나오면 repo 루트에서 명령을 실행했는지 확인한다.
 - `TiDB 설정이 부족함`류 오류가 나오면 `.env`의 `TIDB_HOST`, `TIDB_USER`, `TIDB_PASSWORD`, `TIDB_DATABASE`를 확인한다.
-- 백엔드만 연결이 안 되면 `DABOYEO_DB_URL`, `DABOYEO_DB_USERNAME`, `DABOYEO_DB_PASSWORD`를 확인한다.
-- Python 수집기만 연결이 안 되면 `TIDB_*` 또는 `DATABASE_URL`을 확인한다.
+- 백엔드나 Python 수집기 연결이 안 되면 `TIDB_*`를 확인한다.
 - 추천 API 결과가 비어 있으면 `showtimes` 데이터가 있는지 먼저 확인한다.
 - 새벽 상영 정렬이 이상하면 `start_time_raw`, `end_time_raw`, `starts_at`, `ends_at`를 같이 확인한다.

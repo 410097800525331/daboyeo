@@ -18,8 +18,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-            .allowedOriginPatterns(corsProperties.allowedOrigins().toArray(String[]::new))
+            .allowedOrigins(corsProperties.allowedOrigins().toArray(String[]::new))
             .allowedMethods("GET", "POST", "DELETE", "OPTIONS")
-            .allowedHeaders("*");
+            .allowedHeaders("Accept", "Content-Type", "X-DABOYEO-ADMIN-TOKEN", "X-DABOYEO-BRIDGE-TOKEN")
+            .maxAge(3600);
     }
 }

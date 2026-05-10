@@ -62,9 +62,10 @@ public class CollectorBundlePersistenceService {
         String sql = """
             INSERT INTO movies (
               provider_code, external_movie_id, representative_movie_id, title_ko, title_en, age_rating,
-              runtime_minutes, release_date, booking_rate, box_office_rank, poster_url, raw_json, last_collected_at
+              runtime_minutes, release_date, booking_rate, box_office_rank, poster_url, poster_source_url,
+              poster_r2_key, poster_etag, poster_storage_status, poster_stored_at, raw_json, last_collected_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), CURRENT_TIMESTAMP(3))
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), CURRENT_TIMESTAMP(3))
             ON DUPLICATE KEY UPDATE
               representative_movie_id = VALUES(representative_movie_id),
               title_ko = VALUES(title_ko),
@@ -75,6 +76,11 @@ public class CollectorBundlePersistenceService {
               booking_rate = VALUES(booking_rate),
               box_office_rank = VALUES(box_office_rank),
               poster_url = VALUES(poster_url),
+              poster_source_url = VALUES(poster_source_url),
+              poster_r2_key = VALUES(poster_r2_key),
+              poster_etag = VALUES(poster_etag),
+              poster_storage_status = VALUES(poster_storage_status),
+              poster_stored_at = VALUES(poster_stored_at),
               raw_json = VALUES(raw_json),
               last_collected_at = CURRENT_TIMESTAMP(3)
             """;
@@ -94,7 +100,12 @@ public class CollectorBundlePersistenceService {
                 setBigDecimal(statement, 9, movie.bookingRate());
                 setInteger(statement, 10, movie.boxOfficeRank());
                 statement.setString(11, blankToNull(movie.posterUrl()));
-                statement.setString(12, toJson(movie.raw()));
+                statement.setString(12, blankToNull(movie.posterSourceUrl()));
+                statement.setString(13, blankToNull(movie.posterR2Key()));
+                statement.setString(14, blankToNull(movie.posterEtag()));
+                statement.setString(15, blankToDefault(movie.posterStorageStatus(), blankToNull(movie.posterUrl()) == null ? "missing" : "source_only"));
+                setTimestamp(statement, 16, movie.posterStoredAt());
+                statement.setString(17, toJson(movie.raw()));
                 statement.addBatch();
             }
             statement.executeBatch();
@@ -290,6 +301,10 @@ public class CollectorBundlePersistenceService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value;
+    }
+
+    private static String blankToDefault(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 
     private static void setInteger(PreparedStatement statement, int index, Integer value) throws SQLException {

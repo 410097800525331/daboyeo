@@ -2,6 +2,7 @@ package kr.daboyeo.backend;
 
 import kr.daboyeo.backend.config.BackendCorsProperties;
 import kr.daboyeo.backend.config.CollectorSyncProperties;
+import kr.daboyeo.backend.config.PortfolioSecurityProperties;
 import kr.daboyeo.backend.config.RecommendationProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,7 +14,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableConfigurationProperties({
     RecommendationProperties.class,
     BackendCorsProperties.class,
-    CollectorSyncProperties.class
+    CollectorSyncProperties.class,
+    PortfolioSecurityProperties.class
 })
 public class DaboyeoApplication {
 

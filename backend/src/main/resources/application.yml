@@ -5,9 +5,9 @@ spring:
   application:
     name: daboyeo-backend
   datasource:
-    url: ${DABOYEO_DB_URL:jdbc:mysql://localhost:4000/daboyeo?serverTimezone=Asia/Seoul&characterEncoding=utf8&useSSL=false}
-    username: ${DABOYEO_DB_USERNAME:root}
-    password: ${DABOYEO_DB_PASSWORD:}
+    url: jdbc:mysql://${TIDB_HOST:localhost}:${TIDB_PORT:4000}/${TIDB_DATABASE:daboyeo}?serverTimezone=Asia/Seoul&characterEncoding=utf8&useSSL=${TIDB_SSL:false}
+    username: ${TIDB_USER:root}
+    password: ${TIDB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       initialization-fail-timeout: -1
@@ -24,10 +24,18 @@ logging:
 
 daboyeo:
   cors:
-    allowed-origins: ${DABOYEO_FRONTEND_ORIGINS:http://localhost:4173,http://127.0.0.1:4173,http://*:4173,http://localhost:5173,http://127.0.0.1:5173,http://*:5173,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080,http://127.0.0.1:8080}
+    allowed-origins: ${DABOYEO_FRONTEND_ORIGINS:http://localhost:4173,http://127.0.0.1:4173,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5500,http://127.0.0.1:5500,http://localhost:8080,http://127.0.0.1:8080}
+  security:
+    admin-token: ${DABOYEO_ADMIN_TOKEN:}
+    public-collection-enabled: ${DABOYEO_PUBLIC_COLLECTION_ENABLED:false}
+    public-nearby-refresh-enabled: ${DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED:false}
+    public-seat-layout-enabled: ${DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED:false}
   demo:
     live-fallback-enabled: ${DABOYEO_DEMO_LIVE_FALLBACK_ENABLED:true}
   recommendation:
+    provider: ${DABOYEO_RECOMMEND_PROVIDER:fallback}
+    openai-model: ${DABOYEO_RECOMMEND_OPENAI_MODEL:}
+    poster-public-base-url: ${DABOYEO_POSTER_PUBLIC_BASE_URL:${R2_PUBLIC_BASE_URL:}}
     codex-model: ${DABOYEO_RECOMMEND_CODEX_MODEL:}
     codex-fast-model: ${DABOYEO_RECOMMEND_CODEX_FAST_MODEL:gpt-5.4-mini}
     codex-precise-model: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MODEL:gpt-5.4}
@@ -42,7 +50,7 @@ daboyeo:
     bridge-heartbeat-ttl-seconds: ${DABOYEO_AI_BRIDGE_HEARTBEAT_TTL_SECONDS:45}
     bridge-job-ttl-seconds: ${DABOYEO_AI_BRIDGE_JOB_TTL_SECONDS:90}
     min-start-buffer-minutes: ${DABOYEO_RECOMMEND_MIN_START_BUFFER_MINUTES:20}
-    frontend-origins: ${DABOYEO_FRONTEND_ORIGINS:http://localhost:4173,http://127.0.0.1:4173,http://*:4173,http://localhost:5173,http://127.0.0.1:5173,http://*:5173,http://localhost:5500,http://127.0.0.1:5500}
+    frontend-origins: ${DABOYEO_FRONTEND_ORIGINS:http://localhost:4173,http://127.0.0.1:4173,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5500,http://127.0.0.1:5500}
   sync:
     enabled: ${DABOYEO_SYNC_ENABLED:true}
     timezone: ${DABOYEO_SYNC_TIMEZONE:Asia/Seoul}

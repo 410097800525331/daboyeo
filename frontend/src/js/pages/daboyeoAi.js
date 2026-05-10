@@ -34,7 +34,7 @@ const RESULT_SCROLL_ANIMATION_MS = 300;
 const RESULT_SCROLL_WHEEL_THRESHOLD = 6;
 const RESULT_SCROLL_WHEEL_RESET_MS = 80;
 const AUTO_ADVANCE_MS = 320;
-const DEFAULT_AI_PROVIDER = "codex";
+const DEFAULT_AI_PROVIDER = "";
 const PROVIDER_BOOKING_URLS = {
   cgv: "https://m.cgv.co.kr/WebApp/Reservation/seat.aspx",
   lotte: "https://www.lottecinema.co.kr/NLCHS/Ticketing",
@@ -91,36 +91,36 @@ const modeOptions = [
   {
     value: "fast",
     label: "빠른 추천",
-    model: "GPT (Codex) · fast",
+    model: "무료 추천 · fast",
     description: "짧은 이유와 함께, 바로 볼 수 있는\n영화를 빠르게 추천해 드립니다.",
-    tags: ["GPT", "빠름", "간단한 이유", "상위 후보"],
+    tags: ["무료", "빠름", "간단한 이유", "상위 후보"],
   },
   {
     value: "precise",
     label: "정밀 추천",
-    model: "GPT (Codex) · precise",
+    model: "무료 추천 · precise",
     description: "후보를 꼼꼼히 비교하고, 포스터 취향까지\n반영해 더 정확하게 추천해 드립니다.",
-    tags: ["GPT", "정밀 분석", "포스터 취향", "후보 비교"],
+    tags: ["무료", "정밀 분석", "포스터 취향", "후보 비교"],
     recommended: true,
   },
 ];
 
 const providerInfo = {
-  value: "codex",
-  label: "GPT",
-  title: "GPT (Codex)",
+  value: "",
+  label: "추천 엔진",
+  title: "서버 설정 provider",
 };
 
 const modeProfiles = {
   fast: {
-    model: "GPT (Codex) · fast",
+    model: "무료 추천 · fast",
     description: "후보 수를 줄여 가볍게 비교하고\n바로 볼 만한 영화만 먼저 추려드릴게요.",
-    tags: ["GPT", "Codex", "가벼운 분석", "소수 후보"],
+    tags: ["무료", "fallback", "가벼운 분석", "소수 후보"],
   },
   precise: {
-    model: "GPT (Codex) · precise",
-    description: "GPT로 후보와 취향 근거를 더 꼼꼼하게 비교해서\n어색한 후보를 줄여볼게요.",
-    tags: ["GPT", "Codex", "정밀 분석", "후보 비교"],
+    model: "무료 추천 · precise",
+    description: "취향 근거와 후보를 더 꼼꼼하게 비교해서\n어색한 후보를 줄여볼게요.",
+    tags: ["무료", "fallback", "정밀 분석", "후보 비교"],
   },
 };
 
@@ -205,6 +205,15 @@ function modeProfile(modeValue) {
     ...option,
     ...(modeProfiles[option.value] || {}),
   };
+}
+
+function recommendationProviderTitle(providerValue, modelValue = "") {
+  const key = String(providerValue || "").trim().toLowerCase();
+  const model = String(modelValue || "").trim().toLowerCase();
+  if (key === "codex" || model.startsWith("gpt-")) return "Codex demo";
+  if (key === "openai-api") return "OpenAI API";
+  if (key === "fallback" || model.includes("fallback")) return "무료 fallback";
+  return providerInfo.title;
 }
 
 function goToMainPage() {
@@ -1090,7 +1099,7 @@ function renderModeStep() {
   return renderSplitLayout({
     kicker: "AI GUIDE 06",
     titleParts: [{ text: "어떤 방식으로\n추천해 드릴까요?" }],
-    description: "GPT가 포스터 취향과 상영 후보를 비교하고, 응답이 늦으면 코드 점수 기반으로 자연스럽게 보완합니다.",
+    description: "서버 설정에 맞춰 포스터 취향과 상영 후보를 비교하고, 외부 AI가 없어도 코드 점수 기반으로 추천합니다.",
     content,
   });
 }
@@ -1155,7 +1164,7 @@ function renderLoadingStep() {
   const description = state.run.mode === "fast"
     ? "소수 후보만 빠르게 비교하고 있어. 맞는 후보가 없으면 그대로 알려줄게."
     : mode
-      ? `${mode.model} 모델에 상위 후보만 보내고 있어. 결과가 없으면 가짜 추천 없이 알려줄게.`
+      ? `${mode.model} 방식으로 상위 후보를 비교하고 있어. 결과가 없으면 가짜 추천 없이 알려줄게.`
       : "추천 후보를 계산하고 있어.";
 
   return renderLoadingMessage(title, description);
@@ -1422,7 +1431,7 @@ function renderResultCard(item, index, context = {}) {
 
   if (item.analysisPoint) {
     const analysisPoint = createElement("p", isGptResult ? "ai-result-analysis" : "ai-result-tags");
-    const labelText = isGptResult ? "GPT 분석" : isFallbackResult ? "Fallback 근거" : "분석 포인트";
+    const labelText = isGptResult ? "AI 분석" : isFallbackResult ? "Fallback 근거" : "분석 포인트";
     const label = createElement("strong", "ai-analysis-label", labelText);
     analysisPoint.appendChild(label);
     analysisPoint.appendChild(document.createTextNode(` ${item.analysisPoint}`));
@@ -1631,9 +1640,10 @@ function renderResultsStep() {
   const modeLabel = optionLabel(modeOptions, response.mode || state.run.mode);
   const providerValue = state.run.aiProvider || state.aiProvider;
   const model = response.model || modeProfile(response.mode || state.run.mode).model;
+  const providerTitle = recommendationProviderTitle(providerValue, model);
   const isAiBacked = response.status === "ok";
   const resultSource = isAiBacked
-    ? `${providerInfo.title} · ${modeLabel}`
+    ? `${providerTitle} · ${modeLabel}`
     : "코드 점수 기반 fallback";
   const layout = createElement("section", "ai-result-layout");
   layout.classList.toggle("has-multiple-results", recommendations.length > 1);
@@ -1676,10 +1686,10 @@ function renderResultsStep() {
     addSummaryRow("보고 싶은 장르", optionLabels(genreOptions, state.survey.preferredGenres));
   }
   addSummaryRow("추천 방식", modeLabel);
-  addSummaryRow("요청 엔진", `${providerInfo.title} · ${model}`);
+  addSummaryRow("요청 엔진", `${providerTitle} · ${model}`);
   addSummaryRow("실제 처리", resultSource);
   addSummaryRow("분석 깊이", isAiBacked
-    ? (response.mode || state.run.mode) === "precise" ? "GPT 정밀 분석" : "GPT 빠른 분석"
+    ? (response.mode || state.run.mode) === "precise" ? "정밀 분석" : "빠른 분석"
     : "fallback 추천");
 
   side.appendChild(summary);

@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS movies (
   booking_rate DECIMAL(7,3) NULL,
   box_office_rank INT UNSIGNED NULL,
   poster_url VARCHAR(1024) NULL,
+  poster_source_url VARCHAR(1024) NULL,
+  poster_r2_key VARCHAR(1024) NULL,
+  poster_etag VARCHAR(128) NULL,
+  poster_storage_status VARCHAR(32) NOT NULL DEFAULT 'source_only',
+  poster_stored_at DATETIME(3) NULL,
   raw_json JSON NULL,
   first_collected_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   last_collected_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -41,6 +46,8 @@ CREATE TABLE IF NOT EXISTS movies (
   UNIQUE KEY uk_movies_provider_external (provider_code, external_movie_id),
   KEY idx_movies_title_ko (title_ko),
   KEY idx_movies_representative (provider_code, representative_movie_id),
+  KEY idx_movies_poster_r2_key (provider_code, poster_r2_key(191)),
+  KEY idx_movies_poster_storage_status (poster_storage_status, last_collected_at),
   KEY idx_movies_last_collected (last_collected_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 

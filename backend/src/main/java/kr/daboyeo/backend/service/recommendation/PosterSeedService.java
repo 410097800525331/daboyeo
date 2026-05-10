@@ -17,7 +17,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import kr.daboyeo.backend.config.RecommendationProperties;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.PosterSeedMovie;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -46,9 +48,12 @@ public class PosterSeedService {
     private final List<PosterSeedMovie> movieSeedMovies;
     private final List<PosterSeedMovie> animeSeedMovies;
     private final Map<String, PosterSeedMovie> seedById;
+    private final RecommendationProperties properties;
     private final SecureRandom random = new SecureRandom();
 
-    public PosterSeedService(ObjectMapper objectMapper) {
+    @Autowired
+    public PosterSeedService(ObjectMapper objectMapper, RecommendationProperties properties) {
+        this.properties = properties;
         this.movieSeedMovies = loadSeed(
             objectMapper,
             MOVIE_POSTER_MANIFEST,
@@ -66,6 +71,10 @@ public class PosterSeedService {
         this.seedById = StreamSupport.stream(List.of(movieSeedMovies, animeSeedMovies).spliterator(), false)
             .flatMap(List::stream)
             .collect(Collectors.toUnmodifiableMap(PosterSeedMovie::id, Function.identity(), (left, right) -> left));
+    }
+
+    PosterSeedService(ObjectMapper objectMapper) {
+        this(objectMapper, null);
     }
 
     public List<PosterSeedMovie> randomSeed(int limit) {
@@ -206,7 +215,7 @@ public class PosterSeedService {
         return new PosterSeedMovie(
             idPrefix + id,
             text(node, "titleKo"),
-            text(node, "posterPath"),
+            resolvePosterUrl(text(node, "posterPath")),
             tags.genres(),
             tags.moods(),
             tags.pace(),
@@ -241,6 +250,20 @@ public class PosterSeedService {
     private String text(JsonNode node, String fieldName) {
         JsonNode value = node.path(fieldName);
         return value.isMissingNode() || value.isNull() ? "" : value.asText("");
+    }
+
+    private String resolvePosterUrl(String manifestPath) {
+        String path = manifestPath == null ? "" : manifestPath.trim();
+        String baseUrl = properties == null ? "" : properties.posterPublicBaseUrl();
+        if (path.isBlank() || baseUrl == null || baseUrl.isBlank() || path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
+        String normalized = path.startsWith("/") ? path.substring(1) : path;
+        String prefix = "src/assets/R2/";
+        if (!normalized.startsWith(prefix)) {
+            return path;
+        }
+        return baseUrl + "/" + normalized.substring(prefix.length());
     }
 
     private record PosterSeedTags(

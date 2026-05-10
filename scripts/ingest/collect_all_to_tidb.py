@@ -25,6 +25,7 @@ from collectors.common.normalize import (
     to_int,
 )
 from collectors.common.repository import insert_dict, insert_many_dicts, upsert_and_select_id, upsert_dict
+from collectors.common.poster_storage import mirror_poster_url
 from collectors.common.tidb import connect_tidb, load_tidb_config
 from collectors.lotte import LotteCinemaCollector
 from collectors.megabox import MegaboxCollector
@@ -217,6 +218,12 @@ def provider_ingest_result(provider: str, play_dates: list[str]) -> dict[str, An
         "price_rows_upserted": 0,
         "price_fetch_errors": 0,
         "price_fetch_error_samples": [],
+        "poster_storage_checked": 0,
+        "poster_storage_stored": 0,
+        "poster_storage_source_only": 0,
+        "poster_storage_missing": 0,
+        "poster_storage_failed": 0,
+        "poster_storage_error_samples": [],
     }
 
 
@@ -224,6 +231,69 @@ def append_bounded_unique(items: list[str], value: Any, limit: int = 12) -> None
     text = safe_text(value)
     if text and text not in items and len(items) < limit:
         items.append(text)
+
+
+def movie_external_id(provider: str, row: dict[str, Any]) -> str:
+    if provider == LOTTE:
+        return safe_text(row.get("movie_no"))
+    return safe_text(row.get("movie_no"), safe_text(row.get("representative_movie_no")))
+
+
+def poster_metadata(row: dict[str, Any]) -> dict[str, Any]:
+    poster_url = blank_to_none(row.get("poster_url"))
+    poster_source_url = blank_to_none(row.get("poster_source_url")) or poster_url
+    status = blank_to_none(row.get("poster_storage_status"))
+    if not status:
+        status = "source_only" if poster_url else "missing"
+    return {
+        "poster_url": poster_url,
+        "poster_source_url": poster_source_url,
+        "poster_r2_key": blank_to_none(row.get("poster_r2_key")),
+        "poster_etag": blank_to_none(row.get("poster_etag")),
+        "poster_storage_status": status,
+        "poster_stored_at": blank_to_none(row.get("poster_stored_at")),
+    }
+
+
+def apply_poster_storage(
+    provider: str,
+    row: dict[str, Any],
+    args: argparse.Namespace | None = None,
+    result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    if args is None or getattr(args, "skip_r2_posters", False):
+        return row
+
+    source_url = safe_text(row.get("poster_url"))
+    if not source_url:
+        if result is not None:
+            result["poster_storage_missing"] += 1
+        return {**row, "poster_storage_status": "missing"}
+
+    external_id = movie_external_id(provider, row)
+    if result is not None:
+        result["poster_storage_checked"] += 1
+    stored = mirror_poster_url(
+        provider,
+        external_id,
+        source_url,
+        timeout_seconds=max(1, getattr(args, "poster_upload_timeout_seconds", 15)),
+    )
+    if result is not None:
+        status = stored.poster_storage_status
+        if status == "r2_stored":
+            result["poster_storage_stored"] += 1
+        elif status in {"r2_unconfigured", "r2_stored_private", "source_only"}:
+            result["poster_storage_source_only"] += 1
+        elif status == "missing":
+            result["poster_storage_missing"] += 1
+        elif status == "r2_failed":
+            result["poster_storage_failed"] += 1
+            append_bounded_unique(
+                result["poster_storage_error_samples"],
+                f"{provider}:{external_id}:{stored.error}",
+            )
+    return {**row, **stored.movie_fields()}
 
 
 def _clean_tag_value(value: Any) -> str:
@@ -383,6 +453,7 @@ def upsert_movie_tags(
 
 
 def movie_payload(provider: str, row: dict[str, Any], collected_at: str) -> dict[str, Any]:
+    poster = poster_metadata(row)
     if provider == LOTTE:
         external_id = safe_text(row.get("movie_no"))
         return {
@@ -396,7 +467,7 @@ def movie_payload(provider: str, row: dict[str, Any], collected_at: str) -> dict
             "release_date": db_date(row.get("release_date")),
             "booking_rate": to_decimal(row.get("booking_rate")),
             "box_office_rank": None,
-            "poster_url": blank_to_none(row.get("poster_url")),
+            **poster,
             "raw_json": json_for_db(row.get("raw") or row),
             "last_collected_at": collected_at,
         }
@@ -413,7 +484,7 @@ def movie_payload(provider: str, row: dict[str, Any], collected_at: str) -> dict
         "release_date": db_date(row.get("release_date")),
         "booking_rate": to_decimal(row.get("booking_rate")),
         "box_office_rank": to_int(row.get("box_office_rank")),
-        "poster_url": blank_to_none(row.get("poster_url")),
+        **poster,
         "raw_json": json_for_db(row.get("raw") or row),
         "last_collected_at": collected_at,
     }
@@ -488,8 +559,15 @@ def screen_payload(
     }
 
 
-def upsert_movie(cursor: Any, provider: str, row: dict[str, Any], collected_at: str) -> int:
-    payload = movie_payload(provider, row, collected_at)
+def upsert_movie(
+    cursor: Any,
+    provider: str,
+    row: dict[str, Any],
+    collected_at: str,
+    args: argparse.Namespace | None = None,
+    result: dict[str, Any] | None = None,
+) -> int:
+    payload = movie_payload(provider, apply_poster_storage(provider, row, args, result), collected_at)
     if not payload["external_movie_id"]:
         raise ValueError(f"{provider} external_movie_id is empty")
     return upsert_and_select_id(
@@ -505,8 +583,10 @@ def upsert_movie_from_schedule(
     provider: str,
     schedule_row: dict[str, Any],
     collected_at: str,
+    args: argparse.Namespace | None = None,
+    result: dict[str, Any] | None = None,
 ) -> int:
-    payload = movie_payload(provider, schedule_row, collected_at)
+    payload = movie_payload(provider, apply_poster_storage(provider, schedule_row, args, result), collected_at)
     if not payload["external_movie_id"]:
         raise ValueError(f"{provider} external_movie_id is empty")
     return upsert_and_select_id(
@@ -612,6 +692,8 @@ def resolve_megabox_movie_id(
     schedule_row: dict[str, Any],
     movie_ids: dict[str, int],
     collected_at: str,
+    args: argparse.Namespace | None = None,
+    result: dict[str, Any] | None = None,
 ) -> tuple[int | None, str, bool]:
     schedule_movie_no = safe_text(schedule_row.get("movie_no"))
     schedule_representative_movie_no = safe_text(schedule_row.get("representative_movie_no"))
@@ -620,12 +702,12 @@ def resolve_megabox_movie_id(
     if schedule_movie_no:
         movie_id = movie_ids.get(schedule_movie_no)
         if movie_id is None:
-            movie_id = upsert_movie_from_schedule(cursor, MEGABOX, schedule_row, collected_at)
+            movie_id = upsert_movie_from_schedule(cursor, MEGABOX, schedule_row, collected_at, args, result)
             created = True
     elif schedule_representative_movie_no:
         movie_id = movie_ids.get(schedule_representative_movie_no)
         if movie_id is None:
-            movie_id = upsert_movie_from_schedule(cursor, MEGABOX, schedule_row, collected_at)
+            movie_id = upsert_movie_from_schedule(cursor, MEGABOX, schedule_row, collected_at, args, result)
             created = True
     else:
         return None, movie_key, created
@@ -1353,7 +1435,7 @@ def ingest_lotte_schedule(
 
     movie_id = movie_ids.get(schedule_movie_no)
     if movie_id is None:
-        movie_id = upsert_movie_from_schedule(cursor, LOTTE, schedule, collected_at)
+        movie_id = upsert_movie_from_schedule(cursor, LOTTE, schedule, collected_at, args, result)
         movie_ids[schedule_movie_no] = movie_id
         result["movies_upserted"] += 1
 
@@ -1428,7 +1510,7 @@ def ingest_lotte(cursor: Any, args: argparse.Namespace) -> dict[str, Any]:
     movie_tag_keys: set[tuple[str, str, str, str]] = set()
     if args.eager_master_upserts:
         for movie in movies:
-            movie_id = upsert_movie(cursor, LOTTE, movie, collected_at)
+            movie_id = upsert_movie(cursor, LOTTE, movie, collected_at, args, result)
             movie_no = safe_text(movie.get("movie_no"))
             if movie_no:
                 movie_ids[movie_no] = movie_id
@@ -1590,8 +1672,9 @@ def register_megabox_movie(
     movie_ids: dict[str, int],
     movie_tag_keys: set[tuple[str, str, str, str]],
     result: dict[str, Any],
+    args: argparse.Namespace | None = None,
 ) -> None:
-    movie_id = upsert_movie(cursor, MEGABOX, movie, collected_at)
+    movie_id = upsert_movie(cursor, MEGABOX, movie, collected_at, args, result)
     movie_no = safe_text(movie.get("movie_no"))
     representative_movie_no = safe_text(movie.get("representative_movie_no"))
     if movie_no:
@@ -1666,7 +1749,7 @@ def ingest_megabox_schedule(
         theater_ids[theater_key] = theater_id
         result["theaters_upserted"] += 1
 
-    movie_id, movie_key, movie_created = resolve_megabox_movie_id(cursor, schedule, movie_ids, collected_at)
+    movie_id, movie_key, movie_created = resolve_megabox_movie_id(cursor, schedule, movie_ids, collected_at, args, result)
     if movie_id is None:
         return
     if movie_created:
@@ -1732,7 +1815,7 @@ def ingest_megabox(cursor: Any, args: argparse.Namespace) -> dict[str, Any]:
         branches = limited(collector.build_area_records(play_de), args.limit_theaters)
         if args.eager_master_upserts:
             for movie in movies:
-                register_megabox_movie(cursor, movie, collected_at, movie_ids, movie_tag_keys, result)
+                register_megabox_movie(cursor, movie, collected_at, movie_ids, movie_tag_keys, result, args)
             for branch in branches:
                 register_megabox_branch(cursor, branch, collected_at, theater_ids, result)
 
@@ -1881,6 +1964,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--skip-provider-details", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--skip-kobis-metadata", action="store_true", help="Skip optional KOBIS metadata enrichment even when a KOBIS API key is configured.")
     parser.add_argument("--kobis-metadata-limit", type=int, default=60, help="Maximum current/future movies to check through optional KOBIS metadata enrichment.")
+    parser.add_argument("--skip-r2-posters", action="store_true", help="Keep provider poster URLs without mirroring poster images to Cloudflare R2.")
+    parser.add_argument("--poster-upload-timeout-seconds", type=int, default=15, help="Per-poster download/upload timeout for R2 poster mirroring.")
     parser.add_argument(
         "--enrich-missing-prices",
         action="store_true",

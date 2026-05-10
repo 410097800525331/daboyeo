@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 import java.util.Map;
+import kr.daboyeo.backend.security.PortfolioAccessGate;
 import kr.daboyeo.backend.sync.bridge.PythonCollectorBridge;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ class CgvSeatMapControllerTests {
 
     @MockitoBean
     private PythonCollectorBridge collectorBridge;
+
+    @MockitoBean
+    private PortfolioAccessGate accessGate;
 
     @Test
     void seatLayoutReturnsLiveCollectorPayload() throws Exception {

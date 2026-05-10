@@ -120,7 +120,25 @@ public class RecommendationService {
     }
 
     public List<AiProviderStatus> providerHealth() {
-        return List.of(codexClient.providerStatus(AiProvider.CODEX));
+        return List.of(
+            new AiProviderStatus(
+                AiProvider.FALLBACK.wireValue(),
+                properties.providerLabel(AiProvider.FALLBACK),
+                properties.expectedModelsFor(AiProvider.FALLBACK),
+                true,
+                "ready",
+                "Free local scoring is available."
+            ),
+            codexClient.providerStatus(AiProvider.CODEX),
+            new AiProviderStatus(
+                AiProvider.OPENAI_API.wireValue(),
+                properties.providerLabel(AiProvider.OPENAI_API),
+                properties.expectedModelsFor(AiProvider.OPENAI_API),
+                false,
+                "disabled",
+                "OpenAI API is reserved for future paid runtime wiring."
+            )
+        );
     }
 
     public RecommendationResponse recommend(RecommendationRequest request) {
@@ -129,7 +147,7 @@ public class RecommendationService {
         }
         Instant startedAt = Instant.now();
         RecommendationMode mode = RecommendationMode.from(request.mode());
-        AiProvider aiProvider = AiProvider.from(request.aiProvider());
+        AiProvider aiProvider = resolveProvider(request.aiProvider());
         String anonymousId = normalizeAnonymousId(request.anonymousId());
         if (anonymousId.isBlank()) {
             anonymousId = ensureSession(null).anonymousId();
@@ -226,7 +244,7 @@ public class RecommendationService {
             tasteAwareScored,
             properties.aiCandidateLimitFor(aiProvider, mode)
         );
-        var aiResult = codexClient.rankAndExplain(mode, analysisProfile, aiCandidates);
+        Optional<AiResult> aiResult = rankWithProvider(aiProvider, mode, analysisProfile, aiCandidates);
         List<RecommendationItem> items = aiResult
             .map(result -> itemsFromAi(aiCandidates, result.picks(), analysisProfile, scoreCapProfile, mode, aiProvider))
             .filter(list -> !list.isEmpty())
@@ -261,7 +279,35 @@ public class RecommendationService {
         if (aiResultPresent) {
             return properties.providerLabel(provider) + "가 후보를 비교하고 이유를 작성했어.";
         }
-        return "GPT 응답이 지연돼서 코드 점수 기반으로 임시 추천했어. 취향 태그와 상영 조건이 같이 맞는 순서로 정렬했어.";
+        if (provider == AiProvider.FALLBACK) {
+            return "외부 AI 없이 코드 점수 기반으로 추천했어. 취향 태그와 상영 조건이 같이 맞는 순서야.";
+        }
+        if (provider == AiProvider.OPENAI_API) {
+            return "OpenAI API provider는 아직 비활성이라 코드 점수 기반으로 추천했어.";
+        }
+        return "Codex demo 응답이 지연돼서 코드 점수 기반으로 임시 추천했어. 취향 태그와 상영 조건이 같이 맞는 순서로 정렬했어.";
+    }
+
+    private AiProvider resolveProvider(String requestedProvider) {
+        AiProvider provider = requestedProvider == null || requestedProvider.isBlank()
+            ? properties.defaultProvider()
+            : AiProvider.from(requestedProvider);
+        if (provider == AiProvider.CODEX && !codexClient.bridgeTokenConfigured()) {
+            return AiProvider.FALLBACK;
+        }
+        return provider;
+    }
+
+    private Optional<AiResult> rankWithProvider(
+        AiProvider provider,
+        RecommendationMode mode,
+        TagProfile analysisProfile,
+        List<ScoredCandidate> aiCandidates
+    ) {
+        if (provider != AiProvider.CODEX) {
+            return Optional.empty();
+        }
+        return codexClient.rankAndExplain(mode, analysisProfile, aiCandidates);
     }
 
     private CandidateSearchResult findCandidatesWithFallback(

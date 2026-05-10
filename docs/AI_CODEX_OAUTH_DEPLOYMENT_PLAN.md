@@ -635,9 +635,12 @@ Oracle Cloud 서버에는 Spring Boot jar와 필요한 환경변수만 둔다.
 
 ```env
 DABOYEO_BACKEND_PORT=5500
-DABOYEO_DB_URL=jdbc:mysql://<tidb-host>:4000/<db>?serverTimezone=Asia/Seoul&characterEncoding=utf8&useSSL=true
-DABOYEO_DB_USERNAME=<db-user>
-DABOYEO_DB_PASSWORD=<db-password>
+TIDB_HOST=<tidb-host>
+TIDB_PORT=4000
+TIDB_USER=<db-user>
+TIDB_PASSWORD=<db-password>
+TIDB_DATABASE=<db>
+TIDB_SSL=true
 DABOYEO_FLYWAY_ENABLED=false
 DABOYEO_FRONTEND_ORIGINS=https://<deployed-domain>
 
