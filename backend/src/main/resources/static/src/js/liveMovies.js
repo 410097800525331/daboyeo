@@ -4,7 +4,7 @@
 
 const movieGrid = document.getElementById('movie-grid');
 const DEFAULT_API_BASE_ORIGIN = 'http://localhost:5500';
-const FRONTEND_DEV_PORTS = new Set(['4173', '5173']);
+const FRONTEND_DEV_PORTS = new Set(['4173', '5173', '5510']);
 const API_BASE_URL = resolveApiBaseUrl();
 
 function resolveApiBaseUrl() {

@@ -69,6 +69,183 @@ public class LiveMovieRepository {
         return jdbcTemplate.query(queryParts.sql().toString(), queryParts.params(), new LiveMovieScheduleRowMapper());
     }
 
+    public List<MovieCatalogRow> findPopularMovies(int limit, String query) {
+        return findPopularMovies(limit, query, "", "");
+    }
+
+    public List<MovieCatalogRow> findPopularMovies(int limit, String query, String section) {
+        return findPopularMovies(limit, query, section, "");
+    }
+
+    public List<MovieCatalogRow> findPopularMovies(int limit, String query, String section, String releaseState) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT *
+            FROM (
+            SELECT
+              SUBSTRING_INDEX(
+                GROUP_CONCAT(
+                  CONCAT(m.provider_code, ':', m.external_movie_id)
+                  ORDER BY
+                    CASE WHEN m.box_office_rank IS NULL THEN 999999 ELSE m.box_office_rank END ASC,
+                    m.booking_rate DESC,
+                    m.last_collected_at DESC
+                  SEPARATOR ','
+                ),
+                ',',
+                1
+              ) AS movie_key,
+              m.title_ko AS title_ko,
+              SUBSTRING_INDEX(
+                GROUP_CONCAT(NULLIF(m.title_en, '') ORDER BY m.last_collected_at DESC SEPARATOR '||'),
+                '||',
+                1
+              ) AS title_en,
+              SUBSTRING_INDEX(
+                GROUP_CONCAT(NULLIF(m.age_rating, '') ORDER BY m.last_collected_at DESC SEPARATOR '||'),
+                '||',
+                1
+              ) AS age_rating,
+              MAX(m.runtime_minutes) AS runtime_minutes,
+              MIN(m.release_date) AS release_date,
+              CASE
+                WHEN MIN(m.release_date) IS NULL THEN 'unknown'
+                WHEN MIN(m.release_date) > CURRENT_DATE() THEN 'upcoming'
+                ELSE 'now_playing'
+              END AS release_state,
+              MAX(m.booking_rate) AS booking_rate,
+              MIN(m.box_office_rank) AS box_office_rank,
+              SUBSTRING_INDEX(
+                GROUP_CONCAT(NULLIF(m.poster_url, '') ORDER BY
+                  CASE WHEN m.poster_url IS NULL OR m.poster_url = '' THEN 1 ELSE 0 END ASC,
+                  CASE WHEN m.box_office_rank IS NULL THEN 999999 ELSE m.box_office_rank END ASC,
+                  m.booking_rate DESC,
+                  m.last_collected_at DESC
+                  SEPARATOR '||'
+                ),
+                '||',
+                1
+              ) AS poster_url,
+              MIN(COALESCE(sp.total_price_amount, st.min_price_amount)) AS min_price_amount,
+              COUNT(DISTINCT st.id) AS showtime_count,
+              GROUP_CONCAT(DISTINCT m.provider_code ORDER BY m.provider_code SEPARATOR ',') AS providers,
+              GROUP_CONCAT(DISTINCT CONCAT(mt.tag_type, ':', mt.tag_value) ORDER BY mt.tag_type, mt.tag_value SEPARATOR ',') AS tags,
+              MAX(CASE
+                WHEN mt.tag_type = 'audience' AND mt.tag_value = 'alone' THEN 100
+                WHEN mt.tag_type = 'genre' AND mt.tag_value IN ('sf', 'thriller', 'horror') THEN 72
+                WHEN mt.tag_type = 'genre' AND mt.tag_value = 'drama' THEN 52
+                WHEN mt.tag_type = 'pace' AND mt.tag_value IN ('slow_burn', 'intense') THEN 38
+                ELSE 0
+              END) + COALESCE(MAX(m.booking_rate), 0) AS alone_score,
+              MAX(CASE
+                WHEN mt.tag_type = 'audience' AND mt.tag_value = 'date' THEN 110
+                WHEN mt.tag_type = 'genre' AND mt.tag_value = 'romance' THEN 100
+                WHEN mt.tag_type = 'genre' AND mt.tag_value = 'drama' THEN 40
+                WHEN mt.tag_type = 'genre' AND mt.tag_value = 'animation' THEN 24
+                ELSE 0
+              END) + COALESCE(MAX(m.booking_rate), 0) AS couple_score,
+              MAX(m.last_collected_at) AS latest_collected_at
+            FROM movies m
+            LEFT JOIN showtimes st
+              ON st.provider_code = m.provider_code
+             AND st.external_movie_id = m.external_movie_id
+             AND st.starts_at >= NOW()
+            LEFT JOIN showtime_prices sp
+              ON sp.provider_code = st.provider_code
+             AND sp.external_showtime_key = st.external_showtime_key
+            LEFT JOIN movie_tags mt
+              ON mt.provider_code = m.provider_code
+             AND mt.external_movie_id = m.external_movie_id
+            WHERE m.title_ko IS NOT NULL
+              AND m.title_ko <> ''
+            """);
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("limit", Math.max(1, Math.min(limit, 80)));
+
+        if (query != null && !query.isBlank()) {
+            sql.append(" AND (LOWER(m.title_ko) LIKE :query OR LOWER(COALESCE(m.title_en, '')) LIKE :query)");
+            params.addValue("query", "%" + query.trim().toLowerCase(Locale.ROOT) + "%");
+        }
+
+        sql.append("""
+            GROUP BY m.title_ko
+            ) catalog
+            """);
+
+        String normalizedReleaseState = normalizeReleaseState(releaseState);
+        if ("now_playing".equals(normalizedReleaseState)) {
+            sql.append(" WHERE release_state = 'now_playing'\n");
+        } else if ("upcoming".equals(normalizedReleaseState)) {
+            sql.append(" WHERE release_state = 'upcoming'\n");
+        } else if ("unknown".equals(normalizedReleaseState)) {
+            sql.append(" WHERE release_state = 'unknown'\n");
+        }
+
+        String normalizedSection = normalizeSection(section);
+        if ("alone".equals(normalizedSection)) {
+            sql.append("""
+                ORDER BY
+                  CASE WHEN release_state = 'upcoming' THEN 1 ELSE 0 END ASC,
+                  alone_score DESC,
+                  CASE WHEN box_office_rank IS NULL THEN 1 ELSE 0 END ASC,
+                  box_office_rank ASC,
+                  booking_rate DESC,
+                  showtime_count DESC,
+                  latest_collected_at DESC
+                """);
+        } else if ("couple".equals(normalizedSection)) {
+            sql.append("""
+                ORDER BY
+                  CASE WHEN release_state = 'upcoming' THEN 1 ELSE 0 END ASC,
+                  couple_score DESC,
+                  RAND(),
+                  CASE WHEN box_office_rank IS NULL THEN 1 ELSE 0 END ASC,
+                  booking_rate DESC,
+                  latest_collected_at DESC
+                """);
+        } else {
+            sql.append("""
+                ORDER BY
+                  CASE WHEN box_office_rank IS NULL THEN 1 ELSE 0 END ASC,
+                  box_office_rank ASC,
+                  booking_rate DESC,
+                  showtime_count DESC,
+                  latest_collected_at DESC
+                """);
+        }
+
+        sql.append("""
+            LIMIT :limit
+            """);
+
+        return jdbcTemplate.query(sql.toString(), params, new MovieCatalogRowMapper());
+    }
+
+    private static String normalizeReleaseState(String releaseState) {
+        if (releaseState == null) {
+            return "";
+        }
+        String normalized = releaseState.trim().toLowerCase(Locale.ROOT).replace('-', '_');
+        return switch (normalized) {
+            case "now", "current", "playing", "released", "now_playing" -> "now_playing";
+            case "coming", "coming_soon", "scheduled", "upcoming" -> "upcoming";
+            case "unknown" -> "unknown";
+            default -> "";
+        };
+    }
+
+    private static String normalizeSection(String section) {
+        if (section == null) {
+            return "";
+        }
+        String normalized = section.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "alone", "solo" -> "alone";
+            case "couple", "date", "romance" -> "couple";
+            default -> "";
+        };
+    }
+
     private QueryParts buildBaseQuery(LiveMovieSearchCriteria criteria) {
         StringBuilder sql = new StringBuilder("""
             SELECT
@@ -287,9 +464,70 @@ public class LiveMovieRepository {
         }
     }
 
+    private static final class MovieCatalogRowMapper implements RowMapper<MovieCatalogRow> {
+
+        @Override
+        public MovieCatalogRow mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return new MovieCatalogRow(
+                rs.getString("movie_key"),
+                rs.getString("title_ko"),
+                rs.getString("title_en"),
+                defaultText(rs.getString("age_rating"), "ALL"),
+                getNullableInt(rs, "runtime_minutes"),
+                rs.getObject("release_date", LocalDate.class),
+                defaultText(rs.getString("release_state"), "unknown"),
+                rs.getBigDecimal("booking_rate"),
+                getNullableInt(rs, "box_office_rank"),
+                rs.getString("poster_url"),
+                getNullableInt(rs, "min_price_amount"),
+                rs.getInt("showtime_count"),
+                splitCsv(rs.getString("providers")),
+                splitCsv(rs.getString("tags"))
+            );
+        }
+
+        private static Integer getNullableInt(ResultSet rs, String column) throws SQLException {
+            int value = rs.getInt(column);
+            return rs.wasNull() ? null : value;
+        }
+    }
+
+    private static List<String> splitCsv(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(value.split(","))
+            .map(String::trim)
+            .filter(part -> !part.isBlank())
+            .distinct()
+            .toList();
+    }
+
+    private static String defaultText(String value, String defaultValue) {
+        return value == null || value.isBlank() ? defaultValue : value;
+    }
+
     private record QueryParts(
         StringBuilder sql,
         MapSqlParameterSource params
+    ) {
+    }
+
+    public record MovieCatalogRow(
+        String movieKey,
+        String titleKo,
+        String titleEn,
+        String ageRating,
+        Integer runtimeMinutes,
+        LocalDate releaseDate,
+        String releaseState,
+        BigDecimal bookingRate,
+        Integer boxOfficeRank,
+        String posterUrl,
+        Integer minPriceAmount,
+        int showtimeCount,
+        List<String> providers,
+        List<String> tags
     ) {
     }
 

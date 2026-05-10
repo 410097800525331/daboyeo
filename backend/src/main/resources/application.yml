@@ -41,8 +41,8 @@ daboyeo:
     codex-precise-model: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MODEL:gpt-5.4}
     codex-fast-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_FAST_REASONING_EFFORT:}
     codex-precise-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_PRECISE_REASONING_EFFORT:medium}
-    codex-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_FAST_AI_CANDIDATE_LIMIT:3}
-    codex-precise-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_PRECISE_AI_CANDIDATE_LIMIT:8}
+    codex-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_FAST_AI_CANDIDATE_LIMIT:12}
+    codex-precise-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_PRECISE_AI_CANDIDATE_LIMIT:20}
     codex-fast-max-tokens: ${DABOYEO_RECOMMEND_CODEX_FAST_MAX_TOKENS:420}
     codex-precise-max-tokens: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MAX_TOKENS:900}
     bridge-token: ${DABOYEO_AI_BRIDGE_TOKEN:}

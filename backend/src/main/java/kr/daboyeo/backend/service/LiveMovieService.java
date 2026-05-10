@@ -16,6 +16,7 @@ import kr.daboyeo.backend.domain.LiveMovieSchedule;
 import kr.daboyeo.backend.domain.LiveMovieSearchCriteria;
 import kr.daboyeo.backend.domain.SeatState;
 import kr.daboyeo.backend.repository.LiveMovieRepository;
+import kr.daboyeo.backend.repository.LiveMovieRepository.MovieCatalogRow;
 import kr.daboyeo.backend.security.PortfolioAccessGate;
 import kr.daboyeo.backend.sync.nearby.NearbyShowtimeRefreshService;
 import org.slf4j.Logger;
@@ -154,6 +155,27 @@ public class LiveMovieService {
             return schedulesResponse(movieKey, criteria, items, true, null, false);
         } catch (DataAccessException exception) {
             return schedulesResponse(movieKey, criteria, List.of(), false, DATABASE_FAILURE_WARNING, false);
+        }
+    }
+
+    public MovieCatalogResponse findPopularMovies(Integer limit, String query) {
+        return findPopularMovies(limit, query, "", "");
+    }
+
+    public MovieCatalogResponse findPopularMovies(Integer limit, String query, String section) {
+        return findPopularMovies(limit, query, section, "");
+    }
+
+    public MovieCatalogResponse findPopularMovies(Integer limit, String query, String section, String releaseState) {
+        int boundedLimit = Math.max(1, Math.min(limit == null ? 24 : limit, 80));
+        try {
+            List<MovieCatalogItem> movies = repository.findPopularMovies(boundedLimit, query, section, releaseState).stream()
+                .map(this::toCatalogItem)
+                .toList();
+            return new MovieCatalogResponse(new MovieCatalogMeta(movies.size(), true, null), movies);
+        } catch (DataAccessException exception) {
+            logger.warn("Movie catalog lookup failed.", exception);
+            return new MovieCatalogResponse(new MovieCatalogMeta(0, false, DATABASE_FAILURE_WARNING), List.of());
         }
     }
 
@@ -342,6 +364,49 @@ public class LiveMovieService {
         );
     }
 
+    private MovieCatalogItem toCatalogItem(MovieCatalogRow row) {
+        List<String> providers = row.providers().stream()
+            .map(this::normalizeProviderValue)
+            .distinct()
+            .toList();
+
+        return new MovieCatalogItem(
+            row.movieKey(),
+            row.titleKo(),
+            row.titleEn(),
+            row.ageRating(),
+            row.runtimeMinutes(),
+            row.releaseDate() == null ? null : row.releaseDate().toString(),
+            normalizeReleaseState(row.releaseState()),
+            row.bookingRate(),
+            row.boxOfficeRank(),
+            upgradePosterUrl(row.posterUrl()),
+            row.minPriceAmount(),
+            row.showtimeCount(),
+            providers,
+            row.tags()
+        );
+    }
+
+    private String normalizeReleaseState(String releaseState) {
+        String normalized = releaseState == null ? "" : releaseState.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "now_playing", "upcoming", "unknown" -> normalized;
+            default -> "unknown";
+        };
+    }
+
+    private String upgradePosterUrl(String posterUrl) {
+        if (posterUrl == null || posterUrl.isBlank()) {
+            return posterUrl;
+        }
+        if (!posterUrl.contains("megabox.co.kr/SharedImg/")) {
+            return posterUrl;
+        }
+        return posterUrl
+            .replaceFirst("_(150|230)(\\.[A-Za-z0-9]+)$", "_420$2");
+    }
+
     private LiveMovieResponse nearbyResponse(
         LiveMovieSearchCriteria criteria,
         List<LiveMovieScheduleItem> results,
@@ -480,6 +545,37 @@ public class LiveMovieService {
         LiveMovieSearchMeta search,
         MovieSummary movie,
         List<TheaterScheduleGroup> theaters
+    ) {
+    }
+
+    public record MovieCatalogResponse(
+        MovieCatalogMeta meta,
+        List<MovieCatalogItem> movies
+    ) {
+    }
+
+    public record MovieCatalogMeta(
+        int resultCount,
+        boolean databaseAvailable,
+        String warning
+    ) {
+    }
+
+    public record MovieCatalogItem(
+        String movie_key,
+        String title,
+        String title_en,
+        String age_rating,
+        Integer runtime_minutes,
+        String release_date,
+        String release_state,
+        BigDecimal booking_rate,
+        Integer box_office_rank,
+        String poster_url,
+        Integer min_price_amount,
+        int showtime_count,
+        List<String> providers,
+        List<String> tags
     ) {
     }
 

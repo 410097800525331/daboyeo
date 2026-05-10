@@ -884,3 +884,67 @@ Do not rewrite existing entries; append only.
 - summary: `Sandboxed git add could not create .git/index.lock.`
 - details: `The first git add -A failed with permission denied while creating D:/git/daboyeo/.git/index.lock. The staging command was rerun with approved external permission and completed with CRLF warnings only.`
 - status: `resolved`
+
+# 2026-05-10 17:40 +09:00
+
+- time: `2026-05-10 17:40 +09:00`
+- location: `Oracle codex provider redeploy health check`
+- summary: `Oracle deploy script reported 502 on the immediate public health check after restarting Spring.`
+- details: `The sanitized env and jar were uploaded, remote install detected owner ubuntu, and daboyeo.service reported active. The script then hit Nginx 502 before Spring finished booting. A retry after startup returned /api/health ok, systemd remained active, remote env showed DABOYEO_RECOMMEND_PROVIDER=codex and bridge token present, and provider health showed codex ready.`
+- status: `resolved`
+
+# 2026-05-10 18:02 +09:00
+
+- time: `2026-05-10 18:02 +09:00`
+- location: `Oracle AI three-result hotfix deploy`
+- summary: `Oracle deploy script again reported 502 on the immediate public health check after restarting Spring.`
+- details: `The hotfix jar and sanitized env uploaded successfully and daboyeo.service reported active, but the script's immediate public health probe hit Nginx 502 during Spring startup. A retry returned /api/health ok, provider health showed codex ready, and a valid deployed fast Codex recommendation smoke returned three recommendations.`
+- status: `resolved`
+
+# 2026-05-10 21:12 +09:00
+
+- time: `2026-05-10 21:12 +09:00`
+- location: `AI loading motion browser verification`
+- summary: `The static 5510 page could not reach the recommendation session API, and local Spring was not immediately startable from this shell.`
+- details: `Opening http://127.0.0.1:5510/pages/daboyeoAi.html showed the existing sessionError screen because the frontend treats non-dev ports as same-origin API and 5510 is only a static server. A direct Spring start attempt hit the known PowerShell Start-Process Path/PATH collision, and this shell did not have a Gradle command or wrapper available. Visual verification continued with a temporary in-memory Node REPL mock server serving the actual frontend/src files and minimal local API responses; the real loading step rendered one .motion-loading-card with 58 taste particles and 4 status steps. The mock server was stopped after the browser check.`
+- status: `resolved-with-mock-browser-qa`
+
+# 2026-05-10 21:42 +09:00
+
+- time: `2026-05-10 21:42 +09:00`
+- location: `Oracle portfolio redeploy`
+- summary: `The redeploy script uploaded and restarted the service, but its immediate public health check hit Nginx 502 while Spring was still booting.`
+- details: `Dry-run passed and the jar was rebuilt with approved external Gradle execution after sandbox loopback blocked the first bootJar attempt. The real deploy uploaded sanitized env, app.jar, and the bridge worker, detected remote owner ubuntu, and restarted daboyeo.service active. The script's immediate /api/health probe returned 502, then a retry after startup returned public /api/health 200, VM-local 127.0.0.1:5500 /api/health 200, public root and direct pages 200, responsive.css 200, and provider health 200 with codex ready. No secret values were printed.`
+- status: `resolved`
+
+# 2026-05-10 22:20 +09:00
+
+- time: `2026-05-10 22:20 +09:00`
+- location: `Oracle live movie catalog deployment`
+- summary: `The first live catalog deploy restarted successfully but public smoke exposed a TiDB SQL mode mismatch.`
+- details: `The deploy script again hit the known restart-time Nginx 502 after service restart. A follow-up /api/health retry returned ok, but /api/live/movies returned databaseAvailable=false because TiDB ONLY_FULL_GROUP_BY rejected the grouped catalog query's aggregate alias ORDER BY. The repository SQL was changed to sort the grouped result from an outer derived table, focused controller tests and bootJar passed, and the jar was redeployed. The deploy script again reported the restart-time 502, then retry checks returned /api/health ok and /api/live/movies?limit=3 with three movies and poster_url present for all three.`
+- status: `resolved`
+
+# 2026-05-10 22:55 +09:00
+
+- time: `2026-05-10 22:55 +09:00`
+- location: `Oracle live sections and events deployment`
+- summary: `The deploy script again reported 502 on its immediate public health check while Spring was still restarting.`
+- details: `The jar and static resources uploaded successfully, the remote service reported active, and the local sanitized env was removed. The script's immediate /api/health request returned Nginx 502 during Spring startup. A retry after startup returned /api/health ok, /api/live/movies?limit=3 with three _420 poster URLs, /api/live/movies?section=alone and section=couple with DB-backed results, and /api/events?limit=4 with event imageUrl/eventUrl/hot fields.`
+- status: `resolved`
+
+# 2026-05-11 00:03 +09:00
+
+- time: `2026-05-11 00:03 +09:00`
+- location: `Oracle live movie release-state deployment`
+- summary: `The release-state redeploy script reported 502 on its immediate public health check while Spring was still restarting.`
+- details: `Both release-state deploy attempts uploaded the jar/static resources successfully, removed the local sanitized env, and reported daboyeo.service active, but the script's immediate /api/health probe hit Nginx 502 during Spring startup. Retrying after startup returned /api/health ok. Final public smoke confirmed query=마이클 returns release_date=2026-05-13 and release_state=upcoming, releaseState=now_playing returns only now_playing rows, releaseState=upcoming returns only upcoming rows, and deployed index/allMovies HTML reference the new release-state cache key.`
+- status: `resolved`
+
+# 2026-05-11 00:21 +09:00
+
+- time: `2026-05-11 00:21 +09:00`
+- location: `Oracle ranked-upcoming movie deployment`
+- summary: `The ranked-upcoming redeploy script reported 502 on its immediate public health check while Spring was still restarting.`
+- details: `The jar and static resources uploaded successfully, the remote service reported active, and the local sanitized env was removed. The script's immediate /api/health probe returned Nginx 502 during Spring startup. A retry after startup returned /api/health ok. Public smoke confirmed default /api/live/movies?limit=3 includes 마이클 as release_state=upcoming at rank 1, releaseState=now_playing remains strict with only now_playing rows, deployed JS no longer filters home TOP3 by releaseState=now_playing, and UTF-8 decoded deployed JS contains the 상영예정 label.`
+- status: `resolved`

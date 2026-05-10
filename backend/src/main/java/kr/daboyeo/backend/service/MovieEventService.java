@@ -12,8 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -94,6 +98,28 @@ public class MovieEventService {
         return repository.findAllOrderByCreatedAtDesc();
     }
 
+    public List<EventItem> getEvents(String source, Category category, Integer limit) {
+        int boundedLimit = Math.max(1, Math.min(limit == null ? 80 : limit, 120));
+        String normalizedSource = normalizeSource(source);
+        LocalDate today = LocalDate.now();
+
+        List<MovieEvent> filtered = repository.findAllOrderByCreatedAtDesc().stream()
+            .filter(event -> normalizedSource.isBlank() || normalizeSource(event.getSource()).equals(normalizedSource) || normalizeSource(event.getCinema()).equals(normalizedSource))
+            .filter(event -> category == null || event.getCategory() == category)
+            .toList();
+
+        List<MovieEvent> active = filtered.stream()
+            .filter(event -> isActive(event, today))
+            .toList();
+
+        List<MovieEvent> sourceRows = active.isEmpty() ? filtered : active;
+        return sourceRows.stream()
+            .sorted(eventComparator())
+            .limit(boundedLimit)
+            .map(this::toEventItem)
+            .toList();
+    }
+
     public List<MovieEvent> getByCategory(Category category) {
         return repository.findByCategory(category);
     }
@@ -104,5 +130,75 @@ public class MovieEventService {
 
     public List<MovieEvent> getBySourceAndCategory(String source, Category category) {
         return repository.findBySourceAndCategory(source, category);
+    }
+
+    private Comparator<MovieEvent> eventComparator() {
+        return Comparator
+            .comparing((MovieEvent event) -> event.getCategory() == Category.HOT ? 0 : 1)
+            .thenComparing(event -> event.getStartDate(), Comparator.nullsLast(Comparator.reverseOrder()))
+            .thenComparing(event -> event.getCreatedAt(), Comparator.nullsLast(Comparator.reverseOrder()))
+            .thenComparing(event -> event.getId(), Comparator.nullsLast(Comparator.reverseOrder()));
+    }
+
+    private boolean isActive(MovieEvent event, LocalDate today) {
+        if (event == null) {
+            return false;
+        }
+        LocalDate startDate = event.getStartDate();
+        LocalDate endDate = event.getEndDate();
+        return (startDate == null || !startDate.isAfter(today))
+            && (endDate == null || !endDate.isBefore(today));
+    }
+
+    private String normalizeSource(String source) {
+        if (source == null || source.isBlank()) {
+            return "";
+        }
+        String normalized = source.trim().toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "LOTTE_CINEMA" -> "LOTTE";
+            case "MEGA" -> "MEGABOX";
+            default -> normalized;
+        };
+    }
+
+    private EventItem toEventItem(MovieEvent event) {
+        Category eventCategory = event.getCategory();
+        return new EventItem(
+            event.getId(),
+            safeText(event.getTitle()),
+            normalizeSource(event.getSource()),
+            normalizeSource(event.getCinema()),
+            event.getEventId(),
+            eventCategory == null ? "ALL" : eventCategory.name(),
+            eventCategory == Category.HOT,
+            safeText(event.getImageUrl()),
+            safeText(event.getEventUrl()),
+            event.getStartDate(),
+            event.getEndDate(),
+            safeText(event.getdDay()),
+            event.getCreatedAt()
+        );
+    }
+
+    private String safeText(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    public record EventItem(
+        Long id,
+        String title,
+        String source,
+        String cinema,
+        String eventId,
+        String category,
+        boolean hot,
+        String imageUrl,
+        String eventUrl,
+        LocalDate startDate,
+        LocalDate endDate,
+        String dDay,
+        LocalDateTime createdAt
+    ) {
     }
 }

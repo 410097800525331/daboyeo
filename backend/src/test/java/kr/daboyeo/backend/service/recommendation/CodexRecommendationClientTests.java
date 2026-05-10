@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import kr.daboyeo.backend.config.RecommendationProperties;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiPick;
@@ -73,6 +74,7 @@ class CodexRecommendationClientTests {
             "Candidates:",
             "Decision style: CODEX_FAST",
             "small candidate set",
+            "Pick exactly 1 object from candidates.",
             "avoid generic caution-first wording",
             "\"why\"",
             "\"s\"",
@@ -86,6 +88,24 @@ class CodexRecommendationClientTests {
             "watchRisks"
         );
         assertThat(prompt).doesNotContain("tradeoffHints", "\"score\"", "\"matchedTags\"", "\"penalties\"");
+    }
+
+    @Test
+    void fastResponseSchemaRequiresThreeItemsWhenCandidatePoolAllowsIt() throws Exception {
+        var request = client.openAiCompatibleRequest(
+            RecommendationMode.FAST,
+            new TagProfile(),
+            List.of(scoredCandidate(), scoredCandidate(), scoredCandidate()),
+            "gpt-5.4-mini"
+        );
+
+        Map<String, Object> responseFormat = asMap(request.get("response_format"));
+        Map<String, Object> jsonSchema = asMap(responseFormat.get("json_schema"));
+        Map<String, Object> schema = asMap(jsonSchema.get("schema"));
+        Map<String, Object> properties = asMap(schema.get("properties"));
+        Map<String, Object> rows = asMap(properties.get("r"));
+
+        assertThat(rows).containsEntry("minItems", 3).containsEntry("maxItems", 3);
     }
 
     @Test
@@ -259,6 +279,11 @@ class CodexRecommendationClientTests {
 
     private ScoredCandidate scoredCandidate() {
         return scoredCandidate(Set.of("mood:exciting", "content:loud"), List.of("mood:exciting"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> asMap(Object value) {
+        return (Map<String, Object>) value;
     }
 
     private ScoredCandidate scoredCandidate(Set<String> tags, List<String> matchedTags) {

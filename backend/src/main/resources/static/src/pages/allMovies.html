@@ -5,32 +5,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>다보여 | DABOYEO</title>
-  <!-- favicon -->
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="../css/allMovies.css">
+  <link rel="stylesheet" href="../css/allMovies.css?v=20260511-ranked-upcoming">
+  <link rel="stylesheet" href="../css/responsive.css?v=20260510-real-responsive">
 </head>
 
 <body class="basic-page">
   <main class="main-content">
-    <!-- 발견 섹션 헤더 -->
     <section class="discovery-hero">
       <div class="discovery-hero-inner">
-        <div class="section-label">
-          <i class="fas fa-compass"></i> DISCOVERY
-        </div>
+        <a class="seat-back-link" href="../../index.html#movies" aria-label="뒤로가기">
+          <span aria-hidden="true">←</span>뒤로가기
+        </a>
         <h1 class="discovery-title">
-          당신이 몰랐던<br />
+          당신이 몰랐던<br>
           <span>영화의 세계</span>를 발견하세요
         </h1>
         <p class="discovery-desc">
-          알고리즘이 아닌 감성으로 큐레이션한 영화들. 지금 이 순간 당신에게 꼭 맞는 영화를 찾아드립니다.
+          현재 수집된 영화, 상영, 태그 데이터를 기준으로 지금 볼 만한 작품을 다시 묶어 보여드립니다.
         </p>
       </div>
     </section>
 
-    <!-- ① 요즘 뜨는 영화 (급상승) -->
     <section class="discovery-section section-trending-list">
       <div class="section-header">
         <div class="section-header-left">
@@ -40,71 +38,12 @@
             <p class="section-subtitle">지금 가장 많은 사람들이 선택한 영화</p>
           </div>
         </div>
-        <a href="#" class="view-all-link">전체 순위 보기 <i class="fa-solid fa-chevron-right"></i></a>
       </div>
-
       <div class="trending-list-container">
-        <!-- 1위 -->
-        <div class="trending-item rank-1">
-          <div class="rank-num">1</div>
-          <div class="movie-poster-box">
-            <!-- 포스터 이미지 들어갈 곳 -->
-          </div>
-          <div class="movie-details">
-            <div class="movie-meta">
-              <span class="badge-hot">HOT</span>
-              <span class="movie-info-text">SF · 138분</span>
-            </div>
-            <h3 class="movie-title">프로젝트 헤일메리</h3>
-            <p class="movie-comment">"화성보다 먼 곳에서 온 압도적 몰입감, SF 팬이라면 필람"</p>
-          </div>
-          <div class="movie-side-action">
-            <div class="price-tag">최저 <strong>₩12,000</strong></div>
-            <button class="btn-view-now">지금 보기</button>
-          </div>
-        </div>
-
-        <!-- 2위 -->
-        <div class="trending-item rank-2">
-          <div class="rank-num">2</div>
-          <div class="movie-poster-box">
-            <!-- 포스터 이미지 들어갈 곳 -->
-          </div>
-          <div class="movie-details">
-            <div class="movie-meta">
-              <span class="movie-info-text">로맨스 · 107분</span>
-            </div>
-            <h3 class="movie-title">위 리브 인 타임</h3>
-            <p class="movie-comment">"사랑의 모든 순간을 찬란하게 담아낸 올해 최고의 멜로"</p>
-          </div>
-          <div class="movie-side-action">
-            <div class="price-tag">최저 <strong>₩11,000</strong></div>
-            <button class="btn-view-now">지금 보기</button>
-          </div>
-        </div>
-
-        <!-- 3위 -->
-        <div class="trending-item rank-3">
-          <div class="rank-num">3</div>
-          <div class="movie-poster-box">
-            <!-- 포스터 이미지 들어갈 곳 -->
-          </div>
-          <div class="movie-details">
-            <div class="movie-meta">
-              <span class="movie-info-text">코미디 · 122분</span>
-            </div>
-            <h3 class="movie-title">왕과 사는 남자</h3>
-            <p class="movie-comment">"웃음 뒤에 숨겨진 묵직한 페이소스, 배우들의 열연이 돋보임"</p>
-          </div>
-          <div class="movie-side-action">
-            <div class="price-tag">최저 <strong>₩13,000</strong></div>
-            <button class="btn-view-now">지금 보기</button>
-          </div>
-        </div>
+        <div class="catalog-loading-card">영화 데이터를 불러오는 중</div>
       </div>
     </section>
 
-    <!-- ⑥ 오늘의 추천 한 편 (AI Pick) -->
     <section class="discovery-section ai-pick-section" id="ai-pick">
       <div class="ai-pick-inner">
         <div class="ai-pick-header">
@@ -113,8 +52,7 @@
           </div>
           <h2 class="ai-pick-title">오늘의 추천 한 편</h2>
           <p class="ai-pick-subtitle">
-            DABOYEO AI가 오늘의 날씨, 시간대, 트렌드를 분석해<br />
-            딱 한 편을 골라드립니다.
+            현재 상영 데이터와 예매 흐름을 기준으로 한 편을 고릅니다.
           </p>
         </div>
 
@@ -123,96 +61,61 @@
             <div class="ai-pick-poster">
               <div class="ai-poster-placeholder">
                 <i class="fas fa-film"></i>
-                <span>프로젝트 헤일메리</span>
+                <span>추천 준비 중</span>
               </div>
               <div class="ai-pick-glow"></div>
             </div>
             <div class="ai-pick-reason-bubble">
               <i class="fas fa-robot"></i>
-              <span>오늘 밤 혼자 보기 최적의 SF 영화입니다</span>
+              <span>현재 수집된 영화 데이터를 분석하고 있습니다</span>
             </div>
           </div>
 
           <div class="ai-pick-detail">
-            <div class="ai-pick-movie-title">프로젝트 헤일메리</div>
+            <div class="ai-pick-movie-title">추천 준비 중</div>
             <div class="ai-pick-movie-meta">
-              <span><i class="fas fa-clock"></i> 138분</span>
-              <span><i class="fas fa-star"></i> 9.2</span>
-              <span><i class="fas fa-film"></i> SF / 모험</span>
-              <span><i class="fas fa-calendar"></i> 2025</span>
+              <span>상영중</span>
+              <span>예매율 -%</span>
+              <span>ALL</span>
+              <span>상영 0건</span>
             </div>
 
             <div class="ai-analysis">
               <div class="ai-analysis-title">
-                <i class="fas fa-chart-bar"></i> AI 분석 리포트
+                <i class="fas fa-chart-bar"></i> 데이터 기준
               </div>
               <div class="ai-analysis-items">
                 <div class="ai-analysis-item">
-                  <span class="analysis-label">몰입도</span>
+                  <span class="analysis-label">예매 흐름</span>
                   <div class="analysis-bar-wrap">
-                    <div class="analysis-bar" style="width:95%"></div>
+                    <div class="analysis-bar" style="width:72%"></div>
                   </div>
-                  <span class="analysis-val">95</span>
+                  <span class="analysis-val">API</span>
                 </div>
                 <div class="ai-analysis-item">
-                  <span class="analysis-label">감동지수</span>
+                  <span class="analysis-label">상영 데이터</span>
                   <div class="analysis-bar-wrap">
-                    <div class="analysis-bar" style="width:88%"></div>
+                    <div class="analysis-bar highlight-bar" style="width:86%"></div>
                   </div>
-                  <span class="analysis-val">88</span>
+                  <span class="analysis-val highlight-val">LIVE</span>
                 </div>
-                <div class="ai-analysis-item">
-                  <span class="analysis-label">재관람 의향</span>
-                  <div class="analysis-bar-wrap">
-                    <div class="analysis-bar" style="width:82%"></div>
-                  </div>
-                  <span class="analysis-val">82</span>
-                </div>
-                <div class="ai-analysis-item">
-                  <span class="analysis-label">추천 적합도</span>
-                  <div class="analysis-bar-wrap">
-                    <div class="analysis-bar highlight-bar" style="width:97%"></div>
-                  </div>
-                  <span class="analysis-val highlight-val">97</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="ai-pick-prices">
-              <div class="ai-price-item">
-                <span class="ai-cinema-name"><span class="cinema-dot cgv-dot"></span>CGV</span>
-                <span class="ai-price-val">₩14,000</span>
-              </div>
-              <div class="ai-price-item lowest">
-                <span class="ai-cinema-name"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
-                <span class="ai-price-val">₩12,000 <span class="lowest-tag">최저</span></span>
-              </div>
-              <div class="ai-price-item">
-                <span class="ai-cinema-name"><span class="cinema-dot mega-dot"></span>메가박스</span>
-                <span class="ai-price-val">₩13,000</span>
               </div>
             </div>
 
             <div class="ai-pick-actions">
-              <button class="ai-book-btn">
-                <i class="fas fa-ticket-alt"></i> 최저가로 예매하기
+              <button class="ai-book-btn" type="button">
+                <i class="fas fa-ticket-alt"></i> 상영 정보 보기
               </button>
-              <button class="ai-refresh-btn">
+              <button class="ai-refresh-btn" type="button">
                 <i class="fas fa-sync-alt"></i> 다른 영화 추천받기
               </button>
             </div>
           </div>
         </div>
-
-        <div class="ai-pick-footer">
-          <i class="fas fa-info-circle"></i>
-          AI 추천은 현재 시간(오후 8시), 날씨(맑음), 요일(목요일) 등을 종합 분석하여 매시간 업데이트됩니다.
-        </div>
       </div>
     </section>
 
-    <!-- ② 숨은 명작 추천 -->
-    <section class="discovery-section" id="hidden-gems">
+    <section class="discovery-section" id="hidden-gems" data-static-demo="true">
       <div class="section-header">
         <div class="section-header-left">
           <div class="section-icon gem-icon">
@@ -220,10 +123,9 @@
           </div>
           <div>
             <h2 class="section-title">숨은 명작 추천</h2>
-            <p class="section-subtitle">평점은 높지만 잘 알려지지 않은 보석 같은 영화들</p>
+            <p class="section-subtitle">포트폴리오 시연용 더미 큐레이션입니다</p>
           </div>
         </div>
-        <a href="#" class="view-all-link">모두 보기 <i class="fas fa-arrow-right"></i></a>
       </div>
 
       <div class="gem-cards-grid">
@@ -233,17 +135,17 @@
               <i class="fas fa-film"></i>
             </div>
             <div class="gem-badge">
-              <i class="fas fa-gem"></i> 숨은 명작
+              <i class="fas fa-gem"></i> DEMO
             </div>
             <div class="gem-rating">★ 9.1</div>
           </div>
           <div class="gem-info">
             <div class="gem-title">퍼펙트 데이즈</div>
-            <div class="gem-meta">빔 벤더스 · 2023 · 일본</div>
-            <p class="gem-desc">도쿄의 화장실 청소부가 보내는 소박하고 아름다운 일상. 잔잔하지만 깊은 울림을 주는 작품.</p>
+            <div class="gem-meta">더미 큐레이션 · 드라마</div>
+            <p class="gem-desc">시연 화면의 구성을 보여주기 위한 고정 샘플입니다.</p>
             <div class="gem-price-row">
-              <span class="gem-price">최저 <strong>₩10,000</strong></span>
-              <button class="gem-btn">예매하기</button>
+              <span class="gem-price">시연용 <strong>DEMO</strong></span>
+              <button class="gem-btn" type="button">보기</button>
             </div>
           </div>
         </div>
@@ -251,16 +153,16 @@
         <div class="gem-card">
           <div class="gem-poster">
             <div class="poster-placeholder-lg"><i class="fas fa-film"></i></div>
-            <div class="gem-badge"><i class="fas fa-gem"></i> 숨은 명작</div>
+            <div class="gem-badge"><i class="fas fa-gem"></i> DEMO</div>
             <div class="gem-rating">★ 8.9</div>
           </div>
           <div class="gem-info">
             <div class="gem-title">아프터 선</div>
-            <div class="gem-meta">샬럿 웰스 · 2022 · 영국</div>
-            <p class="gem-desc">딸이 아버지와 함께한 마지막 여름 휴가를 회상하는 이야기. 조용하고 섬세한 감정선이 오래 남는다.</p>
+            <div class="gem-meta">더미 큐레이션 · 감성</div>
+            <p class="gem-desc">실제 API 데이터가 아닌 의도된 포트폴리오 샘플입니다.</p>
             <div class="gem-price-row">
-              <span class="gem-price">최저 <strong>₩9,500</strong></span>
-              <button class="gem-btn">예매하기</button>
+              <span class="gem-price">시연용 <strong>DEMO</strong></span>
+              <button class="gem-btn" type="button">보기</button>
             </div>
           </div>
         </div>
@@ -268,23 +170,22 @@
         <div class="gem-card">
           <div class="gem-poster">
             <div class="poster-placeholder-lg"><i class="fas fa-film"></i></div>
-            <div class="gem-badge"><i class="fas fa-gem"></i> 숨은 명작</div>
+            <div class="gem-badge"><i class="fas fa-gem"></i> DEMO</div>
             <div class="gem-rating">★ 8.7</div>
           </div>
           <div class="gem-info">
             <div class="gem-title">패스트 라이브즈</div>
-            <div class="gem-meta">셀린 송 · 2023 · 미국/한국</div>
-            <p class="gem-desc">어린 시절 첫사랑과 20년 후 재회하는 이야기. 잊혀지지 않는 감정의 결을 담은 아름다운 로맨스.</p>
+            <div class="gem-meta">더미 큐레이션 · 로맨스</div>
+            <p class="gem-desc">숨은 명작 영역만 더미로 유지한다는 요구에 맞춘 샘플입니다.</p>
             <div class="gem-price-row">
-              <span class="gem-price">최저 <strong>₩10,500</strong></span>
-              <button class="gem-btn">예매하기</button>
+              <span class="gem-price">시연용 <strong>DEMO</strong></span>
+              <button class="gem-btn" type="button">보기</button>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ③ 장르별 큐레이션 -->
     <section class="discovery-section" id="genre-curation">
       <div class="section-header">
         <div class="section-header-left">
@@ -299,92 +200,20 @@
       </div>
 
       <div class="genre-tabs">
-        <button class="genre-tab active" data-genre="action">
-          <span class="genre-tab-icon">⚡</span>
-          <span>액션</span>
-        </button>
-        <button class="genre-tab" data-genre="sf">
-          <span class="genre-tab-icon">🚀</span>
-          <span>SF</span>
-        </button>
-        <button class="genre-tab" data-genre="romance">
-          <span class="genre-tab-icon">💕</span>
-          <span>로맨스</span>
-        </button>
-        <button class="genre-tab" data-genre="thriller">
-          <span class="genre-tab-icon">🔪</span>
-          <span>스릴러</span>
-        </button>
-        <button class="genre-tab" data-genre="animation">
-          <span class="genre-tab-icon">🎨</span>
-          <span>애니메이션</span>
-        </button>
-        <button class="genre-tab" data-genre="horror">
-          <span class="genre-tab-icon">👻</span>
-          <span>공포</span>
-        </button>
-        <button class="genre-tab" data-genre="comedy">
-          <span class="genre-tab-icon">😂</span>
-          <span>코미디</span>
-        </button>
+        <button class="genre-tab active" data-genre="action" type="button"><span class="genre-tab-icon">⚡</span><span>액션</span></button>
+        <button class="genre-tab" data-genre="sf" type="button"><span class="genre-tab-icon">🚀</span><span>SF</span></button>
+        <button class="genre-tab" data-genre="romance" type="button"><span class="genre-tab-icon">💕</span><span>로맨스</span></button>
+        <button class="genre-tab" data-genre="thriller" type="button"><span class="genre-tab-icon">🔪</span><span>스릴러</span></button>
+        <button class="genre-tab" data-genre="animation" type="button"><span class="genre-tab-icon">🎨</span><span>애니메이션</span></button>
+        <button class="genre-tab" data-genre="horror" type="button"><span class="genre-tab-icon">👻</span><span>공포</span></button>
+        <button class="genre-tab" data-genre="comedy" type="button"><span class="genre-tab-icon">😂</span><span>코미디</span></button>
       </div>
 
       <div class="genre-movie-row" id="genreMovieRow">
-        <!-- 액션 기본 표시 -->
-        <div class="genre-movie-card">
-          <div class="genre-poster">
-            <div class="poster-mini-lg"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="genre-movie-info">
-            <div class="genre-movie-title">캡틴 아메리카: 브레이브 뉴 월드</div>
-            <div class="genre-movie-sub">118분 · 12세</div>
-            <div class="genre-movie-price">최저 <strong>₩12,500</strong></div>
-          </div>
-        </div>
-        <div class="genre-movie-card">
-          <div class="genre-poster">
-            <div class="poster-mini-lg"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="genre-movie-info">
-            <div class="genre-movie-title">하얼빈</div>
-            <div class="genre-movie-sub">114분 · 15세</div>
-            <div class="genre-movie-price">최저 <strong>₩12,000</strong></div>
-          </div>
-        </div>
-        <div class="genre-movie-card">
-          <div class="genre-poster">
-            <div class="poster-mini-lg"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="genre-movie-info">
-            <div class="genre-movie-title">모아나 2</div>
-            <div class="genre-movie-sub">100분 · 전체</div>
-            <div class="genre-movie-price">최저 <strong>₩11,000</strong></div>
-          </div>
-        </div>
-        <div class="genre-movie-card">
-          <div class="genre-poster">
-            <div class="poster-mini-lg"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="genre-movie-info">
-            <div class="genre-movie-title">데드풀 & 울버린</div>
-            <div class="genre-movie-sub">128분 · 15세</div>
-            <div class="genre-movie-price">최저 <strong>₩12,000</strong></div>
-          </div>
-        </div>
-        <div class="genre-movie-card">
-          <div class="genre-poster">
-            <div class="poster-mini-lg"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="genre-movie-info">
-            <div class="genre-movie-title">글래디에이터 2</div>
-            <div class="genre-movie-sub">148분 · 15세</div>
-            <div class="genre-movie-price">최저 <strong>₩13,000</strong></div>
-          </div>
-        </div>
+        <div class="catalog-loading-card">장르별 영화를 불러오는 중</div>
       </div>
     </section>
 
-    <!-- ④ 혼자 보기 좋은 영화 -->
     <section class="discovery-section" id="solo">
       <div class="section-header">
         <div class="section-header-left">
@@ -393,116 +222,16 @@
           </div>
           <div>
             <h2 class="section-title">혼자 보기 좋은 영화</h2>
-            <p class="section-subtitle">혼영족을 위한 몰입감 최강 추천 리스트</p>
+            <p class="section-subtitle">혼영 태그와 예매 흐름을 기준으로 고른 리스트</p>
           </div>
         </div>
-        <a href="#" class="view-all-link">모두 보기 <i class="fas fa-arrow-right"></i></a>
       </div>
 
       <div class="mood-cards-grid">
-        <div class="mood-card solo-theme">
-          <div class="mood-poster">
-            <div class="poster-placeholder-lg"><i class="fas fa-film"></i></div>
-            <div class="mood-label solo-label">
-              <i class="fas fa-headphones"></i> 몰입 추천
-            </div>
-          </div>
-          <div class="mood-info">
-            <div class="mood-title">프로젝트 헤일메리</div>
-            <div class="mood-reason">
-              <i class="fas fa-quote-left"></i>
-              혼자 보는 SF의 정수. 138분이 눈 깜짝할 사이에 지나갑니다.
-            </div>
-            <div class="mood-tags">
-              <span class="mood-tag">SF</span>
-              <span class="mood-tag">몰입감 MAX</span>
-              <span class="mood-tag">138분</span>
-            </div>
-            <div class="mood-price-row">
-              <span>최저 <strong>₩12,000</strong></span>
-              <button class="mood-btn">예매하기</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="mood-card solo-theme">
-          <div class="mood-poster">
-            <div class="poster-placeholder-lg"><i class="fas fa-film"></i></div>
-            <div class="mood-label solo-label">
-              <i class="fas fa-brain"></i> 생각하게 되는
-            </div>
-          </div>
-          <div class="mood-info">
-            <div class="mood-title">미키 17</div>
-            <div class="mood-reason">
-              <i class="fas fa-quote-left"></i>
-              봉준호 감독의 철학적 SF. 혼자 곱씹을수록 더 깊어지는 영화.
-            </div>
-            <div class="mood-tags">
-              <span class="mood-tag">SF</span>
-              <span class="mood-tag">철학적</span>
-              <span class="mood-tag">137분</span>
-            </div>
-            <div class="mood-price-row">
-              <span>최저 <strong>₩12,000</strong></span>
-              <button class="mood-btn">예매하기</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="mood-card solo-theme">
-          <div class="mood-poster">
-            <div class="poster-placeholder-lg"><i class="fas fa-film"></i></div>
-            <div class="mood-label solo-label">
-              <i class="fas fa-eye"></i> 시각적 충격
-            </div>
-          </div>
-          <div class="mood-info">
-            <div class="mood-title">서브스턴스</div>
-            <div class="mood-reason">
-              <i class="fas fa-quote-left"></i>
-              혼자서 충격받고 싶다면 이 영화. 강렬한 시각 경험 보장.
-            </div>
-            <div class="mood-tags">
-              <span class="mood-tag">공포</span>
-              <span class="mood-tag">충격적</span>
-              <span class="mood-tag">141분</span>
-            </div>
-            <div class="mood-price-row">
-              <span>최저 <strong>₩11,000</strong></span>
-              <button class="mood-btn">예매하기</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="mood-card solo-theme">
-          <div class="mood-poster">
-            <div class="poster-placeholder-lg"><i class="fas fa-film"></i></div>
-            <div class="mood-label solo-label">
-              <i class="fas fa-heart"></i> 감성 충전
-            </div>
-          </div>
-          <div class="mood-info">
-            <div class="mood-title">퍼펙트 데이즈</div>
-            <div class="mood-reason">
-              <i class="fas fa-quote-left"></i>
-              혼자 조용히 감성을 충전하고 싶을 때. 마음이 따뜻해지는 영화.
-            </div>
-            <div class="mood-tags">
-              <span class="mood-tag">드라마</span>
-              <span class="mood-tag">잔잔함</span>
-              <span class="mood-tag">124분</span>
-            </div>
-            <div class="mood-price-row">
-              <span>최저 <strong>₩10,000</strong></span>
-              <button class="mood-btn">예매하기</button>
-            </div>
-          </div>
-        </div>
+        <div class="catalog-loading-card">혼영 추천 데이터를 불러오는 중</div>
       </div>
     </section>
 
-    <!-- ⑤ 연인과 보기 좋은 영화 -->
     <section class="discovery-section" id="couple">
       <div class="section-header">
         <div class="section-header-left">
@@ -511,137 +240,28 @@
           </div>
           <div>
             <h2 class="section-title">연인과 보기 좋은 영화</h2>
-            <p class="section-subtitle">데이트 영화 고민 끝! 함께 보면 더 좋은 영화들</p>
+            <p class="section-subtitle">로맨스 태그와 현재 예매 흐름을 기준으로 랜덤 추천</p>
           </div>
         </div>
-        <a href="#" class="view-all-link">모두 보기 <i class="fas fa-arrow-right"></i></a>
       </div>
 
       <div class="couple-banner">
-        <div class="couple-banner-text">
-          <div class="couple-banner-label">
-            <i class="fas fa-heart"></i> COUPLE PICK
-          </div>
-          <div class="couple-banner-title">위 리브 인 타임</div>
-          <div class="couple-banner-desc">
-            시간을 초월한 사랑 이야기. 데이트 영화로 이미 검증된 최고의 선택.
-            함께 보고 나서 이야기꽃 피우기 딱 좋은 영화입니다.
-          </div>
-          <div class="couple-banner-meta">
-            <span><i class="fas fa-clock"></i> 107분</span>
-            <span><i class="fas fa-star"></i> 8.9</span>
-            <span><i class="fas fa-tag"></i> 최저 ₩11,000</span>
-          </div>
-          <button class="couple-main-btn">
-            <i class="fas fa-ticket-alt"></i> 지금 예매하기
-          </button>
-        </div>
-        <div class="couple-banner-poster">
-          <div class="couple-poster-placeholder">
-            <i class="fas fa-film"></i>
-            <span>위 리브 인 타임</span>
-          </div>
-        </div>
+        <div class="catalog-loading-card">데이트 추천 영화를 불러오는 중</div>
       </div>
 
       <div class="couple-sub-grid">
-        <div class="couple-sub-card">
-          <div class="couple-sub-poster">
-            <div class="poster-mini-sm"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="couple-sub-info">
-            <div class="couple-sub-title">그랜드 투어</div>
-            <div class="couple-sub-tags">
-              <span class="tag">드라마</span>
-              <span class="tag">로맨스</span>
-            </div>
-            <div class="couple-sub-price">최저 <strong>₩11,500</strong></div>
-          </div>
-          <button class="couple-sub-btn">예매</button>
-        </div>
-        <div class="couple-sub-card">
-          <div class="couple-sub-poster">
-            <div class="poster-mini-sm"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="couple-sub-info">
-            <div class="couple-sub-title">패스트 라이브즈</div>
-            <div class="couple-sub-tags">
-              <span class="tag">로맨스</span>
-              <span class="tag">드라마</span>
-            </div>
-            <div class="couple-sub-price">최저 <strong>₩10,500</strong></div>
-          </div>
-          <button class="couple-sub-btn">예매</button>
-        </div>
-        <div class="couple-sub-card">
-          <div class="couple-sub-poster">
-            <div class="poster-mini-sm"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="couple-sub-info">
-            <div class="couple-sub-title">인사이드 아웃 3</div>
-            <div class="couple-sub-tags">
-              <span class="tag">애니메이션</span>
-              <span class="tag">가족</span>
-            </div>
-            <div class="couple-sub-price">최저 <strong>₩13,000</strong></div>
-          </div>
-          <button class="couple-sub-btn">예매</button>
-        </div>
-        <div class="couple-sub-card">
-          <div class="couple-sub-poster">
-            <div class="poster-mini-sm"><i class="fas fa-film"></i></div>
-          </div>
-          <div class="couple-sub-info">
-            <div class="couple-sub-title">아프터 선</div>
-            <div class="couple-sub-tags">
-              <span class="tag">드라마</span>
-              <span class="tag">감성</span>
-            </div>
-            <div class="couple-sub-price">최저 <strong>₩9,500</strong></div>
-          </div>
-          <button class="couple-sub-btn">예매</button>
-        </div>
+        <div class="catalog-loading-card">추가 추천 영화를 불러오는 중</div>
       </div>
     </section>
   </main>
 
-  <!-- 맨 위로 버튼 -->
-  <button class="scroll-to-top" id="scrollToTop">
-    <i class="fas fa-arrow-up"></i>
-  </button>
-
+  <div id="topButton"></div>
   <div id="footer"></div>
 
-  <script>
-    // 맨 위로 버튼
-    const scrollBtn = document.getElementById('scrollToTop');
-    window.addEventListener('scroll', () => {
-      scrollBtn.classList.toggle('visible', window.scrollY > 300);
-    });
-    scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-
-    // 장르 탭
-    document.querySelectorAll('.genre-tab').forEach(tab => {
-      tab.addEventListener('click', function () {
-        document.querySelectorAll('.genre-tab').forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-      });
-    });
-
-    // AI 다른 영화 추천 버튼 애니메이션
-    const refreshBtn = document.querySelector('.ai-refresh-btn');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', function () {
-        const icon = this.querySelector('i');
-        icon.style.transition = 'transform 0.5s ease';
-        icon.style.transform = 'rotate(360deg)';
-        setTimeout(() => { icon.style.transform = 'rotate(0deg)'; }, 500);
-      });
-    }
-  </script>
   <script src="../js/include.js"></script>
   <script src="../js/pages/common.js"></script>
   <script src="../js/pages/script.js"></script>
+  <script type="module" src="../js/pages/allMovies.js?v=20260511-ranked-upcoming"></script>
 </body>
 
 </html>

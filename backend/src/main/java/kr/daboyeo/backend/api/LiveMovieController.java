@@ -11,6 +11,7 @@ import java.util.List;
 import kr.daboyeo.backend.domain.SeatState;
 import kr.daboyeo.backend.service.LiveMovieService;
 import kr.daboyeo.backend.service.LiveMovieService.LiveMovieResponse;
+import kr.daboyeo.backend.service.LiveMovieService.MovieCatalogResponse;
 import kr.daboyeo.backend.service.LiveMovieService.MovieSchedulesResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
@@ -76,6 +77,18 @@ public class LiveMovieController {
                 limit
             )
         );
+    }
+
+    @GetMapping("/movies")
+    public MovieCatalogResponse movies(
+        @RequestParam(required = false) Integer limit,
+        @RequestParam(required = false) String query,
+        @RequestParam(required = false) String section,
+        @RequestParam(required = false)
+        @Pattern(regexp = "all|now|current|playing|released|now_playing|now-playing|coming|coming_soon|coming-soon|scheduled|upcoming|unknown", flags = Pattern.Flag.CASE_INSENSITIVE, message = "releaseState 값이 잘못됐다.")
+        String releaseState
+    ) {
+        return liveMovieService.findPopularMovies(limit, query, section, releaseState);
     }
 
     @GetMapping("/movies/{movieKey}/schedules")

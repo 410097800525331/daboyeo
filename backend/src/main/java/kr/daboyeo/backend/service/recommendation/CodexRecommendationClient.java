@@ -223,9 +223,10 @@ public class CodexRecommendationClient {
             String candidateJson = objectMapper.writeValueAsString(candidates.stream()
                 .map(scored -> candidateForPrompt(scored, safeProfile, mode))
                 .toList());
-            String pickInstruction = mode == RecommendationMode.PRECISE && candidates.size() >= 3
-                ? "Pick exactly 3 objects from candidates."
-                : "Pick 1 to " + Math.min(3, candidates.size()) + " objects from candidates.";
+            int targetPickCount = Math.min(3, Math.max(1, candidates.size()));
+            String pickInstruction = "Pick exactly " + targetPickCount + " "
+                + (targetPickCount == 1 ? "object" : "objects")
+                + " from candidates.";
             String depth = mode == RecommendationMode.PRECISE
                 ? "Decision style: CODEX_PRECISE. Evaluate every supplied candidate before choosing. Compare selected genre intent, poster taste, avoid risks, showtime practicality, and why each selected candidate beats a nearby alternative."
                 : "Decision style: CODEX_FAST. Use the small candidate set as-is, make one ranking pass, and keep the answer short. Prioritize the strongest concrete fit and avoid generic caution-first wording.";
@@ -297,7 +298,7 @@ public class CodexRecommendationClient {
         int maxTextLength,
         int candidateCount
     ) {
-        int minItems = mode == RecommendationMode.PRECISE ? Math.min(3, Math.max(1, candidateCount)) : 1;
+        int minItems = Math.min(3, Math.max(1, candidateCount));
         return Map.of(
             "type", "object",
             "additionalProperties", false,

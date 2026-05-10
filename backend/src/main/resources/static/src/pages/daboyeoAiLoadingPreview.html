@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DABOYEO AI 로딩 프리뷰</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="../css/daboyeoAiLoadingPreview.css">
+</head>
+<body class="ai-loading-preview-page">
+  <div class="ai-shell">
+    <header class="ai-topbar" aria-label="AI 로딩 프리뷰">
+      <div class="ai-topbar-left">
+        <a class="ai-back-button" href="./daboyeoAi.html">이전</a>
+        <a class="ai-brand" href="../../index.html" aria-label="DABOYEO 홈으로 이동">DABOYEO</a>
+      </div>
+      <div class="ai-progress">프리뷰</div>
+    </header>
+
+    <main class="ai-preview-stage" aria-live="polite">
+      <section class="loading-preview-card" aria-label="AI 분석 로딩 애니메이션 프리뷰">
+        <div class="loading-preview-copy">
+          <p class="loading-kicker">AI 분석 중</p>
+          <h1>상영 후보와 취향을<br>맞춰보는 중</h1>
+          <p class="loading-description">선택한 포스터, 장르, 시간대와 좌석 여유를 참고해서 추천 후보를 정리 중이야.</p>
+        </div>
+
+        <div class="scan-visual" aria-hidden="true">
+          <div class="screen-line"></div>
+          <div class="seat-grid">
+            <span class="seat is-dim"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat is-hot"></span>
+            <span class="seat"></span>
+            <span class="seat is-dim"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat is-hot"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat is-dim"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat is-hot"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat is-dim"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat is-hot"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat is-dim"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat"></span>
+            <span class="seat is-hot"></span>
+          </div>
+          <div class="scan-beam"></div>
+          <div class="scan-readout">
+            <span>candidate scan</span>
+            <strong id="loadingPercent">72%</strong>
+          </div>
+        </div>
+
+        <div class="loading-progress" aria-label="예상 진행률">
+          <div class="progress-topline">
+            <span id="loadingStageText">상영 후보 스캔</span>
+            <span>예상 진행률</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="loadingProgressFill"></div>
+          </div>
+        </div>
+
+        <div class="loading-stages" aria-label="분석 단계">
+          <span class="stage-dot is-complete">포스터 취향</span>
+          <span class="stage-dot is-complete">장르 매칭</span>
+          <span class="stage-dot is-active">상영 후보</span>
+          <span class="stage-dot">추천 정렬</span>
+        </div>
+
+        <p class="loading-footnote">보통 10~30초 정도 걸려. 결과가 준비되면 바로 넘길게.</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/pages/daboyeoAiLoadingPreview.js"></script>
+</body>
+</html>

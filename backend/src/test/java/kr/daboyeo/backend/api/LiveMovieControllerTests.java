@@ -21,6 +21,9 @@ import kr.daboyeo.backend.service.LiveMovieService;
 import kr.daboyeo.backend.service.LiveMovieService.LiveMovieResponse;
 import kr.daboyeo.backend.service.LiveMovieService.LiveMovieScheduleItem;
 import kr.daboyeo.backend.service.LiveMovieService.LiveMovieSearchMeta;
+import kr.daboyeo.backend.service.LiveMovieService.MovieCatalogItem;
+import kr.daboyeo.backend.service.LiveMovieService.MovieCatalogMeta;
+import kr.daboyeo.backend.service.LiveMovieService.MovieCatalogResponse;
 import kr.daboyeo.backend.service.LiveMovieService.MovieSchedulesResponse;
 import kr.daboyeo.backend.service.LiveMovieService.MovieSummary;
 import kr.daboyeo.backend.service.LiveMovieService.ScheduleCard;
@@ -133,6 +136,64 @@ class LiveMovieControllerTests {
                     .queryParam("lat", "37.4979")
                     .queryParam("lng", "127.0276")
                     .queryParam("seatState", "weird")
+                    .accept(MediaType.APPLICATION_JSON)
+            )
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+            .andExpect(jsonPath("$.message").value("요청 파라미터를 확인해."));
+    }
+
+    @Test
+    void moviesReturnsPopularCatalogWithPosters() throws Exception {
+        given(liveMovieService.findPopularMovies(3, "야당", "alone", "now_playing"))
+            .willReturn(
+                new MovieCatalogResponse(
+                    new MovieCatalogMeta(1, true, null),
+                    List.of(
+                        new MovieCatalogItem(
+                            "CGV:123",
+                            "야당",
+                            "Yadang",
+                            "15",
+                            122,
+                            "2026-04-01",
+                            "now_playing",
+                            new BigDecimal("28.500"),
+                            1,
+                            "https://cdn.example/yadang.webp",
+                            12000,
+                            18,
+                            List.of("CGV", "LOTTE"),
+                            List.of("genre:thriller")
+                        )
+                    )
+                )
+            );
+
+        mockMvc.perform(
+                get("/api/live/movies")
+                    .queryParam("limit", "3")
+                    .queryParam("query", "야당")
+                    .queryParam("section", "alone")
+                    .queryParam("releaseState", "now_playing")
+                    .accept(MediaType.APPLICATION_JSON)
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.meta.resultCount").value(1))
+            .andExpect(jsonPath("$.meta.databaseAvailable").value(true))
+            .andExpect(jsonPath("$.movies[0].movie_key").value("CGV:123"))
+            .andExpect(jsonPath("$.movies[0].title").value("야당"))
+            .andExpect(jsonPath("$.movies[0].release_date").value("2026-04-01"))
+            .andExpect(jsonPath("$.movies[0].release_state").value("now_playing"))
+            .andExpect(jsonPath("$.movies[0].poster_url").value("https://cdn.example/yadang.webp"))
+            .andExpect(jsonPath("$.movies[0].providers[0]").value("CGV"));
+    }
+
+    @Test
+    void moviesRejectsInvalidReleaseStateWithCleanMessage() throws Exception {
+        mockMvc.perform(
+                get("/api/live/movies")
+                    .queryParam("releaseState", "later-or-whatever")
                     .accept(MediaType.APPLICATION_JSON)
             )
             .andExpect(status().isBadRequest())

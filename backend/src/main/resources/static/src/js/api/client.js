@@ -1,5 +1,5 @@
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:5500";
-const FRONTEND_DEV_PORTS = new Set(["4173", "5173"]);
+const FRONTEND_DEV_PORTS = new Set(["4173", "5173", "5510"]);
 
 export function getApiBaseUrl() {
   if (window.DABOYEO_API_BASE_URL) {

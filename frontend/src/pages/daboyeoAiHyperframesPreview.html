@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DABOYEO AI HyperFrames Motion Preview</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="../css/daboyeoAiHyperframesPreview.css">
+</head>
+<body class="hf-preview-page">
+  <div
+    class="hf-composition"
+    data-composition-id="daboyeo-ai-loading-motion"
+    data-start="0"
+    data-duration="8"
+    data-track-index="0"
+    data-width="1440"
+    data-height="900"
+  >
+    <header class="hf-topbar" aria-label="HyperFrames motion preview">
+      <div class="hf-topbar-left">
+        <a class="hf-back" href="./daboyeoAi.html">이전</a>
+        <a class="hf-brand" href="../../index.html" aria-label="DABOYEO 홈으로 이동">DABOYEO</a>
+      </div>
+      <div class="hf-status">Motion preview</div>
+    </header>
+
+    <main class="hf-stage" aria-live="polite">
+      <section class="hf-copy">
+        <p class="hf-kicker">AI 분석 중</p>
+        <h1>포스터 취향에서<br>추천 카드까지</h1>
+        <p id="hfStageCopy">선택한 포스터와 장르를 기준으로 후보를 정리하고 있어.</p>
+      </section>
+
+      <section class="hf-motion" aria-label="AI 추천 로딩 모션 그래픽">
+        <div class="poster-rail" aria-hidden="true">
+          <div class="poster-card poster-one">
+            <span></span>
+            <strong>poster</strong>
+          </div>
+          <div class="poster-card poster-two">
+            <span></span>
+            <strong>taste</strong>
+          </div>
+          <div class="poster-card poster-three">
+            <span></span>
+            <strong>mood</strong>
+          </div>
+        </div>
+
+        <div class="genre-stream" aria-hidden="true">
+          <span>액션</span>
+          <span>몰입</span>
+          <span>친구</span>
+          <span>시간대</span>
+        </div>
+
+        <div class="analysis-core" aria-hidden="true">
+          <div class="core-ring ring-a"></div>
+          <div class="core-ring ring-b"></div>
+          <div class="core-dot"></div>
+          <div class="beam beam-a"></div>
+          <div class="beam beam-b"></div>
+        </div>
+
+        <div class="candidate-grid" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="result-stack" aria-hidden="true">
+          <article class="result-card result-one">
+            <span class="result-thumb"></span>
+            <div><strong></strong><p></p></div>
+            <em></em>
+          </article>
+          <article class="result-card result-two">
+            <span class="result-thumb"></span>
+            <div><strong></strong><p></p></div>
+            <em></em>
+          </article>
+          <article class="result-card result-three">
+            <span class="result-thumb"></span>
+            <div><strong></strong><p></p></div>
+            <em></em>
+          </article>
+        </div>
+      </section>
+
+      <section class="hf-progress" aria-label="예상 진행률">
+        <div class="hf-progress-row">
+          <span id="hfStageName">포스터 취향 정리</span>
+          <strong id="hfPercent">38%</strong>
+        </div>
+        <div class="hf-progress-track">
+          <div class="hf-progress-fill" id="hfProgressFill"></div>
+        </div>
+        <div class="hf-stage-dots">
+          <span class="is-active">포스터</span>
+          <span>장르</span>
+          <span>후보</span>
+          <span>카드</span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/pages/daboyeoAiHyperframesPreview.js"></script>
+</body>
+</html>

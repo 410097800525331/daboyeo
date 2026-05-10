@@ -138,6 +138,23 @@ const progressText = {
   sessionError: "연결 필요",
 };
 
+const loadingMotionParticlePalette = ["#a78bfa", "#7dd3fc", "#5eead4", "#f472b6", "#cdc4ff"];
+const loadingMotionCandidateStates = [
+  "drop",
+  "keep",
+  "drop",
+  "scan",
+  "keep",
+  "drop",
+  "scan",
+  "drop",
+  "keep",
+  "drop",
+  "scan",
+  "drop",
+];
+const loadingMotionStepLabels = ["포스터", "입자화", "후보 제거", "카드 조립"];
+
 const stepBackMap = {
   mood: "audience",
   avoid: "mood",
@@ -1150,11 +1167,153 @@ async function runRecommendation(mode) {
   }
 }
 
+function loadingSeededFraction(index, salt) {
+  const raw = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
+  return raw - Math.floor(raw);
+}
+
+function createLoadingPosterCluster() {
+  const cluster = createElement("div", "poster-cluster");
+  const posters = [
+    { className: "poster-a", label: "POSTER" },
+    { className: "poster-b", label: "MOOD" },
+    { className: "poster-c", label: "GENRE" },
+  ];
+
+  posters.forEach((poster) => {
+    const card = createElement("span", `preview-poster ${poster.className}`);
+    card.appendChild(createElement("span", "poster-art"));
+    card.appendChild(createElement("strong", null, poster.label));
+    cluster.appendChild(card);
+  });
+
+  return cluster;
+}
+
+function createLoadingParticleField() {
+  const field = createElement("div", "particle-field");
+
+  for (let index = 0; index < 58; index += 1) {
+    const particle = createElement("span", "taste-particle");
+    const fromX = 9 + loadingSeededFraction(index, 1) * 22;
+    const fromY = 23 + loadingSeededFraction(index, 2) * 44;
+    const toX = 45 + loadingSeededFraction(index, 3) * 10;
+    const toY = 36 + loadingSeededFraction(index, 4) * 26;
+    const driftX = 68 + loadingSeededFraction(index, 5) * 22;
+    const driftY = 24 + loadingSeededFraction(index, 6) * 48;
+    const size = 3 + loadingSeededFraction(index, 7) * 5;
+
+    particle.style.setProperty("--from-x", `${fromX}%`);
+    particle.style.setProperty("--from-y", `${fromY}%`);
+    particle.style.setProperty("--to-x", `${toX}%`);
+    particle.style.setProperty("--to-y", `${toY}%`);
+    particle.style.setProperty("--drift-x", `${driftX}%`);
+    particle.style.setProperty("--drift-y", `${driftY}%`);
+    particle.style.setProperty("--size", `${size}px`);
+    particle.style.setProperty("--delay", `${(index % 18) * 76}ms`);
+    particle.style.setProperty("--color", loadingMotionParticlePalette[index % loadingMotionParticlePalette.length]);
+    field.appendChild(particle);
+  }
+
+  return field;
+}
+
+function createLoadingTasteCore() {
+  const core = createElement("div", "taste-core");
+  core.appendChild(createElement("span", "core-ring ring-one"));
+  core.appendChild(createElement("span", "core-ring ring-two"));
+  core.appendChild(createElement("span", "core-ring ring-three"));
+  core.appendChild(createElement("span", "core-dot"));
+  core.appendChild(createElement("span", "core-label", "TASTE VECTOR"));
+  return core;
+}
+
+function createLoadingSignalRibbons() {
+  const ribbons = createElement("div", "signal-ribbons");
+  ribbons.appendChild(createElement("span", "ribbon ribbon-one"));
+  ribbons.appendChild(createElement("span", "ribbon ribbon-two"));
+  ribbons.appendChild(createElement("span", "ribbon ribbon-three"));
+  return ribbons;
+}
+
+function createLoadingCandidateStream() {
+  const stream = createElement("div", "candidate-stream");
+
+  loadingMotionCandidateStates.forEach((stateName, index) => {
+    const chip = createElement("span", `candidate-chip is-${stateName}`);
+    chip.style.setProperty("--i", index);
+    chip.appendChild(createElement("b"));
+    chip.appendChild(createElement("i"));
+    chip.appendChild(createElement("em"));
+    stream.appendChild(chip);
+  });
+
+  return stream;
+}
+
+function createLoadingResultShell(rank, className) {
+  const shell = createElement("span", ["result-shell", className]);
+  shell.appendChild(createElement("span", "result-rank", String(rank)));
+  shell.appendChild(createElement("span", "result-poster"));
+  shell.appendChild(createElement("span", "result-line line-main"));
+  shell.appendChild(createElement("span", "result-line line-sub"));
+  shell.appendChild(createElement("span", "result-score"));
+  return shell;
+}
+
+function createLoadingResultAssembly() {
+  const assembly = createElement("div", "result-assembly");
+  assembly.appendChild(createLoadingResultShell(1, "result-one"));
+  assembly.appendChild(createLoadingResultShell(2, "result-two"));
+  assembly.appendChild(createLoadingResultShell(3, "result-three"));
+  return assembly;
+}
+
+function createLoadingMotionVisual() {
+  const viewport = createElement("div", "motion-viewport");
+  viewport.setAttribute("aria-hidden", "true");
+  viewport.appendChild(createLoadingPosterCluster());
+  viewport.appendChild(createLoadingParticleField());
+  viewport.appendChild(createLoadingTasteCore());
+  viewport.appendChild(createLoadingSignalRibbons());
+  viewport.appendChild(createLoadingCandidateStream());
+  viewport.appendChild(createLoadingResultAssembly());
+  return viewport;
+}
+
+function createLoadingMotionStatus() {
+  const status = createElement("div", "motion-status");
+  const row = createElement("div", "status-row");
+  row.appendChild(createElement("span", null, "추천 후보 압축 중"));
+  row.appendChild(createElement("strong", null, "예상 흐름"));
+  status.appendChild(row);
+
+  const track = createElement("div", "status-track");
+  track.appendChild(createElement("span", "status-sweep"));
+  status.appendChild(track);
+
+  const steps = createElement("div", "status-steps");
+  loadingMotionStepLabels.forEach((label) => {
+    steps.appendChild(createElement("span", null, label));
+  });
+  status.appendChild(steps);
+
+  return status;
+}
+
 function renderLoadingMessage(title, description) {
-  const card = createElement("section", "ai-loading-card");
-  card.appendChild(createElement("div", "ai-loader"));
-  card.appendChild(createElement("h2", null, title));
-  card.appendChild(createElement("p", null, description));
+  const card = createElement("section", "motion-loading-card");
+  card.setAttribute("aria-busy", "true");
+  card.setAttribute("aria-label", "AI 추천 분석 중");
+  card.appendChild(createLoadingMotionVisual());
+
+  const copy = createElement("div", "motion-copy");
+  copy.appendChild(createElement("p", "motion-kicker", "DABOYEO AI"));
+  copy.appendChild(createElement("h2", null, title));
+  copy.appendChild(createElement("p", null, description));
+  card.appendChild(copy);
+  card.appendChild(createLoadingMotionStatus());
+  card.appendChild(createElement("p", "motion-note", "선택한 취향을 기준으로 추천 후보를 정리하고 있어."));
   return card;
 }
 

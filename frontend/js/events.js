@@ -1,12 +1,7 @@
 const EventsApp = {
     async init() {
-        console.log('Initializing Movie Events App...');
-
-        // Setup filter listeners
         Filter.init(() => this.loadEvents());
         Render.init();
-
-        // Initial load
         await this.loadEvents();
     },
 
@@ -16,15 +11,15 @@ const EventsApp = {
         const { provider, category } = Filter.getFilters();
 
         try {
-            const events = await API.fetchEvents(provider, category);
+            const events = await API.fetchEvents({ provider, category, limit: 80 });
             Render.renderEvents(events);
         } catch (error) {
+            console.error("Failed to load events:", error);
             Render.showError();
         }
-    }
+    },
 };
 
-// Start app
-document.addEventListener('DOMContentLoaded', () => {
-    EventsApp.init();
+document.addEventListener("DOMContentLoaded", () => {
+    void EventsApp.init();
 });

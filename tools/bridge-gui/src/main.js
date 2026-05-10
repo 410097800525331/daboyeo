@@ -99,14 +99,43 @@ function sanitizeLogLine(line, token) {
 }
 
 function resolvePython(env) {
-  const configured = [env.DABOYEO_BRIDGE_PYTHON, env.PYTHON].filter(Boolean);
+  const bundledPython = path.join(
+    process.env.USERPROFILE || "",
+    ".cache",
+    "codex-runtimes",
+    "codex-primary-runtime",
+    "dependencies",
+    "python",
+    "python.exe"
+  );
+  const configured = [env.DABOYEO_BRIDGE_PYTHON, env.PYTHON, bundledPython].filter(Boolean);
   const candidates = [...configured, "python", "py", "python3"];
   for (const command of candidates) {
+    if (path.isAbsolute(command) && !fs.existsSync(command)) {
+      continue;
+    }
     const args = command.toLowerCase() === "py" ? ["-3", "--version"] : ["--version"];
     const probe = spawnSync(command, args, { windowsHide: true, encoding: "utf8" });
     if (probe.status === 0) {
       return command;
     }
+  }
+  return "";
+}
+
+function resolveCodexCommand(env) {
+  if (env.DABOYEO_CODEX_COMMAND && env.DABOYEO_CODEX_COMMAND.trim()) {
+    return env.DABOYEO_CODEX_COMMAND.trim();
+  }
+  const installedCodex = path.join(
+    process.env.LOCALAPPDATA || "",
+    "OpenAI",
+    "Codex",
+    "bin",
+    "codex.exe"
+  );
+  if (fs.existsSync(installedCodex)) {
+    return installedCodex;
   }
   return "";
 }
@@ -160,6 +189,10 @@ async function startBridge() {
     lastError = "Python runtime was not found. Set DABOYEO_BRIDGE_PYTHON in .env.";
     appendLog("gui", lastError);
     return bridgeStatus();
+  }
+  const codexCommand = resolveCodexCommand(config.env);
+  if (codexCommand) {
+    config.env.DABOYEO_CODEX_COMMAND = codexCommand;
   }
 
   bridgeProcess = spawn(python, pythonArgs(python), {

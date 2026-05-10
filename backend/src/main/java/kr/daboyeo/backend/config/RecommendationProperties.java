@@ -107,7 +107,7 @@ public record RecommendationProperties(
         codexPreciseModel = defaultString(codexPreciseModel, codexModel.isBlank() ? "gpt-5.5" : codexModel);
         codexFastReasoningEffort = normalizeReasoningEffort(codexFastReasoningEffort, "");
         codexPreciseReasoningEffort = normalizeReasoningEffort(codexPreciseReasoningEffort, "xhigh");
-        codexFastAiCandidateLimit = clamp(codexFastAiCandidateLimit, 3, 3, 24);
+        codexFastAiCandidateLimit = clamp(codexFastAiCandidateLimit, 12, 3, 24);
         codexPreciseAiCandidateLimit = clamp(codexPreciseAiCandidateLimit, 20, 3, 30);
         codexFastMaxTokens = clamp(codexFastMaxTokens, 420, 320, 1400);
         codexPreciseMaxTokens = clamp(codexPreciseMaxTokens, 1700, 1000, 2400);
