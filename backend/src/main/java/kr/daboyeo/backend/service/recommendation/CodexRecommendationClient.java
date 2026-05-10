@@ -316,7 +316,7 @@ public class CodexRecommendationClient {
 
     private Map<String, Object> recommendationItemSchema(RecommendationMode mode, int maxTextLength) {
         int analysisMax = mode == RecommendationMode.PRECISE ? maxTextLength : Math.min(maxTextLength, 220);
-        int reasonMax = mode == RecommendationMode.PRECISE ? Math.min(maxTextLength, 240) : Math.min(maxTextLength, 180);
+        int reasonMax = mode == RecommendationMode.PRECISE ? Math.min(maxTextLength, 320) : Math.min(maxTextLength, 180);
         int valueMax = mode == RecommendationMode.PRECISE ? Math.min(maxTextLength, 180) : Math.min(maxTextLength, 150);
         int cautionMax = mode == RecommendationMode.PRECISE ? Math.min(maxTextLength, 140) : Math.min(maxTextLength, 100);
         return Map.of(

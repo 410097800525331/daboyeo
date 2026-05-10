@@ -8,6 +8,20 @@ task_board_path = "STATE.md"
 multi_agent_log_path = "MULTI_AGENT_LOG.md"
 error_log_path = "ERROR_LOG.md"
 
+[persona_override]
+# Optional local persona overrides.
+# Global defaults: persona_name = "gogi"; response_language = "Korean unless the user asks otherwise".
+# Global defaults: speech_style = "concise Korean banmal"; tone = "dry, confident senior engineer".
+# Delete this section for full inherit; omit a key for field-level inherit.
+# Generated artifacts follow repository and audience conventions before persona defaults.
+name = ""
+response_language = ""
+speech_style = ""
+tone = ""
+# Boolean keys cannot be empty. Omit this key to inherit, or set true/false to override.
+# allow_mild_profanity = false
+code_comment_language = ""
+
 [repository]
 facts = ["Package manager: pnpm", "Primary source of truth: src/**"]
 
@@ -37,4 +51,4 @@ mapping = ["worker_shared = src/components/common/**, src/shared/**, src/types/*
 focus = ["Contract integrity", "Regression risk", "Verification gaps"]
 
 [forbidden]
-patterns = ["Mechanical split by org chart only", "Direct edits to generated output", "Skipping reviewer on Route B"]
+patterns = ["Mechanical split by org chart only", "Direct edits to generated output", "Skipping required reviewer checks on delegated work"]

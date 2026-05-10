@@ -1,5 +1,7 @@
 package kr.daboyeo.backend.service.recommendation;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
@@ -44,7 +46,10 @@ public class AiBridgeJobService {
         if (!tokenConfigured()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI bridge token is not configured.");
         }
-        if (token == null || !properties.bridgeToken().equals(token)) {
+        if (token == null || !MessageDigest.isEqual(
+            properties.bridgeToken().getBytes(StandardCharsets.UTF_8),
+            token.getBytes(StandardCharsets.UTF_8)
+        )) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid AI bridge token.");
         }
     }

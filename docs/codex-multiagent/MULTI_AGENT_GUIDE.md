@@ -33,8 +33,8 @@ Hard triggers first:
 - Medium-or-higher regression risk
 - A clearly necessary reviewer pass
 
-If any hard trigger exists, classify the task as delegated or mixed.
-Hard triggers are gates, not hidden score boosts; record the trigger by name instead of converting it into points.
+If any hard trigger exists, reclassify before implementation writes.
+Hard triggers are gates, not hidden score boosts and not delegation orders; record the trigger by name, then decide topology from contract stability, write-set separability, verification independence, `orchestration_value`, handoff cost, and `agent_budget`.
 
 Do not score only from the final edited file count.
 One rendered HTML or frontend file can still hide separate upstream responsibilities such as data collection, coordinate extraction, normalization, or schema confirmation.
@@ -52,17 +52,18 @@ If no hard trigger exists, score these at `1` point each:
 Profile selection:
 
 - `single-session`
-  - `0-3` points
+  - default profile
+  - usually `0-3` points
   - `main` may edit directly in one tight slice
   - use this only when upstream investigation and downstream implementation are not independently ownable
   - allowed only when the contract is stable, no independent discovery slice exists, verification is small, and the reason is more specific than "one final file"
 - `delegated-serial`
-  - `4-6` points
+  - larger or dependent work where handoff lowers risk
   - `main` coordinates workers one slice at a time
   - good fit when collection or normalization must finish before rendering, but each slice is still independently verifiable
   - choose this when dependencies exist between slices or the contract must be frozen after discovery
 - `delegated-parallel`
-  - `7+` points, or any hard trigger when the write sets are separable
+  - strong candidate at `7+` points when the parallel gate passes
   - `main` delegates safe slices to workers
   - good fit when collection, normalization, and rendering can proceed with pinned contracts and separate ownership
   - allowed only when the contract is frozen, write sets are disjoint, shared assets have one owner, `main` will not write during the parallel phase, and slice verification exists
@@ -70,21 +71,78 @@ Profile selection:
   - uneven tasks that need both sequential and parallel delegation
   - choose this when one phase must run serially to freeze the contract and later phases can fan out safely
 
+Efficiency gate:
+
+- Keep three gates separate:
+  - `score_total` is a complexity/risk prior.
+  - `evaluation_need` is the close-out evidence depth: `none`, `light`, or `full`.
+  - `orchestration_value` is the delegation value: `low`, `medium`, or `high`.
+- `0-3` points usually stays local unless there is a clean reviewer or explorer sidecar with almost no handoff cost.
+- `4-6` points use a lightweight spawn/no-spawn basis when the choice is non-obvious. Spawn only when a role can return useful work while `main` continues non-overlapping work, or when serial delegation lowers risk enough to justify the handoff.
+- `7+` points must record an explicit `spawn_decision` unless a concrete blocker keeps the work local. A blocker can be one blocking discovery result, one tightly coupled edit surface, unclear ownership, weak verification independence, or handoff cost higher than expected gain.
+- `10+` points still split evaluation and orchestration: require a concrete evaluation plan, then choose `single-session`, `delegated-serial`, `delegated-parallel`, or `mixed` from ownership clarity and handoff value.
+
+Do not write "efficiency" as vague optimism. Ground the decision in:
+
+- handoff cost
+- ownership clarity
+- discovery separability
+- verification independence
+- rework risk
+
+Record `efficiency_basis` in `STATE.md` before spawning. Use a one-line basis only when a `4-6` point choice is genuinely non-obvious; use the fuller structure below for delegated profiles or policy/template changes:
+
+- `parallelizable_slices`: the independent slices and their owners
+- `handoff_cost`: why the handoff is small enough
+- `expected_gain`: wall-clock reduction, lower risk, or better review coverage
+- `blocking_dependencies`: anything that prevents immediate fan-out
+- `spawn_decision`: `spawn`, `defer_until_contract_freeze`, or `do_not_spawn`
+
+Spawn without asking again only when the current user request or workspace instructions already grant standing authorization and all of these are true:
+
+- the slice has a read-only scope or a disjoint write set
+- the output can be verified independently
+- `agent_budget` is greater than `0`
+- `main` will not write the same files during a parallel phase
+- the expected gain is larger than handoff and wait cost
+
+Do not spawn just because the score is high. High score starts the efficiency analysis; safe ownership and useful parallel work decide the actual call.
+
+Recursive Socratic improvement gate:
+
+- Treat recursive improvement as two scoped loops: task-local bounded repair for the current workspace task, and global-kit rule evolution for kit-level policy or template changes.
+- Task-local recursive improvement does not create a new objective; it stays inside the current task's pinned write set, tests, docs, and verification surface.
+- Trigger the global-kit rule evolution gate for policy, workflow, delegation, installer/template, global default, permission language, or new recording-field changes; also trigger it when the user asks whether a design is too heavy.
+- Keep global-kit rule evolution proposal-only unless the user explicitly asks for kit-level implementation.
+- Use the smallest useful loop: `4-6` points gets three questions, `7+` gets an efficiency-and-safety pass, and installer/template/global-default text gets the blast-radius pass.
+- Keep the output fixed: failure mode, direct or indirect effect, blast radius, verdict `keep`/`soften`/`remove`, minimal edit, self-check, and final recommendation.
+- For installer, template, global default, or authorization wording, ask: "Does this describe existing authority, or create authority the user did not grant?"
+- Finish with the adversarial pass: did the simplification become too weak, too vague, or likely to revive the original failure mode?
+- This is not a background autonomous optimizer. Do not add polling, daemonized self-editing, cross-workspace learning, or unrelated repository auto-edits.
+
+Blast-radius tiers:
+
+- `task-local auto`: may patch the current task's local wording or workflow notes.
+- `workspace-local guarded`: may patch workspace rules only after the scope is pinned in `STATE.md`.
+- `global-kit proposal-only`: propose global installer/default changes unless the user explicitly asked for the kit patch.
+- `never-auto`: authority wording, security-sensitive defaults, destructive command policy, and permission semantics require explicit user intent before implementation.
+
 Before any write begins:
 
 - record the exact `orchestration_profile` and concrete `reason` in `STATE.md`
-- record `score_total`, `score_breakdown`, `hard_triggers`, `selected_rules`, `selected_skills`, `execution_topology`, and `agent_budget`
+- record `score_total`, `score_breakdown`, `hard_triggers`, `selected_rules`, `selected_skills`, `execution_topology`, `orchestration_value`, and `agent_budget`; record `efficiency_basis` and `spawn_decision` when delegation efficiency is being evaluated
 - report to the user which score or trigger basis was read from `STATE.md` and how that changes the startup plan, such as staying local, starting serial delegation, or opening parallel worker lanes
 - do not use legacy route labels or hedge labels such as `single-agent fallback`
 - on `single-session`, keep one write-capable lane and no subagent calls
 - if the user changes the contract mid-task, record whether the old `single-session` reason still holds; if not, reclassify before continuing
+- if the current phase is review or design, stay read-only: patch text may be proposed, but files and write-capable delegation wait until patch scope is pinned and implementation is explicitly entered
 - on delegated profiles, `main` delegates implementation to workers and keeps ownership boundaries explicit
 - on delegated profiles, a `reviewer` pass is mandatory when `review_required` is selected
 - on delegated profiles, if shared assets and feature files are both touched, use `worker_shared` plus at least one feature worker
 
 Decision gate:
 
-- If `delegated-parallel` fails any required condition, downgrade to `delegated-serial` or run discovery first.
+- If `delegated-parallel` fails any required condition, do not use parallel delegation. Choose `delegated-serial` only when the serial handoff still lowers risk; otherwise stay `single-session` or run discovery first.
 - If `single-session` has a vague reason such as "small task" or "one file", stop and replace it with a concrete ownership and verification reason.
 - If implementation correctness depends on facts that are not yet known, use explorer-first discovery before implementation.
 
@@ -94,11 +152,11 @@ Start decision tree:
 2. If yes, does correctness depend on facts not yet known?
 3. If yes, start in explorer-first discovery.
 4. If no, are the contract and write sets already pinned and disjoint?
-5. If yes, choose `delegated-parallel` when `main` can stay read-only during fan-out; otherwise choose `delegated-serial`.
+5. If yes, choose `delegated-parallel` only when the full parallel gate passes; otherwise choose `delegated-serial` or stay `single-session` with a concrete blocker.
 6. If no hard trigger fired, score the task.
 7. `0-3` points stays `single-session` only when no independent upstream slice exists.
-8. `4-6` points starts `delegated-serial`.
-9. `7+` points starts `delegated-parallel` only if the parallel gate passes; otherwise downgrade to `delegated-serial`.
+8. `4-6` points stays a judgment call; record a lightweight spawn/no-spawn basis only when the choice is non-obvious.
+9. `7+` points records `spawn_decision`; choose `delegated-parallel` only if the parallel gate passes, otherwise choose `delegated-serial` or stay `single-session` with a concrete blocker.
 10. If one early phase must freeze the contract and a later phase can fan out, choose `mixed`.
 
 ## 3. What Makes A Safe Slice
@@ -136,7 +194,22 @@ Record:
 
 No implementation writes continue until `main` updates `STATE.md`, refreshes `execution_topology`, and records whether the task stays local, moves serial, moves parallel, or becomes mixed.
 
-## 3.2 Verification Gates
+## 3.2 Evaluation And Verification Gates
+
+Use `evaluation_need` separately from `execution_topology`:
+
+- `none`: clear acceptance, strong hard checks, and no meaningful reviewer judgment.
+- `light`: compact checklist or one reviewer-style pass for non-obvious wording, UX, contract, or regression risk.
+- `full`: explicit evaluation plan for ambiguous acceptance, sensitive contracts, weak executable checks, broad regression blast radius, or subtle behavior/wording judgment.
+
+Score bands guide the first pass but do not decide evaluator strength:
+
+- `0-3` with clear acceptance and strong hard checks defaults to no formal evaluator or a tiny checklist.
+- `4-6` creates a compact evaluation plan only when acceptance, contracts, or reviewer judgment are non-obvious.
+- `7+` requires an evaluation plan, but orchestration remains a separate decision.
+- High score alone does not upgrade `evaluation_need`, high score alone does not justify delegation, and file count alone upgrades neither `evaluation_need` nor `orchestration_value`.
+
+Hard checks outrank LLM review. Treat `llm_review_rubric` as a soft second pass, not the source of truth.
 
 Use the selected profile to set the minimum verification gate before close-out:
 
@@ -147,18 +220,27 @@ Use the selected profile to set the minimum verification gate before close-out:
 
 If no verification target can be named, do not fan out; return to discovery or shrink the slice.
 
-## 4. When To Use Skills
+## 3.3 Review And Design Mode Latch
 
-Skill selection is automatic and follows the task state.
+Review and design modes are read-only.
+They may produce findings, diagrams, patch text, or a proposed implementation scope.
 
-- `ouroboros-interview`
-  - requirements are unclear or still moving
-- `ouroboros-seed`
-  - the contract must be frozen before implementation
-- `ouroboros-run`
-  - the task is ready to enter implementation
-- `ouroboros-evaluate`
-  - verification against the frozen seed is the active goal
+They may not:
+
+- edit repository files
+- spawn write-capable workers
+- treat accepted design feedback as implementation permission
+
+Move into implementation only after `main` records the patch scope, write sets, and verification target in `STATE.md`.
+
+## 4. Native Spec-First Gates
+
+The kit does not bundle workflow skills for spec-first phases. Spec-first behavior is native to `AGENTS.md`, `STATE.md`, and the selected orchestration profile.
+
+- Clarify requirements in a read-only phase when scope is unclear or still moving.
+- Freeze the contract by recording scope, write sets, verification targets, and non-goals in `STATE.md`.
+- Enter implementation through the selected orchestration profile once the contract is stable enough.
+- Verify against the frozen contract using repository checks and record the result in `STATE.md`.
 
 The user can still override the default picker with natural language. That override wins.
 
@@ -224,7 +306,7 @@ Pinned contracts
 - APIs, schemas, routes, events, or env keys that must not drift
 
 Selection
-- `selected_rules`, `selected_skills`, `execution_topology`, `agent_budget`
+- `selected_rules`, `selected_skills`, `execution_topology`, `orchestration_value`, `agent_budget`
 
 Verification
 - Commands
@@ -250,7 +332,15 @@ Use `STATE.md` to track:
 - `selected_rules`
 - `selected_skills`
 - `execution_topology`
+- `orchestration_value`
 - `agent_budget`
+- `evaluation_need`
+- `project_invariants`
+- `task_acceptance`
+- `non_goals`
+- `hard_checks`
+- `llm_review_rubric`
+- `evidence_required`
 - `reviewer_target` when a reviewer is assigned
 
 That gives `main` enough structure to sequence work without pretending this repo is a full scheduler.
@@ -346,7 +436,7 @@ If the structure is broken, formatting comments are noise.
 - Domain worker names
 - Skill-selection overrides for repository-specific workflows
 - Whether concurrent registry mode is enabled and where thread state files live
-- Where task retrospectives and rule-evolution notes should be appended
+- Where task retrospectives should be appended
 
 ## 14. Retrospectives And Rule Evolution
 
@@ -357,26 +447,30 @@ After non-trivial work, especially anything involving reclassification, collisio
 
 - task name
 - `score_total`
-- selected profile
+- `evaluation_fit`: `under`, `fit`, or `over`
+- `orchestration_fit`: `under`, `fit`, or `over`
+- predicted topology or selected profile
 - actual topology used
-- what caused drift, collision, or reclassification
-- what verification caught or missed
-- what rule, template, or installer text should change next
+- `spawn_count`
+- rework or reclassification
+- reviewer findings
+- verification outcome
+- `next_gate_adjustment`: optional one-liner for future evaluation/orchestration calibration
 
-Keep rule-evolution notes append-only.
-That gives future AGENTS or installer changes an evidence trail instead of a vague memory.
+Do not introduce a separate standing rule-evolution artifact.
+Reuse task retrospectives as evidence; repeated patterns may support future AGENTS or installer proposals.
 
 ## 15. Recommended Adoption Order
 
 1. Start with `main`
 2. Add hard-trigger + scorecard gating
 3. Add `STATE.md` once tasks stop fitting in your head
-4. Add automatic skill routing for `ouroboros-*`
+4. Add repository-specific skill routing only when a real workflow needs it
 5. Add `agent_budget` once delegation starts to spread across multiple slices
 6. Add `worker_shared` when common types, shared utils, or common components keep causing collisions
 7. When real collisions appear, add repository-specific forbidden patterns
 8. Only after real same-workspace collisions appear, add concurrent registry mode
-9. Once execution patterns repeat, add compact retrospectives and a rule-evolution log
+9. Once execution patterns repeat, add compact retrospectives and use them as evidence for kit-level proposals
 
 ## 16. One-Line Summary
 

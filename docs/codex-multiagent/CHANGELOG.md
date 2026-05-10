@@ -2,12 +2,22 @@
 
 ## Unreleased
 
+### Removed
+
+- Removed bundled legacy workflow skills.
+- Removed the legacy command-routing rule, porting note, and micro-seed example.
+- Updated shell and PowerShell installers so they no longer copy bundled workflow skills and clean up the previously installer-managed workflow-skill kit folder.
+- Removed remaining active seed/interview/evaluate terminology from current docs and installer-generated state templates.
+- Removed committed `docs/codex-multiagent/` mirror copies from the repository surface; installers still create workspace-local supporting docs when requested.
+- Removed obsolete `agentplan.txt`.
+- Removed obsolete `examples/RULE_EVOLUTION_LOG.example.md`; task retrospectives remain the evidence trail for future rule proposals.
+
 ### Added
 
 - `docs/CONCURRENT_STATE_MODE.md` 를 추가해 기본 single `STATE.md` 유지 원칙, concurrent-registry 전환 조건, root registry 필드, thread state 파일 구조를 문서화
 - `docs/OPERATIONS_RETROSPECTIVE.md` 를 추가해 task retrospective 와 rule evolution log 를 어떤 기준으로 남길지 운영 규칙을 정리
 - `examples/STATE.registry.example.md`, `examples/STATE.thread.example.md` 로 동시 작업용 root/thread 상태 파일 예시를 추가
-- `examples/TASK_RETROSPECTIVE.example.md`, `examples/RULE_EVOLUTION_LOG.example.md` 로 사후 회고와 규칙 진화 로그 예시를 추가
+- `examples/TASK_RETROSPECTIVE.example.md` 로 사후 회고 예시를 추가
 
 - 각 핵심 기능 영역의 기대 동작을 `pass|partial|fail` 로 판정할 수 있도록 `docs/AREA_EVALUATION_METRICS.md` 에 공통 평가 축, 측정 항목, 최소 합격선, 기록 예시를 추가
 - 프로젝트 목표 기준으로 저장소를 비교할 수 있도록 `docs/GOAL_COMPARISON_AREAS.md`에 핵심 기능 영역, 포함/제외 범위, 비교 질문, 최소 합격선을 추가
@@ -18,11 +28,12 @@
 - 작은 기능 후보를 `value`, `implementation_cost`, `goal_alignment`, `ripple_effect` 기준으로 점수화하고 우선순위화하는 세부 루브릭을 `docs/GOAL_ALIGNMENT_FRAMEWORK.md`에 추가
 - 리팩터링 후보를 `quality_impact`, `risk`, `maintainability`, `feature_goal_contribution` 기준으로 점수화하고 우선순위화하는 세부 루브릭을 `docs/GOAL_ALIGNMENT_FRAMEWORK.md`에 추가
 - 기능 후보와 리팩터링 후보를 같은 후보 카드, `common_score`, `specific_score`, `priority_score`, `priority_grade` 규칙으로 비교·정렬하는 공통 점수화 체계를 `docs/GOAL_ALIGNMENT_FRAMEWORK.md`에 추가
-- 도구 실행 결과에서 실패·경고·커버리지 신호를 공통 JSON 필드로 정규화하는 `normalize_quality_signals.py` 와 샘플 입력 `examples/quality_signal_samples.json` 추가
+- 도구 실행 결과에서 실패·경고·커버리지 신호를 공통 JSON 필드로 정규화하는 `scripts/normalize_quality_signals.py` 와 샘플 입력 `examples/quality_signal_samples.json` 추가
 - 정규화된 분석 결과를 지정한 `--history` 경로에 append-only JSON 이력으로 누적 저장하고 `latest|summary|all` 로 조회하는 기능 추가
 
 ### Changed
 
+- 루트에 있던 품질/리포트 Python 도구들을 `scripts/` 폴더로 이동하고 Makefile 및 문서의 실행 경로를 갱신
 - PowerShell installer가 UTF-8 no BOM `WORKSPACE_CONTEXT.toml` 의 한글을 깨뜨리지 않도록 명시적 UTF-8 읽기/쓰기로 고정
 - 설치 시 함께 복사되는 `docs/WORKSPACE_CONTEXT_GUIDE.md` 의 깨진 한글 문서를 정상 한국어 가이드로 교체
 - `AGENTS.md` 와 `MULTI_AGENT_GUIDE.md` 에 same-workspace 동시 작업 충돌을 위한 optional concurrent registry mode, overlap 충돌 시 중단 규칙, retrospective/metrics 기록 규칙을 추가
@@ -47,27 +58,27 @@
 
 ### Changed
 
-- 저장소 상위 오케스트레이션 모델을 `Route A/B`에서 점수 기반 `orchestration profile` 흐름으로 전환
+- 저장소 상위 오케스트레이션 모델을 legacy route model 에서 점수 기반 `orchestration profile` 흐름으로 전환
 - `score_total`, `score_breakdown`, `hard_triggers`, `selected_rules`, `selected_skills`, `execution_topology`, `agent_budget`, `selection_reason` 추적 필드를 `STATE.md`와 installer 생성 템플릿에 반영
 - 서브에이전트 위임을 사용자 명령 전제 대신 에이전트의 자동 delegation 판단으로 재정의하고 자연어 override 우선 규칙을 문서 전반에 통일
 - 고정 role cap 문구를 제거하고 작업별 동적 `agent_budget` 기준으로 `worker`, `reviewer`, `explorer` 사용량을 설명하도록 갱신
-- `AGENTS.md`, `README.md`, `MULTI_AGENT_GUIDE.md`, `profiles/*`, `examples/*`, `docs/OUROBOROS_LITE_PORT.md`, `codex_rules/ouroboros-lite.md`를 새 용어 체계에 맞춰 정렬
+- `AGENTS.md`, `README.md`, `MULTI_AGENT_GUIDE.md`, `profiles/*`, `examples/*`, legacy porting note, legacy command rule 을 새 용어 체계에 맞춰 정렬
 - Windows PowerShell installer 실생성 검증으로 새 `AGENTS.md` / `STATE.md` 템플릿 출력이 `Orchestration Profile` 스키마를 따르는지 확인
 
 ## v0.3.0 - 2026-03-22
 
 ### Changed
 
-- 저장소 라우트 모델을 `Route A` / `Route B` 2단계로 정리
-- `Route A` 를 main-only, no-subagent route 로 재정의
-- `Route B` 를 delegated route 로 재정의하고 old 대형 작업 의미를 흡수
-- `AGENTS.md`, `README.md`, `MULTI_AGENT_GUIDE.md`, `profiles/*`, `codex_skills/*`, `docs/OUROBOROS_LITE_PORT.md`, `examples/*` 를 새 라우트 모델에 맞게 정렬
+- 저장소 라우트 모델을 legacy two-route model 로 정리
+- main-only 경로를 no-subagent route 로 재정의
+- delegated 경로가 old 대형 작업 의미를 흡수
+- `AGENTS.md`, `README.md`, `MULTI_AGENT_GUIDE.md`, `profiles/*`, legacy workflow skills, legacy porting note, `examples/*` 를 당시 라우트 모델에 맞게 정렬
 
 ## v0.1.13 - 2026-03-22
 
 ### Added
 
-- `codex_skills/ouroboros-interview`, `ouroboros-seed`, `ouroboros-run`, `ouroboros-evaluate` 추가
+- legacy interview/seed/run/evaluate workflow skills 추가
 - append-only `ERROR_LOG.md` 템플릿 추가
 - `WORKSPACE_CONTEXT_TEMPLATE.toml` 에 `error_log_path` 추가
 - `codex_rules/ouroboros-lite.md` 추가
@@ -76,7 +87,7 @@
 ### Changed
 
 - `AGENTS.md` 에 spec-first workflow, error logging, subagent hygiene 규칙 추가
-- installer 가 `codex_skills` 를 전역 설치와 workspace docs 복사 흐름에 포함하도록 확장
+- installer 가 legacy workflow skills 를 전역 설치와 workspace docs 복사 흐름에 포함하도록 확장
 - shell / PowerShell installer 가 workspace-relative `task_board_path` 와 `error_log_path` 만 허용하도록 보강
 - shell installer 의 top-level iteration 을 deterministic 하게 정리하고 GNU `find -maxdepth` 의존 제거
 - stale managed skill 정리를 manifest 기반으로 바꿔 same-prefix user skill 보존
@@ -98,7 +109,7 @@
 
 ### Changed
 
-- 전역 규칙에 `route/reason` 선기록, `Route A/B` 승격 규칙, delegated route 최소 worker/reviewer 요구를 추가
+- 전역 규칙에 `route/reason` 선기록, legacy route 승격 규칙, delegated route 최소 worker/reviewer 요구를 추가
 - 작업공간 오버라이드 설치 시 `WORKSPACE_CONTEXT.toml` 을 우선 읽어 맞춤형 `AGENTS.md` 와 초기 `STATE.md` 를 생성하도록 installer 를 확장
 - `WORKSPACE_CONTEXT_TEMPLATE.toml` 예시 파일과 관련 문서를 추가
 - macOS GitHub Actions 검증에 `WORKSPACE_CONTEXT.toml` 기반 workspace 생성 경로를 추가
@@ -108,8 +119,8 @@
 
 ### Changed
 
-- 전역/저장소 AGENTS 템플릿에 `하드 트리거 + 점수제 + Route A/Route B` 작업 크기 게이트 추가
-- `main` 직접 수정은 `Route A`, 큰 작업은 `Route B delegated planner-only` 로 정리
+- 전역/저장소 AGENTS 템플릿에 legacy route model 기반 작업 크기 게이트 추가
+- `main` 직접 수정과 delegated planner-only 경로를 분리
 - 작업공간 오버라이드 템플릿과 `STATE_TEMPLATE.md` 에 `route` 와 `write_sets` 개념 추가
 - 운영 가이드와 예시를 route 기반 멀티에이전트 모델로 갱신
 
@@ -124,6 +135,7 @@
 ### Changed
 
 - macOS 설치 경로를 README 중심으로 정리하고 GitHub Actions `macos-latest` 기준 전역 설치, workspace 오버라이드, bootstrap 경로 실검증 완료
+
 ## v0.1.2 - 2026-03-19
 
 ### Added

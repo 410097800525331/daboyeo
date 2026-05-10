@@ -12,6 +12,25 @@ const brandClassMap = {
   메가박스: "brand-mega",
 };
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[char]));
+}
+
+function safeExternalUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : "#";
+  } catch {
+    return "#";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const mapContainer = document.getElementById("map");
   const listEl = document.getElementById("placesList");
@@ -69,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const position = new kakao.maps.LatLng(Number(place.y), Number(place.x));
     const marker = new kakao.maps.Marker({ position, map: currentMap });
     kakao.maps.event.addListener(marker, "click", () => {
-      infoWindow.setContent(`<div style="padding:6px 8px;font-size:12px;color:#111;">${place.place_name}</div>`);
+      infoWindow.setContent(`<div style="padding:6px 8px;font-size:12px;color:#111;">${escapeHtml(place.place_name)}</div>`);
       infoWindow.open(currentMap, marker);
     });
     markers.push(marker);
@@ -90,23 +109,45 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    listEl.innerHTML = filtered.map((place) => {
+    listEl.replaceChildren();
+    filtered.forEach((place) => {
       const name = place.place_name || place.name;
       const brand = place.brand || getBrand(name);
       const address = place.road_address_name || place.address_name || place.address || "";
       const distance = place.distance ? `${(Number(place.distance) / 1000).toFixed(1)}km` : place.distance || "";
-      const placeUrl = place.place_url || "#";
-      const targetAttr = placeUrl === "#" ? "" : ` target="_blank" rel="noreferrer"`;
-      return `
-        <article class="place-item">
-          <span class="place-brand ${brandClassMap[brand] || ""}">${brand}</span>
-          <h3 class="place-name">${name}</h3>
-          <p class="place-address">${address}</p>
-          <p class="place-distance">${distance}</p>
-          <a class="btn-booking" href="${placeUrl}"${targetAttr}>상세 보기</a>
-        </article>
-      `;
-    }).join("");
+      const placeUrl = safeExternalUrl(place.place_url);
+
+      const article = document.createElement("article");
+      article.className = "place-item";
+
+      const brandBadge = document.createElement("span");
+      brandBadge.className = `place-brand ${brandClassMap[brand] || ""}`.trim();
+      brandBadge.textContent = brand;
+
+      const title = document.createElement("h3");
+      title.className = "place-name";
+      title.textContent = name;
+
+      const addressText = document.createElement("p");
+      addressText.className = "place-address";
+      addressText.textContent = address;
+
+      const distanceText = document.createElement("p");
+      distanceText.className = "place-distance";
+      distanceText.textContent = distance;
+
+      const link = document.createElement("a");
+      link.className = "btn-booking";
+      link.href = placeUrl;
+      link.textContent = "상세 보기";
+      if (placeUrl !== "#") {
+        link.target = "_blank";
+        link.rel = "noreferrer";
+      }
+
+      article.append(brandBadge, title, addressText, distanceText, link);
+      listEl.appendChild(article);
+    });
 
     clearMarkers();
     filtered.forEach(addMarker);

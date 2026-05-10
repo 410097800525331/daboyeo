@@ -1,0 +1,46 @@
+{
+  "results": [
+    {
+      "tool": "markdownlint",
+      "command": "markdownlint-cli2 README.md",
+      "exit_code": 1,
+      "stdout": "README.md:12 MD022/blanks-around-headings Headings should be surrounded by blank lines\nREADME.md:44:1 MD032/blanks-around-lists Lists should be surrounded by blank lines",
+      "stderr": ""
+    },
+    {
+      "tool": "shellcheck",
+      "command": "shellcheck installer/CodexMultiAgent.sh",
+      "exit_code": 1,
+      "stdout": "In installer/CodexMultiAgent.sh line 12:\nTARGET_WORKSPACE=\"${1}\"\n^-- SC2034 (warning): TARGET_WORKSPACE appears unused. Verify use (or export if used externally).\n\nFor more information:\n  https://www.shellcheck.net/wiki/SC2034 -- TARGET_WORKSPACE appears unused.",
+      "stderr": ""
+    },
+    {
+      "tool": "psscriptanalyzer",
+      "command": "pwsh -Command Invoke-ScriptAnalyzer -Path . -Recurse",
+      "exit_code": 1,
+      "issues": [
+        {
+          "severity": "Warning",
+          "rule": "PSAvoidUsingWriteHost",
+          "path": "installer/CodexMultiAgent.ps1",
+          "line": 28,
+          "message": "File 'installer/CodexMultiAgent.ps1' uses Write-Host directly."
+        },
+        {
+          "severity": "Error",
+          "rule": "ParseError",
+          "path": "installer/Bootstrap.ps1",
+          "line": 71,
+          "message": "Unexpected token '}' in expression or statement."
+        }
+      ]
+    },
+    {
+      "tool": "pytest",
+      "command": "pytest --cov=installer tests/test_quality.py",
+      "exit_code": 1,
+      "stdout": "FAILED tests/test_quality.py::test_detects_failures - AssertionError\n=============================== warnings summary ===============================\ntests/test_quality.py:42: DeprecationWarning: legacy hook is deprecated\n---------- coverage: platform linux, python 3.12 ----------\nName    Stmts   Miss  Cover\nTOTAL      40      3    92%",
+      "stderr": ""
+    }
+  ]
+}

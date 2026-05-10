@@ -22,7 +22,7 @@ const POSTER_IMAGE_HINTS = Object.freeze({
   result: {
     width: 420,
     height: 600,
-    sizes: "(max-width: 430px) 212px, (max-width: 680px) 96px, 212px",
+    sizes: "(max-width: 680px) 42vw, (max-width: 1180px) 220px, 320px",
     fetchPriority: "auto",
   },
 });
@@ -205,6 +205,7 @@ const state = {
     response: null,
     error: null,
   },
+  selectedResultIndex: 0,
   feedback: new Map(),
   stepTimer: null,
   toastTimer: null,
@@ -468,6 +469,7 @@ function resetInputs(keepSession = true) {
   state.posterChoices = { likedSeedMovieIds: [], dislikedSeedMovieIds: [] };
   state.posters.activeBatchIndex = 0;
   state.run = { status: "idle", mode: null, aiProvider: null, response: null, error: null };
+  state.selectedResultIndex = 0;
   state.feedback = new Map();
 
   if (!keepSession) {
@@ -1158,6 +1160,7 @@ async function runRecommendation(mode) {
   try {
     const response = await requestRecommendations(payload);
     state.run = { status: "success", mode, aiProvider, response, error: null };
+    state.selectedResultIndex = 0;
 
     const recommendations = Array.isArray(response?.recommendations) ? response.recommendations : [];
     setStep(response?.status === "no_candidates" || recommendations.length === 0 ? "empty" : "results");
@@ -1398,23 +1401,6 @@ function safeUrl(value) {
   }
 }
 
-function formatPrice(amount, currencyCode) {
-  if (amount === null || amount === undefined || amount === "") {
-    return "가격 정보 없음";
-  }
-
-  const numberAmount = Number(amount);
-  if (Number.isNaN(numberAmount)) {
-    return String(amount);
-  }
-
-  return new Intl.NumberFormat("ko-KR", {
-    style: "currency",
-    currency: currencyCode || "KRW",
-    maximumFractionDigits: 0,
-  }).format(numberAmount);
-}
-
 function providerKey(providerCode) {
   return String(providerCode || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -1433,17 +1419,6 @@ function providerBookingUrl(providerCode) {
   if (key.includes("mega")) return PROVIDER_BOOKING_URLS.megabox;
   if (key.includes("cgv")) return PROVIDER_BOOKING_URLS.cgv;
   return null;
-}
-
-function priceInfo(item) {
-  const hasPrice = item.minPriceAmount !== null && item.minPriceAmount !== undefined && item.minPriceAmount !== "";
-  const fallbackValue = [item.screenName, formatShowtime(item)].filter(Boolean).join(" · ");
-  return {
-    label: hasPrice ? "추천 항목 가격" : "가격 대신 확인",
-    value: hasPrice
-      ? formatPrice(item.minPriceAmount, item.currencyCode)
-      : fallbackValue || "상영 시간과 지점 먼저 확인",
-  };
 }
 
 function formatShowtime(item) {
@@ -1550,19 +1525,63 @@ function renderShowtimeItem(label, value) {
   return item;
 }
 
-function renderResultCard(item, index, context = {}) {
-  const card = createElement("article", "ai-result-card");
-  card.setAttribute("role", "listitem");
-  card.setAttribute("aria-label", `${index + 1}번째 추천 영화`);
-  const isAiBacked = context.isAiBacked !== false;
-  const isGptResult = isAiBacked && context.providerValue === "codex";
-  const isFallbackResult = !isAiBacked;
-  const isPreciseResult = context.mode === "precise";
-  card.classList.toggle("is-gpt-result", isGptResult);
-  card.classList.toggle("is-fallback-result", isFallbackResult);
-  card.classList.toggle("is-precise-result", isPreciseResult);
-  const inner = createElement("div", "ai-result-card-inner");
-  const poster = createElement("div", "ai-result-poster");
+function finiteNumber(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") {
+      continue;
+    }
+    const numberValue = Number(value);
+    if (Number.isFinite(numberValue)) {
+      return numberValue;
+    }
+  }
+  return null;
+}
+
+function resultScore(item) {
+  return Math.round(finiteNumber(item?.score) ?? 0);
+}
+
+function seatAvailability(item) {
+  const remaining = finiteNumber(item?.remainingSeatCount, item?.remainingSeats, item?.availableSeatCount);
+  const total = finiteNumber(item?.totalSeatCount, item?.totalSeats);
+
+  if (remaining !== null) {
+    if (remaining <= 0) {
+      return { value: "매진 임박", tone: "danger" };
+    }
+    if (total && total > 0) {
+      const ratio = remaining / total;
+      if (remaining >= 30 || ratio >= 0.3) {
+        return { value: `${remaining}석 여유`, tone: "good" };
+      }
+      if (remaining <= 10 || ratio <= 0.1) {
+        return { value: `${remaining}석 주의`, tone: "warn" };
+      }
+    }
+    return remaining >= 20
+      ? { value: `${remaining}석 여유`, tone: "good" }
+      : { value: `${remaining}석 남음`, tone: "warn" };
+  }
+
+  const evidence = [item?.valuePoint, item?.analysisPoint, item?.reason, item?.caution]
+    .filter(Boolean)
+    .join(" ");
+  if (evidence.includes("좌석여유") || evidence.includes("좌석 여유") || evidence.includes("여유")) {
+    return { value: "여유 있음", tone: "good" };
+  }
+  if (evidence.includes("좌석주의") || evidence.includes("좌석 주의") || evidence.includes("매진")) {
+    return { value: "좌석 주의", tone: "warn" };
+  }
+  return { value: "정보 확인", tone: "neutral" };
+}
+
+function resultRankText(index) {
+  return `${index + 1}순위`;
+}
+
+function resultPoster(item, index, className) {
+  const poster = createElement("div", className);
   const imageUrl = safeUrl(item.posterUrl);
 
   if (imageUrl) {
@@ -1576,45 +1595,70 @@ function renderResultCard(item, index, context = {}) {
     poster.appendChild(createElement("div", "ai-poster-fallback", item.title || "포스터 없음"));
   }
 
-  poster.appendChild(createElement("div", "ai-rank", String(index + 1)));
+  poster.appendChild(createElement("div", "ai-rank", resultRankText(index)));
+  return poster;
+}
+
+function renderResultFact(label, value, tone = "") {
+  const fact = createElement("div", ["ai-result-fact", tone ? `is-${tone}` : null]);
+  fact.appendChild(createElement("strong", null, label));
+  fact.appendChild(createElement("span", null, value || "정보 없음"));
+  return fact;
+}
+
+function tasteFitText(item) {
+  const fitLabel = state.survey.mood
+    ? optionLabel(moodOptions, state.survey.mood)
+    : "점수 기반";
+  return `${resultScore(item)}점 · ${fitLabel}`;
+}
+
+function renderResultCard(item, index, context = {}) {
+  const card = createElement("article", "ai-result-feature");
+  card.setAttribute("role", "listitem");
+  card.setAttribute("aria-label", `${resultRankText(index)} 추천 영화 상세`);
+  const isAiBacked = context.isAiBacked !== false;
+  const isGptResult = isAiBacked && context.providerValue === "codex";
+  const isFallbackResult = !isAiBacked;
+  const isPreciseResult = context.mode === "precise";
+  card.classList.toggle("is-gpt-result", isGptResult);
+  card.classList.toggle("is-fallback-result", isFallbackResult);
+  card.classList.toggle("is-precise-result", isPreciseResult);
 
   const body = createElement("div", "ai-result-body");
   const heading = createElement("div", "ai-result-heading");
+  heading.appendChild(createElement("span", "ai-feature-rank", resultRankText(index)));
   heading.appendChild(createElement("h2", "ai-movie-title", item.title || "제목 미상"));
-  heading.appendChild(createElement("div", "ai-score", `${Math.round(Number(item.score) || 0)}점`));
+  heading.appendChild(createElement("div", "ai-score", `${resultScore(item)}점`));
   body.appendChild(heading);
 
   if (item.reason) {
-    body.appendChild(createElement("p", isGptResult ? "ai-result-reason" : "ai-result-tags", item.reason));
+    const reason = createElement("section", "ai-result-copy-block");
+    reason.appendChild(createElement("strong", null, "추천 이유"));
+    reason.appendChild(createElement("p", isGptResult ? "ai-result-reason" : "ai-result-tags", item.reason));
+    body.appendChild(reason);
   }
 
   if (item.analysisPoint) {
-    const analysisPoint = createElement("p", isGptResult ? "ai-result-analysis" : "ai-result-tags");
-    const labelText = isGptResult ? "AI 분석" : isFallbackResult ? "Fallback 근거" : "분석 포인트";
-    const label = createElement("strong", "ai-analysis-label", labelText);
-    analysisPoint.appendChild(label);
-    analysisPoint.appendChild(document.createTextNode(` ${item.analysisPoint}`));
-    body.appendChild(analysisPoint);
+    const analysis = createElement("section", "ai-result-copy-block");
+    analysis.appendChild(createElement("strong", null, isGptResult ? "분석 포인트" : isFallbackResult ? "Fallback 근거" : "분석 포인트"));
+    analysis.appendChild(createElement("p", isGptResult ? "ai-result-analysis" : "ai-result-tags", item.analysisPoint));
+    body.appendChild(analysis);
   }
 
   if (item.caution) {
-    const caution = createElement("p", "ai-result-caution");
+    const caution = createElement("section", "ai-result-copy-block is-caution");
     caution.appendChild(createElement("strong", null, "주의 포인트"));
-    caution.appendChild(document.createTextNode(` ${item.caution}`));
+    caution.appendChild(createElement("p", "ai-result-caution", item.caution));
     body.appendChild(caution);
   }
 
-  if (item.valuePoint) {
-    body.appendChild(createElement("p", ["ai-result-tags", "ai-result-tags-white"], item.valuePoint));
-  }
-
-  const price = priceInfo(item);
-  const showtimeGrid = createElement("div", "ai-showtime-grid");
-  showtimeGrid.appendChild(renderShowtimeItem("예매처", providerDisplayName(item.providerCode)));
-  showtimeGrid.appendChild(renderShowtimeItem("극장/상영관", [item.theaterName, item.screenName].filter(Boolean).join(" · ")));
-  showtimeGrid.appendChild(renderShowtimeItem("상영 시간", formatShowtime(item)));
-  showtimeGrid.appendChild(renderShowtimeItem(price.label, price.value));
-  body.appendChild(showtimeGrid);
+  const factGrid = createElement("div", "ai-result-fact-grid");
+  factGrid.appendChild(renderResultFact("예매처", providerDisplayName(item.providerCode)));
+  factGrid.appendChild(renderResultFact("극장/상영관", [item.theaterName, item.screenName].filter(Boolean).join(" · ")));
+  factGrid.appendChild(renderResultFact("상영시간", formatShowtime(item)));
+  factGrid.appendChild(renderResultFact("취향 적합도", tasteFitText(item)));
+  body.appendChild(factGrid);
 
   const actions = createElement("div", "ai-result-actions");
   const bookingButton = createElement("button", "ai-booking-button", "예매하기");
@@ -1628,11 +1672,55 @@ function renderResultCard(item, index, context = {}) {
   actions.appendChild(seatMapButton);
 
   body.appendChild(actions);
-  inner.appendChild(poster);
-  inner.appendChild(body);
-  card.appendChild(inner);
+  card.appendChild(resultPoster(item, index, "ai-result-poster"));
+  card.appendChild(body);
 
   return card;
+}
+
+function renderCompactResultCard(item, index, context = {}) {
+  const seat = seatAvailability(item);
+  const button = createElement("button", "ai-result-compact-card");
+  button.type = "button";
+  button.setAttribute("aria-label", `${resultRankText(index)} ${item.title || "추천 영화"} 상세 정보 보기`);
+  button.addEventListener("click", () => {
+    state.selectedResultIndex = index;
+    render();
+  });
+
+  const head = createElement("div", "ai-compact-head");
+  head.appendChild(createElement("span", "ai-compact-rank", resultRankText(index)));
+  head.appendChild(createElement("span", "ai-compact-score", `${resultScore(item)}점`));
+  button.appendChild(head);
+
+  const body = createElement("div", "ai-compact-body");
+  body.appendChild(resultPoster(item, index, "ai-compact-poster"));
+
+  const info = createElement("div", "ai-compact-info");
+  info.appendChild(createElement("strong", null, item.title || "제목 미상"));
+
+  const facts = createElement("dl", "ai-compact-facts");
+  [
+    ["다음 상영", formatShowtime(item)],
+    ["상영관", [providerDisplayName(item.providerCode), item.theaterName].filter(Boolean).join(" · ")],
+    ["좌석 여유", seat.value],
+  ].forEach(([label, value]) => {
+    facts.appendChild(createElement("dt", null, label));
+    facts.appendChild(createElement("dd", seat.value === value ? `is-${seat.tone}` : null, value || "정보 없음"));
+  });
+  info.appendChild(facts);
+  body.appendChild(info);
+  button.appendChild(body);
+
+  const affordance = createElement("span", "ai-compact-affordance", "상세 정보 보기");
+  affordance.appendChild(createElement("span", null, "›"));
+  button.appendChild(affordance);
+
+  if (context.isAiBacked === false) {
+    button.classList.add("is-fallback-result");
+  }
+
+  return button;
 }
 
 function resultScrollCardCount(list) {
@@ -1795,7 +1883,7 @@ function setupResultListScrollAnimation(list) {
 
 function renderResultsStep() {
   const response = state.run.response || {};
-  const recommendations = Array.isArray(response.recommendations) ? response.recommendations : [];
+  const recommendations = (Array.isArray(response.recommendations) ? response.recommendations : []).slice(0, 3);
   const modeLabel = optionLabel(modeOptions, response.mode || state.run.mode);
   const providerValue = state.run.aiProvider || state.aiProvider;
   const model = response.model || modeProfile(response.mode || state.run.mode).model;
@@ -1806,14 +1894,22 @@ function renderResultsStep() {
     : "코드 점수 기반 fallback";
   const layout = createElement("section", "ai-result-layout");
   layout.classList.toggle("has-multiple-results", recommendations.length > 1);
+
+  if (state.selectedResultIndex >= recommendations.length) {
+    state.selectedResultIndex = 0;
+  }
+  const selectedIndex = Math.max(0, state.selectedResultIndex);
+  const selectedItem = recommendations[selectedIndex] || recommendations[0];
+
   const side = createElement("aside", "ai-result-side");
 
-  side.appendChild(createElement("p", "ai-kicker", "AI RESULT"));
-  side.appendChild(renderTitle([
-    { text: "다보의\n영화 추천은!" },
-  ]));
-  const resultNote = response.message || "지금 상황과 취향을 반영해, 바로 볼 수 있는 최적의 영화를 골랐어요.";
-  side.appendChild(createElement("p", "ai-result-note", resultNote));
+  const sideHead = createElement("div", "ai-result-side-head");
+  sideHead.appendChild(createElement("strong", null, "선택 조건"));
+  const editConditionButton = createElement("button", "ai-condition-edit-button", "편집");
+  editConditionButton.type = "button";
+  editConditionButton.addEventListener("click", () => setStep("audience"));
+  sideHead.appendChild(editConditionButton);
+  side.appendChild(sideHead);
 
   const summary = createElement("div", "ai-result-summary");
 
@@ -1853,6 +1949,9 @@ function renderResultsStep() {
 
   side.appendChild(summary);
 
+  const sideHint = createElement("p", "ai-result-side-hint", "조건에 맞춰 정렬한 결과야. 마음에 드는 작품을 예매해 보세요!");
+  side.appendChild(sideHint);
+
   const actions = createElement("div", "ai-result-side-actions");
 
   const topRow = createElement("div", "ai-result-side-actions-row");
@@ -1876,24 +1975,45 @@ function renderResultsStep() {
 
   side.appendChild(actions);
 
-  const list = createElement("div", "ai-result-list");
-  list.setAttribute("role", "list");
-  if (recommendations.length > 1) {
-    list.classList.add("has-multiple-results");
-    list.tabIndex = 0;
-    list.setAttribute("aria-label", "추천 영화 목록. 위아래로 스크롤해 다른 추천을 볼 수 있어.");
-  }
-  recommendations.forEach((item, index) => {
-    list.appendChild(renderResultCard(item, index, {
+  const board = createElement("div", "ai-result-board");
+  const boardHead = createElement("div", "ai-result-board-head");
+  const titleWrap = createElement("div", "ai-result-board-title");
+  titleWrap.appendChild(createElement("p", "ai-kicker", "AI RESULT"));
+  titleWrap.appendChild(createElement("h1", "ai-result-title", `추천 결과 ${recommendations.length}개`));
+  boardHead.appendChild(titleWrap);
+
+  const changeButton = createElement("button", "ai-change-condition-button", "조건 변경하기");
+  changeButton.type = "button";
+  changeButton.addEventListener("click", () => setStep("audience"));
+  boardHead.appendChild(changeButton);
+  board.appendChild(boardHead);
+
+  const resultGrid = createElement("div", "ai-result-grid");
+  resultGrid.setAttribute("role", "list");
+
+  if (selectedItem) {
+    resultGrid.appendChild(renderResultCard(selectedItem, selectedIndex, {
       providerValue,
       mode: response.mode || state.run.mode,
       isAiBacked,
     }));
+  }
+
+  const compactRail = createElement("div", "ai-result-compact-rail");
+  recommendations.forEach((item, index) => {
+    if (index === selectedIndex) {
+      return;
+    }
+    compactRail.appendChild(renderCompactResultCard(item, index, { isAiBacked }));
   });
-  setupResultListScrollAnimation(list);
+  resultGrid.appendChild(compactRail);
+  board.appendChild(resultGrid);
+
+  const resultNote = response.message || "추천 결과는 실시간 상영 후보와 좌석 상황에 따라 달라질 수 있어.";
+  board.appendChild(createElement("p", "ai-result-note", resultNote));
 
   layout.appendChild(side);
-  layout.appendChild(list);
+  layout.appendChild(board);
 
   return layout;
 }

@@ -1,0 +1,30 @@
+goal: >
+  Create a collaboration-ready local repository skeleton for daboyeo with a
+  Spring Boot backend, TiDB/MySQL database conventions, vanilla HTML/CSS/JS
+  frontend, and preserved existing Python collectors.
+constraints:
+  - Do not delete, move, or overwrite existing collector, script, docs, or database files.
+  - Do not introduce Bootstrap yet; keep frontend styling as local vanilla CSS.
+  - Do not hardcode secrets, tokens, credentials, cookies, or private keys.
+  - Use environment variables for TiDB/MySQL connection settings.
+  - Keep DB migration structure ready for Flyway, but do not auto-apply migrations by default.
+  - Keep the scaffold simple enough for GitHub collaboration and later stack decisions.
+acceptance_criteria:
+  - Root-level frontend, backend, and db directories exist with clear responsibilities.
+  - Backend has a minimal Spring Boot project structure and environment-based TiDB config.
+  - Frontend has vanilla HTML, CSS, and JS entry points without Bootstrap.
+  - DB folder documents migration, seed, and local sample-data responsibilities.
+  - Existing collectors and scripts remain usable and are documented as first-class workspace areas.
+  - Git ignore rules cover common Java, frontend, Python, and local environment outputs.
+verification:
+  - git status --short
+  - Get-Content -Raw WORKSPACE_CONTEXT.toml
+  - Select-String -Path WORKSPACE_CONTEXT.toml -Pattern '^\\[workspace\\]','^\\[architecture\\]','^\\[editing_rules\\]','^\\[verification\\]'
+  - Inspect the created file tree locally.
+out_of_scope:
+  - Installing dependencies.
+  - Running a browser or external runtime smoke test.
+  - Connecting to TiDB or applying migrations.
+  - Choosing or adding Bootstrap.
+  - Rewriting existing collector logic.
+  - Moving existing scripts/db SQL into Flyway migrations.

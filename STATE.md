@@ -1,0 +1,2312 @@
+# STATE
+
+## Current Task
+
+- task: `Security scan, fix, commit main, and deploy`
+- phase: `verified-deployed`
+- previous_task: `Refine precise recommendation result analysis was verified locally; the user now requested a deployment-basis security scan, fixes, main commit/push, and deployment.`
+- scope: `Use Codex Security workflow against the deploy-relevant runtime surface, fix validated vulnerabilities, preserve existing user/previous dirty work where possible, commit to main, push, and deploy to Oracle.`
+- verification_target: `Codex Security scan artifacts, secret redaction without printing values, backend/frontend syntax/tests, bootJar, git commit/push to main, Oracle deploy, and public health/static smoke without secret output.`
+- classification: `score_total=10; security scan and fixes 3; secrets/env handling 2; public API abuse controls 2; commit/push/main branch 1; external Oracle deployment 2`
+- score_breakdown: `security plugin scan 2; deployed Spring API trust boundaries 2; secret file exposure risk 2; rate limiting/abuse protection 1; existing dirty worktree preservation 1; git main/push/deploy 2`
+- hard_triggers: `security scan/fix, secrets/env examples, externally reachable public APIs, AI bridge resource usage, deployment/external service connection, dirty worktree, main branch commit/push`
+- selected_rules: `Codex Security phases threat-model -> finding-discovery -> validation -> attack-path-analysis -> final report; no secret values in output; fix critical secret exposure first; add abuse protection for externally reachable recommendation endpoints; keep public collection gates closed; commit only after verification; deploy with existing sanitized Oracle script.`
+- selected_skills: `codex-security:security-scan`
+- execution_topology: `single-session`
+- orchestration_value: `high`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the user invoked a plugin but did not ask for subagents, and commit/push/deploy needs one controlled writer lane in the dirty workspace.`
+- reason: `The user explicitly requested a deployment-basis vulnerability scan, remediation, main commit/push, and deployment, touching security boundaries and external runtime.`
+- write_sets: `STATE.md; ERROR_LOG.md if material errors occur; .env.example secret placeholders; backend/src/main/java/kr/daboyeo/backend/security/**; backend/src/main/java/kr/daboyeo/backend/api/recommendation/RecommendationController.java; backend/src/main/java/kr/daboyeo/backend/config/PortfolioSecurityProperties.java; backend/src/main/resources/application.yml; backend tests; deploy script only if security validation requires it.`
+- contract_freeze: `The deployed runtime must not expose real secret material in tracked example files or logs. Public recommendation/session/feedback endpoints must have local abuse protection before they can enqueue Codex bridge work or mutate recommendation profiles. Collection/seat/admin endpoints remain gated by admin token or disabled public flags. Existing frontend result-screen and hourly refresh changes remain preserved and are included in the final main commit if still dirty. Security scan artifacts are saved under .local/security-scans because the default C:\tmp\codex-security-scans path was not writable in this session.`
+- evaluation_need: `full; security, secrets, public API behavior, git main, and deployment are all in scope.`
+- project_invariants: `No secret values printed, no destructive git reset/restore/clean, no public collection endpoint enablement, no broad framework change, no DB schema change unless a validated security fix requires it.`
+- task_acceptance: `Validated security findings are fixed, focused and relevant repository checks pass, changes are committed to main with Conventional Commits format, pushed to origin/main, deployed to Oracle, public health/static checks pass, and final status reports any residual risk.`
+- non_goals: `No unrelated visual redesign, no changing provider credentials, no enabling public crawl/seat layout, no repository-wide low-value cleanup.`
+- hard_checks: `Codex Security artifact files exist; no non-placeholder sensitive values remain in .env.example; focused backend tests for security/recommendation pass; node --check for touched static JS; mirror checks for touched frontend/static files; git diff --check; bootJar; commit/push main; deploy dry-run and real deploy; public /api/health and static cache key smoke.`
+- evidence_required: `scan id/artifact path, findings fixed/suppressed, secret redaction result, rate-limit tests, full verification commands, commit hash, push result, deploy result, public health.`
+- security_scan_deploy_evidence: `2026-05-11 Codex Security deploy scan artifacts were written under .local/security-scans/c1d5ad6_20260511T0305KST_deploy-security. Fixed findings: .env.example secret-like values replaced with placeholders while preserving the template key list; public recommendation/session/feedback endpoints now call PublicApiRateLimiter before service work; frontend and backend static map views no longer render provider/theater strings through unsafe innerHTML list cards; AI bridge token comparison now uses MessageDigest.isEqual. Validation passed: node --check for frontend/backend kakaoMap.js and movieTheaterMap.js, masked .env.example scan returned no_non_placeholder_sensitive_values_detected, focused Gradle tests for RecommendationControllerSecurityTests, PortfolioAccessGateTests, AiBridgeJobServiceTests, RecommendationServiceQualityTests, RecommendationServiceCandidateFilterTests, and CodexRecommendationClientTests passed, git diff --check passed with CRLF warnings only, bootJar passed, deploy dry-run passed with ExecutionPolicy Bypass, real Oracle deploy uploaded sanitized env/app jar/bridge worker/collector runtime and restarted daboyeo.service active, public health returned ok, provider codex status returned ready, and post-deploy public smoke returned health=ok, AI page 200, kakao map JS 200.`
+- security_scan_pr_handoff: `Direct push to origin/main was rejected by GitHub GH013 because repository rules require pull requests. The same deployed and verified main merge commit was pushed to origin/codex/deploy-security-hardening and PR #5 was opened into main: https://github.com/r2gul4r/daboyeo/pull/5.`
+- security_scan_retrospective: `task=security scan fix commit main and deploy; score_total=10; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=validation exposed Spring record constructor binding conflict after adding a test convenience constructor, so the extra constructor was removed and tests were updated to use the canonical constructor; verification_outcome=security artifacts, JS syntax, secret placeholder scan, focused backend tests, diff check, bootJar, dry-run, real deploy, and public smoke passed; collisions_or_reclassifications=pre-existing result-screen and hourly refresh dirty files were preserved and included in the deploy payload; next_rule_change=for ConfigurationProperties records, avoid adding overloaded constructors because Spring Boot may lose constructor-binding inference.`
+
+- task: `Refine precise recommendation result analysis`
+- phase: `verified-local`
+- previous_task: `Enable hourly deployed-site information refresh was verified and deployed; this request changes the recommendation result screen and precise recommendation contract.`
+- scope: `Shrink the expanded recommendation result fact boxes to four useful facts, give precise analysis more room for concrete reason/analysis copy, switch precise Codex defaults to GPT-5.5 xhigh, and enforce exactly three recommendation results even when no genre is selected.`
+- verification_target: `STATE contract, frontend/backend static mirror equality, JS syntax, focused recommendation backend tests, config review, git diff review, and no secret output.`
+- classification: `score_total=7; frontend result rendering plus backend recommendation contract/default model; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- score_breakdown: `user-facing result UI 2; backend result cardinality contract 2; precise Codex model config 1; AI prompt/narrative quality 1; static mirror and dirty worktree preservation 1`
+- hard_triggers: `HTML rendering of recommendation data, AI provider/model configuration, public API recommendation contract, existing dirty worktree, static mirror freshness`
+- selected_rules: `freeze UI/API contract before edits; render untrusted recommendation strings via DOM-safe paths; do not print secrets; preserve existing dirty .env.example and prior frontend deploy files; keep exactly three visible recommendations when any candidates exist; do not expose public collection triggers; keep frontend and Spring static mirror files synced.`
+- selected_skills: `none`
+- execution_topology: `single-session`
+- orchestration_value: `medium`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the user did not request subagents and the UI rendering plus recommendation contract are tightly coupled.`
+- reason: `The user provided concrete result-screen defects and backend behavior requirements: smaller fact boxes, richer precise analysis, GPT-5.5 xhigh precise model, and guaranteed three ranked outputs.`
+- write_sets: `STATE.md; ERROR_LOG.md if material errors occur; backend/src/main/resources/application.yml; backend recommendation service/client/tests as needed; frontend/src/js/pages/daboyeoAi.js; frontend/src/css/daboyeoAi.css; backend static mirrors for touched frontend files.`
+- contract_freeze: `Expanded result cards show only four compact fact boxes: 예매처, 극장/상영관, 상영시간, 취향 적합도. Genre and price-check fact boxes are removed from the expanded result. The saved vertical space is used by 추천 이유 and 분석 포인트 so precise mode can show more concrete, evidence-backed text. Precise Codex defaults are gpt-5.5 with xhigh reasoning. Recommendation responses should return exactly three ranked items whenever at least three scored candidates exist, regardless of whether the user selected a genre; if AI returns fewer picks, the backend fills from the highest-scored remaining candidates.`
+- evaluation_need: `full; this touches user-visible HTML rendering and backend recommendation result cardinality/model defaults.`
+- project_invariants: `No secret output, no DB schema change, no public crawl endpoint exposure, no destructive git action, no unrelated cleanup, frontend/backend static mirrors stay synced.`
+- task_acceptance: `The result screen no longer shows genre or price-check boxes, the remaining four facts are compact, reason/analysis copy has more layout room, precise configuration defaults to gpt-5.5/xhigh, backend result creation fills to three results when candidates exist, JS/config/backend checks pass, and final dirty status is reported.`
+- non_goals: `No visual redesign beyond the accepted result screen, no provider credentials change, no deployment unless separately requested, no browser smoke unless explicitly requested.`
+- hard_checks: `node --check frontend/src/js/pages/daboyeoAi.js backend/src/main/resources/static/src/js/pages/daboyeoAi.js; Compare-Object frontend/backend JS/CSS mirrors; focused Gradle tests around recommendation service/client if available; git diff --check; WORKSPACE_CONTEXT section check.`
+- evidence_required: `classification, changed files, model defaults, result fill behavior, JS syntax, mirror checks, focused backend checks, final dirty status.`
+- result_analysis_refine_evidence: `2026-05-11 refined the precise recommendation result screen and backend contract. Expanded result cards now render only four compact facts: 예매처, 극장/상영관, 상영시간, 취향 적합도. Genre and price-check boxes plus the extra preference chip row were removed, giving 추천 이유 and 분석 포인트 more vertical room. Frontend cache keys were bumped to 20260511-analysis-refine and source files were mirrored into backend static resources. Backend precise Codex defaults now resolve through application.yml to gpt-5.5, xhigh reasoning, and 1700 max tokens; precise response text limits were raised for longer reason/analysis copy. Candidate search now expands underfilled exact/filter results to reach three distinct movie candidates when possible, and final recommendation assembly fills AI under-selection from highest-scored remaining movies. Verification passed: node --check for frontend and backend mirror daboyeoAi.js, Compare-Object mirror checks for HTML/CSS/JS, focused Gradle tests for RecommendationServiceQualityTests, RecommendationServiceCandidateFilterTests, and CodexRecommendationClientTests, WORKSPACE_CONTEXT raw/section checks, and git diff --check with CRLF warnings only. Browser and deployment checks were skipped because they were not explicitly requested for this turn.`
+- result_analysis_refine_retrospective: `task=refine precise recommendation result analysis; score_total=7; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=focused tests exposed duplicate fill after HTML entity decoding and duplicate selected-genre broad fetch, both fixed locally; verification_outcome=JS syntax, mirror, focused backend tests, WORKSPACE_CONTEXT, and diff check passed with line-ending warnings only; collisions_or_reclassifications=pre-existing .env.example, scripts/README.md, and scripts/deploy/deploy_oracle_portfolio.ps1 dirty changes were preserved; next_rule_change=when enforcing a three-result contract, deduplicate after display normalization and expand underfilled candidate searches before AI ranking.`
+
+- task: `Enable hourly deployed-site information refresh`
+- phase: `verified-deployed`
+- previous_task: `Renew AI recommendation result screen was verified and deployed; the new request is an operations/runtime refresh cadence change.`
+- scope: `Make the Oracle-deployed portfolio site refresh live movie/showtime information every hour and keep the Python collector runtime deployed with the Spring service that triggers the hourly sync.`
+- verification_target: `STATE contract, deploy script review, local syntax/build checks where feasible, Oracle deploy/restart, server service logs/config evidence, and public API health without printing secrets.`
+- classification: `score_total=7; deployment/runtime scheduler plus collector artifact sync; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- score_breakdown: `deployment/external service 2; server env/scheduler behavior 2; Python collector artifact freshness 1; DB/provider external collection risk 1; dirty worktree preservation 1`
+- hard_triggers: `deployment/external service connection, external provider requests, secret/env handling, scheduler/runtime behavior, existing dirty worktree`
+- selected_rules: `freeze runtime contract before edits; do not print secret values; preserve unrelated dirty files; keep public collection endpoints guarded; use existing Spring hourly scheduler instead of exposing public crawl triggers; sync collector runtime artifacts during deploy; verify server service and public health after restart.`
+- selected_skills: `none`
+- execution_topology: `single-session`
+- orchestration_value: `medium`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the user did not request subagents and the deployment/scheduler change is one tightly coupled operations lane.`
+- reason: `The user asked to make the deployed site update information every hour, which changes Oracle runtime behavior and deployment payload rather than frontend rendering.`
+- write_sets: `STATE.md; ERROR_LOG.md if material errors occur; scripts/deploy/deploy_oracle_portfolio.ps1; scripts/README.md or docs only if deployment behavior documentation needs updating.`
+- contract_freeze: `The deployed Oracle service keeps public collection endpoints disabled unless an admin token is intentionally supplied, but the backend runtime refreshes showtime/live movie data hourly through the existing Spring scheduler using cron "0 0 * * * *" and DABOYEO_SYNC_PYTHON=python3 on Oracle. Startup sync remains disabled to avoid restart-time crawl delays. Deployments upload app.jar, sanitized env, ai bridge worker, and the Python collector runtime needed by PythonCollectorBridge: collectors/, scripts/ingest/, and requirements.txt when present. After deployment, /api/health is healthy and service logs/config show the hourly scheduler path is active without exposing secrets.`
+- evaluation_need: `full; this touches deployed runtime configuration and external collection dependencies.`
+- project_invariants: `No public crawl endpoint exposure, no secret values in output, no destructive server cleanup, no DB schema migration, no unrelated frontend change, no commit/push unless separately requested.`
+- task_acceptance: `Oracle deployment has explicit hourly showtime sync configuration, collector runtime files are present and current enough for PythonCollectorBridge, daboyeo service is active after restart, public health succeeds, and logs/config show startup sync disabled plus scheduled hourly sync available.`
+- non_goals: `No manual full historical crawl, no CGV enablement while upstream CGV remains unreliable, no public collection endpoint enablement, no browser visual smoke unless separately requested.`
+- hard_checks: `PowerShell syntax review for deploy script, deploy dry-run, backend bootJar if jar changes or deploy script requests build, Oracle deploy/restart, server config/log readback, public /api/health.`
+- evidence_required: `classification, changed deploy behavior, dry-run/deploy result, server file/config evidence, public health, final dirty status.`
+- hourly_refresh_evidence: `2026-05-11 updated scripts/deploy/deploy_oracle_portfolio.ps1 so Oracle sanitized env enforces DABOYEO_SYNC_ENABLED=true, DABOYEO_SYNC_PYTHON=python3, DABOYEO_SHOWTIME_SYNC_ENABLED=true, DABOYEO_SHOWTIME_SYNC_CRON="0 0 * * * *", DABOYEO_SHOWTIME_STARTUP_ENABLED=false, and public collection endpoint gates remain false. The deploy now packages and uploads collectors/, scripts/ingest/, and requirements.txt with app.jar/env/bridge worker, and public health checks retry through restart-time 502s. Dry-run passed. Two real deploys completed; the second included python3. Server readback confirmed app.jar, collectors/, scripts/ingest/, requirements.txt, and refresh env keys. python3 collector imports passed. Public /api/health returned ok. The 2026-05-11 02:00 KST scheduled sync started via scheduled path and stored Lotte and Megabox showtime bundles, including Megabox 300 showtimes, with no failure log observed during the check window. ERROR_LOG.md records the resolved python executable issue.`
+- hourly_refresh_retrospective: `task=enable hourly deployed-site information refresh; score_total=7; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=server import check exposed missing python executable, so deploy env was revised to force python3; verification_outcome=dry-run, deploy, server env/runtime readback, python3 collector import, public health, and observed 02:00 KST scheduled DB writes passed; collisions_or_reclassifications=pre-existing frontend/.env.example dirty files preserved; next_rule_change=for collector-backed server scheduling, verify the exact remote Python executable before relying on Spring scheduler defaults.`
+
+- task: `Renew AI recommendation result screen`
+- phase: `verified-deployed`
+- previous_task: `Selective deploy payload merge into main was recorded in STATE but this request is a new frontend result-screen renewal.`
+- scope: `Redesign the DABOYEO AI recommendation result view from a vertical one-card scroll into the selected mock: exactly three recommendation results are visible, rank 1 is expanded by default, compact ranks 2/3 can be clicked to become the expanded detailed result, and all loaded recommendation/showtime/seat/booking facts remain visible.`
+- verification_target: `STATE contract, frontend JS syntax, frontend/backend static mirror equality, WORKSPACE_CONTEXT checks, git diff review, and no secret output.`
+- classification: `score_total=6; single-session frontend result UI renewal with static mirror synchronization; orchestration_value=low; agent_budget=0; evaluation_need=full`
+- score_breakdown: `interactive selected-card result behavior 2; dense responsive visual rewrite 1; recommendation DB/API fields rendered safely 1; frontend/backend static mirror freshness 1; existing dirty worktree preservation 1`
+- hard_triggers: `HTML rendering of recommendation data, external booking links already present in result actions, static mirror freshness, existing dirty worktree`
+- selected_rules: `freeze UI contract before edits; render untrusted recommendation strings with textContent/createElement only; preserve booking URL safeUrl behavior; keep exactly three visible results when available; do not introduce frameworks; keep frontend and Spring static mirror files synced; do not touch .env.example dirty change`
+- selected_skills: `none`
+- execution_topology: `single-session`
+- orchestration_value: `low`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the user did not request subagents and JS/CSS/static mirror changes are one tightly coupled frontend surface.`
+- reason: `The user selected a concrete result-screen mock and asked to apply it, requiring bounded frontend rendering/layout changes plus static mirror sync.`
+- write_sets: `STATE.md; ERROR_LOG.md if material verification errors occur; frontend/src/pages/daboyeoAi.html; frontend/src/js/pages/daboyeoAi.js; frontend/src/css/daboyeoAi.css; backend static mirrors for those files.`
+- contract_freeze: `Result screen shows the top three recommendation items when present. Rank 1 is selected and expanded by default. The expanded card includes poster, rank badge, title, score, recommendation reason, analysis point, optional caution/value point, provider/theater/screen/showtime/seat availability/price or booking note, genre/preference chips when derivable, and booking/seat-map actions. Non-selected results remain visible as compact clickable cards with poster thumbnail, rank, title, score, next showtime, theater, seat availability, and detail affordance. Clicking a compact card swaps the selected expanded card without losing the three-result list. Empty or fewer-than-three responses remain handled without fake items.`
+- evaluation_need: `full; this rewrites user-facing recommendation rendering and responsive layout.`
+- project_invariants: `No API/schema changes, no crawler/DB mutation, no paid AI call, no secret output, no new framework, no destructive git operation, and frontend/backend static mirrors stay synced.`
+- task_acceptance: `The AI result page visually follows the accepted mock, displays up to three recommendation results at once, defaults to rank 1 expanded, compact rank clicks expand that result, text is DOM-safe, touched frontend files are mirrored into backend static resources, and repository verification commands pass or gaps are reported.`
+- non_goals: `No backend recommendation scoring changes, no deployment/push unless explicitly requested, no browser/public smoke unless explicitly requested, no preview-only artifact generation, no .env.example cleanup.`
+- hard_checks: `node --check frontend/src/js/pages/daboyeoAi.js backend/src/main/resources/static/src/js/pages/daboyeoAi.js; Compare-Object frontend/backend HTML/CSS/JS mirrors; Get-Content -Raw WORKSPACE_CONTEXT.toml; Select-String WORKSPACE_CONTEXT sections; git diff --check; git status --short.`
+- llm_review_rubric: `Check selected-result state behavior, exactly-three visible result contract, DOM-safe text rendering, safe booking URL handling, responsive overflow/text clipping, static mirror freshness, and unrelated dirty worktree preservation.`
+- evidence_required: `classification, changed files, JS syntax result, mirror checks, WORKSPACE_CONTEXT result, diff check, and final dirty status.`
+- result_renewal_evidence: `2026-05-11 renewed the AI recommendation result screen. The frontend now keeps selectedResultIndex state, limits the visible result set to the top three recommendations, expands rank 1 by default, renders non-selected ranks as compact clickable cards, and swaps the detailed panel when a compact card is clicked. The expanded card renders poster, title, score, reason, analysis/caution, showtime, theater/screen/provider, seat availability when present or inferable, price/booking note, selected preference chips, booking, and seat-map actions using createElement/textContent paths. Cache keys were bumped to 20260511-result-renewal and frontend files were mirrored into backend static resources. Verification passed: node --check for frontend and backend mirror daboyeoAi.js, Compare-Object mirror checks for HTML/CSS/JS, WORKSPACE_CONTEXT raw and section checks, and git diff --check with line-ending warnings only. Browser/public smoke was skipped because this workspace requires explicit user request for browser checks. Existing .env.example dirty change was preserved.`
+- result_renewal_retrospective: `task=renew AI recommendation result screen; score_total=6; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=none after contract freeze; verification_outcome=JS syntax, mirror, WORKSPACE_CONTEXT, and diff check passed with CRLF warnings only; collisions_or_reclassifications=pre-existing .env.example dirty change remained untouched; next_rule_change=when result UI depends on currently loaded facts, keep compact and expanded renderers backed by the same helper functions so future response fields appear consistently.`
+- deploy_request: `2026-05-11 user requested deployment after local result-screen verification. Reclassified to deploy stage with score_total=6; hard_triggers=deployment/external service connection, secret/env handling, public runtime smoke; selected_rules=use existing deploy script, do not print secrets, preserve unrelated .env.example dirty change, build jar before upload, run public health/static smoke after restart; execution_topology=single-session; agent_budget=0; spawn_decision=no spawn because deployment is a single controlled external operation.`
+- deploy_contract: `Run local deploy dry-run, build backend bootJar with the changed static resources, upload jar/sanitized env/bridge script through scripts/deploy/deploy_oracle_portfolio.ps1, restart the remote daboyeo service, and verify public /api/health plus AI page static cache key without printing secret values. No git push or commit unless separately requested.`
+- deploy_evidence: `2026-05-11 deploy completed. Dry-run passed with provider=codex, bridge token present, bridge server present, and sanitized env excluding ORACLE_* keys. Sandbox Gradle bootJar failed with unable to establish loopback connection, then approved external Gradle bootJar succeeded. deploy_oracle_portfolio.ps1 uploaded sanitized env, app.jar, and bridge worker, installed remote files as ubuntu-owned, restarted daboyeo.service active, then hit the known immediate Nginx 502 while Spring was starting. Retry returned public /api/health ok. Public /src/pages/daboyeoAi.html returned 200 and contains 20260511-result-renewal. Provider health returned fallback ready, codex ready, and openai-api disabled. ERROR_LOG.md has the resolved restart-time 502 entry. No secret values were printed.`
+
+- task: `Selective deploy payload merge into main`
+- phase: `push-lsh-and-main`
+- previous_task: `Rank upcoming movies but label them as 상영예정 verified and deployed on 2026-05-11.`
+- scope: `Prepare main with only the runtime/deployment payload needed to reproduce the currently deployed portfolio site, excluding preview/design-only artifacts and keeping the dirty lsh worktree intact.`
+- verification_target: `Isolated main worktree, selected runtime file set, focused syntax/build checks, git diff review, local main commit, and no secret output.`
+- classification: `score_total=8; isolated main worktree selective merge; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- score_breakdown: `main is far behind lsh 2; deployed payload spans backend/frontend/scripts/bridge/static mirrors 2; dirty uncommitted runtime changes 2; exclusion of preview/design artifacts 1; build verification before main commit 1`
+- hard_triggers: `branch integration, dirty worktree preservation, deployment surface, generated/static mirror freshness, large source divergence`
+- selected_rules: `do not merge whole lsh blindly; use an isolated worktree for main; exclude preview-only and design-only artifacts; do not print secrets; do not revert current dirty lsh worktree; verify before committing main`
+- selected_skills: `none`
+- execution_topology: `single-session`
+- orchestration_value: `medium`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the user did not request subagents and the safest path is a single controlled worktree assembly with explicit file selection.`
+- reason: `The user wants only deployment-needed work merged into main, while current lsh contains a broad dirty worktree and main is many commits behind.`
+- write_sets: `STATE.md in current worktree; isolated C:/tmp/daboyeo-main-selective worktree on main; local main commit if verification passes.`
+- contract_freeze: `Create or reuse an isolated worktree for local main. Bring in committed lsh runtime/deployment baseline needed by the current portfolio: backend, frontend, collectors, db, scripts, requirements, bridge GUI, and deployment helpers. Overlay current dirty runtime files needed for the deployed site, including live movie/event API, AI loading, responsive direct-entry pages, release-state ranking, static mirrors, and tests. Exclude preview-only daboyeoAi*Preview files, docs/design assets, and other purely temporary artifacts. Do not push unless separately requested.`
+- evaluation_need: `full; this changes the release branch target and must be build-verified.`
+- project_invariants: `No secret values in output, no destructive reset/restore in the current lsh worktree, no preview artifacts in main, frontend and Spring static mirrors stay synced.`
+- task_acceptance: `Local main contains the selected deployment payload; preview/design-only files are absent; backend bootJar passes from main worktree; relevant JS checks pass; final commit on main uses Conventional Commits; current lsh dirty worktree remains available.`
+- non_goals: `No push unless explicitly requested, no public redeploy from main in this step unless requested, no cleanup of current lsh worktree, no broad git reset/clean.`
+- hard_checks: `git status/diff review in isolated main worktree; node --check for selected JS; backend bootJar; selected artifact absence checks; final main log/status.`
+- llm_review_rubric: `Check that selected files reproduce current deployment without preview-only pages, that uncommitted runtime files are included, that static mirrors are fresh, and that main commit excludes secrets and local logs where not needed.`
+- evidence_required: `selected worktree path, included/excluded summary, verification command results, commit hash, and remaining gap or push status.`
+- merge_evidence: `2026-05-11 created isolated main worktree at C:/tmp/daboyeo-main-selective from local main e662ba6. Selected the committed lsh runtime/deployment baseline plus current dirty runtime overlays for backend/frontend/static mirrors/collectors/db/scripts/bridge GUI. Excluded preview/design artifacts by name search; .env and production env files were not selected. Sanitized .env.example placeholders and ignored root .gradle-runtime verification cache. Verification passed: node --check for selected frontend JS, frontend/backend static mirror hash checks, git diff --check, cached secret scan, focused Gradle tests for LiveMovieControllerTests/MovieEventControllerTests/CodexRecommendationClientTests, and Gradle bootJar. Gradle needed external execution because sandbox loopback daemon creation failed. Local main commit created: 195f4c8 feat: merge deploy-ready portfolio payload. main is ahead of origin/main by 1; no push was performed.`
+- merge_retrospective: `task=selective deploy payload merge into main; score_total=8; selected_profile=single-session; actual_topology=single-session with isolated main worktree; spawn_count=0; rework_or_reclassification=.env.example was sanitized after redacted secret-pattern check flagged real-looking example values; verification_outcome=JS syntax, mirror, diff, secret scan, focused tests, bootJar, and final main commit passed; collisions_or_reclassifications=current lsh dirty worktree preserved and main changes were committed only in C:/tmp/daboyeo-main-selective; next_rule_change=for deploy-branch promotion, run a redacted env-example check before staging because examples can drift into real-looking credentials.`
+- push_plan: `2026-05-11 user requested one cleanup commit on lsh and a push of both lsh and main. lsh commit will preserve the current active worktree, including preview/design artifacts and task logs, after secret checks. main push will publish only the isolated deploy-ready commit 195f4c8 from C:/tmp/daboyeo-main-selective.`
+
+- task: `Distinguish upcoming movies in live catalog`
+- phase: `verified-deployed`
+- previous_task: `Remove allMovies/event hardcoding and improve live poster/event sections verified and deployed on 2026-05-10.`
+- scope: `Keep presale/future-release titles such as 마이클 in popularity rankings when their booking/rank data is high, while labeling them as 상영예정 instead of 상영중 on index/allMovies.`
+- verification_target: `STATE contract, focused live movie controller tests, backend build, frontend syntax/static mirror checks, deployed public smoke for releaseState filtering and Michael/upcoming labeling, and no secret output.`
+- classification: `score_total=6; single-session ranking policy and frontend label repair; orchestration_value=low; agent_budget=0; evaluation_need=full`
+- score_breakdown: `DB-backed default ordering policy 2; frontend index/allMovies fetch and label text 1; static mirror/cache freshness 1; Oracle deploy/public smoke 1; dirty worktree preservation 1`
+- hard_triggers: `public API surface, DB read model, HTML rendering of DB strings, deployment/external service checks, existing dirty worktree`
+- selected_rules: `freeze API contract before implementation; keep API parameters bounded/whitelisted; use DOM-safe rendering/textContent for DB values; do not print secrets; preserve unrelated dirty worktree changes; mirror frontend files into Spring static resources; deploy only after local verification passes`
+- selected_skills: `none`
+- execution_topology: `single-session`
+- orchestration_value: `medium`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the user did not request subagents and the API shape plus two frontend renderers need coordinated edits in one lane.`
+- reason: `The user clarified that 마이클 should not be removed from popularity ranking because its booking rank is real; it should remain ranked but be visibly marked as 상영예정.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; backend LiveMovieController/Service/Repository and focused tests; frontend/src/js/pages/homePopularMovies.js and mirror; frontend/src/js/pages/allMovies.js and mirror; frontend/src/css/style.css and allMovies.css plus mirrors; frontend/index.html/backend static index cache key if needed.`
+- contract_freeze: `GET /api/live/movies keeps release_date/release_state and optional strict releaseState filters. The default popularity catalog must not demote upcoming rows; it ranks by provider rank/booking signals exactly like the source data, so high-presale titles such as 마이클 can appear in TOP rankings. Main "지금 가장 인기 있는 영화" and allMovies trending/AI pick must use the default popularity catalog, not releaseState=now_playing. Upcoming rows must be labeled as 상영예정, now_playing rows as 상영중, and unknown rows as 개봉 정보 미확인. Strict releaseState=now_playing/upcoming filters remain available for future views.`
+- evaluation_need: `full; this touches DB-backed public API semantics, frontend display, and deployed UX.`
+- project_invariants: `No DB mutation, no new crawler provider, no paid API, no secret output, no bridge behavior changes, frontend and Spring static mirrors stay synced.`
+- task_acceptance: `Public default /api/live/movies?limit=3 includes high-ranked 마이클 when source rank places it first; its release_state remains upcoming and UI label text says 상영예정. releaseState=now_playing remains strict for future filtered views. index/allMovies static JS no longer filters top popularity with releaseState=now_playing; tests/build/static checks pass and Oracle deployment smoke verifies changed endpoints/files.`
+- non_goals: `No event rewrite, no crawler run, no DB schema migration, no redesign of unrelated pages, no cleanup of preview/utility pages, no destructive dirty-worktree action.`
+- hard_checks: `Focused LiveMovieControllerTests; node --check for touched JS; frontend/backend mirror checks; git diff --check; deployed smoke for /api/live/movies releaseState filters and changed static JS.`
+- llm_review_rubric: `Check releaseState whitelist behavior, TiDB ONLY_FULL_GROUP_BY compatibility, response backward compatibility, DB string rendering safety, static mirror freshness, and public deployed API behavior.`
+- evidence_required: `classification, changed files, API response shape, Michael/upcoming evidence when present, now_playing filter evidence, tests/build, deploy status, public smoke results, final dirty status.`
+- release_state_evidence: `2026-05-11 added release_date/release_state to the live movie catalog contract. LiveMovieRepository now derives release_state from MIN(m.release_date) in the grouped catalog and supports whitelisted releaseState filters; now_playing is strict and excludes unknown/upcoming rows. LiveMovieController accepts releaseState with validation and LiveMovieService returns release_date/release_state in MovieCatalogItem. index TOP3 and allMovies popular/solo sections request releaseState=now_playing, while allMovies couple/default rendering shows release-state chips for any included upcoming or unknown title. Frontend source files were mirrored into Spring static resources and cache keys were bumped to 20260510-release-state. Verification passed: node --check for frontend/backend homePopularMovies.js and allMovies.js, mirror Compare-Object checks for touched JS/CSS, WORKSPACE_CONTEXT checks, LiveMovieControllerTests, bootJar, git diff --check with CRLF warnings only, Oracle deploy with retry after known restart-time 502, public /api/health ok, public query=마이클 returned release_date=2026-05-13 and release_state=upcoming, public releaseState=now_playing returned 5/5 now_playing rows, public releaseState=upcoming returned 5/5 upcoming rows, deployed static JS contains releaseState=now_playing, and root/allMovies HTML contains the release-state cache key. No secret values were printed.`
+- release_state_retrospective: `task=distinguish upcoming movies in live catalog; score_total=7; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=after public smoke, releaseState=now_playing was tightened from not-upcoming to confirmed now_playing only; verification_outcome=syntax, mirror, focused Spring test, bootJar, deploy, and public API/static smoke passed; collisions_or_reclassifications=existing broad dirty worktree preserved; next_rule_change=when endpoint filters use semantic labels, keep unknown as a separate state rather than silently folding it into current results.`
+- ranked_upcoming_evidence: `2026-05-11 changed the release-state policy after user clarification: default popularity rankings now include upcoming rows by source rank/booking signals instead of demoting them, while strict releaseState filters remain available. index TOP3 and allMovies trending/AI pick now use the default catalog without releaseState=now_playing, and upcoming UI copy changed from 개봉 예정 to 상영예정. The allMovies solo recommendation section still uses releaseState=now_playing because it is a "보기 좋은" recommendation, not the popularity ranking. Frontend source files were mirrored into Spring static resources and cache keys were bumped to 20260511-ranked-upcoming. Verification passed: node --check for homePopularMovies.js and allMovies.js, mirror checks, LiveMovieControllerTests, bootJar, build resource checks, git diff --check with CRLF warnings only, Oracle deploy with retry after known restart-time 502, public /api/health ok, public default /api/live/movies?limit=3 returned 마이클 first with release_date=2026-05-13 and release_state=upcoming, public releaseState=now_playing returned only now_playing rows, deployed home JS has no TOP3 now_playing filter, deployed allMovies JS popular fetch uses default catalog, UTF-8 decoded deployed JS contains 상영예정, and root/allMovies HTML contains 20260511-ranked-upcoming. No secret values were printed.`
+- ranked_upcoming_retrospective: `task=rank upcoming movies but label them; score_total=6; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=user clarified product semantics from excluding upcoming to preserving ranking truth with clear status label; verification_outcome=syntax, mirror, focused Spring test, bootJar, deploy, and public API/static smoke passed; collisions_or_reclassifications=existing broad dirty worktree preserved; next_rule_change=separate factual popularity rank from screening availability labels before filtering ranked lists.`
+
+- task: `Remove allMovies/event hardcoding and improve live poster/event sections`
+- phase: `verified-deployed`
+- previous_task: `Connect live movie catalog API, posters, and map SDK cleanup verified and deployed on 2026-05-10.`
+- scope: `Improve main popular poster quality, remove hardcoded allMovies sections for alone/couple/event data, keep hidden gem as explicit dummy/demo content, and connect main events plus events.html to DB-backed APIs.`
+- verification_target: `STATE contract, backend event/movie API tests/build, frontend syntax/static mirror checks, deployed public smoke for movie categories/events, and no secret output.`
+- classification: `score_total=10; single-session API plus frontend data-binding repair; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- score_breakdown: `backend movie category API 2; backend event API and DB mapping 2; frontend allMovies hardcoding removal 2; main event rendering 1; poster quality CSS/source selection 1; Oracle deploy/public smoke 1; dirty worktree preservation 1`
+- hard_triggers: `public API surface, DB read model, HTML rendering of DB strings, deployment/external service checks, existing dirty worktree`
+- selected_rules: `freeze API contracts before edits; use DOM-safe rendering/textContent for DB content where touching frontend; do not print secrets; preserve unrelated dirty worktree changes; keep hidden gems intentionally dummy-only; mirror frontend files into Spring static resources; deploy only after local verification passes`
+- selected_skills: `none`
+- execution_topology: `single-session`
+- orchestration_value: `medium`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the user did not request subagents and the responsive overlay plus stylesheet wiring must stay coordinated across frontend and static mirror files.`
+- reason: `The user reported remaining deployed UI/data issues and explicitly asked to replace hardcoded allMovies/event content with API/DB-backed data except for hidden gems, plus improve top poster quality.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; backend LiveMovieController/Service/Repository and focused tests; backend event repository/service/controller if current /api/events is static or unsafe; frontend/src/js/pages/homePopularMovies.js and mirror; frontend/src/js/pages/allMovies.js and mirror; frontend/src/js/api/client.js only if needed; frontend/js event modules and backend static mirrors if they are still legacy; frontend/backend CSS for poster/event card rendering; frontend/backend index.html, allMovies.html, events.html script/cache keys if needed.`
+- contract_freeze: `Keep hidden gem recommendations as clearly intentional dummy/demo content on allMovies. Add or extend read-only movie catalog API filters so "혼자 보기 좋은 영화" uses current movie API results ranked by one-person audience/book-rate signals when available, falling back to live rank/showtime score rather than hardcoded titles. "연인과 보기 좋은 영화" must use API data filtered by romance tags/genres and randomized deterministically enough for the page load, with live poster/title/provider/meta. Improve main top 1-3 poster quality by avoiding CSS/image upscaling blur where possible and preferring available high-resolution poster_url values. Connect main "지금 인기 이벤트" and events.html to DB-backed movie_events data through safe API mapping, removing frontend hardcoded event arrays and unsafe HTML interpolation. Do not mutate event schema or crawl new external events in this round; use existing DB rows.`
+- evaluation_need: `full; this touches public DB-backed APIs, HTML rendering, and deployed UX.`
+- project_invariants: `No secret values in output, no paid API, no destructive DB operation, no event schema rewrite, no bridge auto-start, frontend and Spring static mirrors stay synced, hidden gems remain the only dummy section.`
+- task_acceptance: `Public site returns non-empty DB-backed events; main event grid and events.html render event cards from API without hardcoded data; allMovies alone/couple sections are populated from movie API data with posters and metadata; hidden gem section is explicitly dummy/demo; top 1-3 posters render at better quality; tests/build/static checks pass and Oracle deployment smoke verifies changed endpoints/files.`
+- non_goals: `No new crawler provider, no event table rewrite, no paid AI/API use, no redesign of unrelated pages, no destructive cleanup of current dirty worktree.`
+- hard_checks: `Focused backend tests for movie catalog/events; node --check for touched JS; frontend/backend mirror checks; git diff --check; deployed smoke for /api/live/movies category filters, /api/events, root/allMovies/events static resources.`
+- llm_review_rubric: `Check DB string rendering for XSS, endpoint parameter bounds, deterministic fallback behavior for sparse tags, frontend hardcoded data removal except hidden gems, static mirror freshness, and deployed DB/API availability.`
+- evidence_required: `classification, files changed, API response shape/counts, hardcoding removal checks, tests/build, deploy status, public smoke results, and final dirty status.`
+- live_sections_events_evidence: `2026-05-10 removed hardcoded movie rendering from allMovies except the explicitly dummy hidden-gems section. /api/live/movies now accepts section=alone and section=couple; alone ranking prioritizes audience:alone tags when present and otherwise solo-friendly genre signals plus booking_rate, while couple ranking prioritizes audience:date/genre:romance and randomizes within the section. Megabox SharedImg poster URLs are upgraded from _150/_230 thumbnails to _420 before frontend rendering, improving main TOP 1-3 poster quality without switching to huge original files. allMovies.js now renders TOP3, AI pick, genre, solo, and couple sections from API data through DOM-safe node creation. events API now returns a bounded DTO list with hot/category/source/imageUrl/eventUrl fields instead of exposing entities directly, and frontend event renderer no longer injects DB strings through innerHTML. Main event grid and events.html both fetch /api/events with explicit limits. Frontend files were mirrored into Spring static resources. Verification passed: hardcoded old allMovies movie-title search returned no matches outside the dummy section, event renderer unsafe innerHTML/onerror search returned no matches, node --check passed for touched JS, LiveMovieControllerTests and MovieEventControllerTests passed, bootJar passed, Oracle deploy uploaded and restarted service active, retry public /api/health returned ok after the known immediate 502, public /api/live/movies?limit=3 returned 3 posters with _420 URLs, /api/live/movies?section=alone returned 4 DB-backed movies, /api/live/movies?section=couple returned 5 DB-backed movies with romance top=true, /api/events?limit=4 returned 4 events with imageUrl/eventUrl/hot property, root/events/allMovies cache keys were updated, and public allMovies no longer contains the old hardcoded titles. No secret values were printed.`
+- live_sections_events_retrospective: `task=remove hardcoded allMovies/event data and improve poster quality; score_total=10; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=the prior live catalog task expanded into section-specific movie curation and event DTO/API rendering; verification_outcome=static hardcoding/XSS checks, JS syntax, focused backend tests, bootJar, Oracle deploy, and public API/static smoke passed; collisions_or_reclassifications=existing broad dirty worktree preserved and hidden gems intentionally remains the only dummy section; next_rule_change=when UI asks for hardcoding removal, prune the HTML fallback containers as well as JS render paths.`
+- live_catalog_deploy_evidence: `2026-05-10 added and deployed the live movie catalog path. TiDB movies already had 236 rows with poster_url and the event table already had 109 event rows with image_url/event_url, so event work stayed lower priority. Applied the idempotent poster-storage metadata migration to movies for future R2-backed crawls: poster_source_url, poster_r2_key, poster_etag, poster_storage_status, and poster_stored_at. Added GET /api/live/movies backed by movies/showtimes/posters, wired index TOP3 and allMovies.html to render DB-backed posters through DOM-safe textContent/node creation, updated local 5510 API base handling, synced frontend files into Spring static resources, and normalized movieTheaterMap Kakao SDK loading to autoload=false with services,clusterer. Initial public smoke found TiDB ONLY_FULL_GROUP_BY rejecting aggregate ORDER BY aliases; LiveMovieRepository now wraps the grouped catalog in a derived table and sorts outside the GROUP BY. Verification passed: node --check for touched JS, frontend/backend static mirror check, LiveMovieControllerTests, bootJar, git diff --check with CRLF warnings only, Oracle redeploy, public /api/health ok, public /api/live/movies?limit=3 returned 3 DB-backed movies with databaseAvailable=true and poster_present=true for all top 3, root contains homePopularMovies.js, allMovies contains allMovies.js, both live JS files return 200, and map SDK markup is normalized. The deploy script still reports restart-time Nginx 502 before Spring finishes booting; retry health succeeds and this is logged resolved in ERROR_LOG.md. No secret values were printed.`
+- live_catalog_deploy_retrospective: `task=connect crawled movie/poster data to main and allMovies then deploy; score_total=9; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=public smoke exposed a SQL mode mismatch that local MVC tests could not catch, so repository SQL was repaired and redeployed; verification_outcome=syntax, focused backend tests, bootJar, mirror/diff checks, TiDB schema evidence, Oracle deploy, and public API/static smoke passed; collisions_or_reclassifications=existing broad dirty worktree preserved and event work intentionally left as lower-priority because current DB already has event image/url rows; next_rule_change=for DB-backed catalog endpoints, include a real TiDB query smoke before deployment and update the deploy script to retry public health after restarts.`
+- oracle_redeploy_current_evidence: `2026-05-10 redeployed the current portfolio build to the configured Oracle VM. Required Oracle/TiDB/R2 env keys were checked for presence only. scripts/deploy/deploy_oracle_portfolio.ps1 -DryRun passed and confirmed sanitized env upload plan with ORACLE_* keys excluded. The first sandboxed bootJar failed with Gradle loopback connection restriction, then approved external Gradle 8.14.4 bootJar succeeded and produced backend/build/libs/daboyeo-backend-0.1.0-SNAPSHOT.jar at 132064788 bytes. Real deploy uploaded sanitized env, app.jar, and scripts/ai_bridge_agent.py, detected remote_owner=ubuntu, restarted daboyeo.service active, and removed the local sanitized env. The deploy script's immediate public health check hit restart-time Nginx 502; this was logged resolved in ERROR_LOG.md. Follow-up checks passed: public /api/health 200 with status ok, VM-local 127.0.0.1:5500 /api/health 200, nginx active, Java listening on 5500, public root 200 and contains responsive.css link, public daboyeoAi and movies pages 200, public /src/css/responsive.css 200, and provider health 200 with codex_status=ready. No secret values were printed.`
+- oracle_redeploy_current_retrospective: `task=redeploy current DABOYEO portfolio build to Oracle; score_total=8; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=previous frontend responsive task became external deployment after explicit user request; verification_outcome=dry-run, external bootJar, remote restart, public/internal health, static resource checks, and provider health passed; collisions_or_reclassifications=existing dirty worktree preserved and only STATE.md/ERROR_LOG.md were edited locally during deployment; next_rule_change=the deploy script should retry public health for Spring startup grace instead of failing on an immediate restart-time 502.`
+- responsive_real_pages_evidence: `2026-05-10 narrowed the responsive work to pages directly reachable from index only. frontend/src/css/responsive.css and the Spring static mirror now wire only into frontend/index.html, daboyeoAi, movies, allMovies, events, and seatRecommendMbti, with matching backend static HTML. Removed responsive.css wiring from daboyeoAi*Preview, dd, priceComparison, priceComparison2, movieTheaterMap, and cgvSeatMap, and pruned non-target selectors for price comparison, nearby theater map, and CGV seat map layouts from the shared responsive overlay. Events was corrected from /src/css absolute stylesheet links to relative ../css links so both the frontend static server and Spring /src/pages route load the same CSS. Verification passed: direct-entry link check clean, excluded-link check clean, non-target selector scan clean, mirror check complete for all changed frontend/backend pairs, WORKSPACE_CONTEXT section check passed, git diff --check passed with CRLF warnings only, and excluded page content diff shows no responsive-task content changes beyond line-ending warnings.`
+- responsive_real_pages_retrospective: `task=direct-index-entry responsive polish excluding previews and utility pages; score_total=8; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=user clarified that seat maps and pages not directly connected from index are out of scope, so cgvSeatMap, movieTheaterMap, priceComparison, priceComparison2, dd, and preview pages were unwired and the CSS overlay was pruned; verification_outcome=direct-entry link, excluded-link, non-target selector, mirror, WORKSPACE_CONTEXT, and diff checks passed; collisions_or_reclassifications=existing dirty worktree preserved and final responsive scope is limited to index, daboyeoAi, movies, allMovies, events, and seatRecommendMbti; next_rule_change=when a request says actual pages, derive the target list from index links before wiring shared CSS.`
+- ai_motion_apply_evidence: `2026-05-10 applied the accepted open-background motion loading design to the real AI loading renderer. renderLoadingMessage now returns the motion-loading-card structure with deterministic taste particles, poster cluster, taste core, candidate stream, result-card silhouettes, status track, and centered copy. daboyeoAi.css now scopes the accepted loading background, responsive geometry, motion layers, keyframes, status animation, and reduced-motion fallback to .motion-loading-card. daboyeoAi.html cache keys were bumped to 20260510-motion-loading. Frontend and Spring static mirror HTML/CSS/JS files are synced. Verification passed: node --check for both AI JS files, frontend/backend Compare-Object for HTML/CSS/JS, cache-key and motion selector static checks, WORKSPACE_CONTEXT raw and section checks, git diff --check with CRLF warnings only, browser open of the real AI page on 5510 with console warning/error count 0, and a mock-local browser flow serving actual frontend/src files rendered the loading step with .motion-loading-card=1, .taste-particle=58, and 4 status steps. The 5510 static page cannot complete live session flow by itself because it is not the API server; that verification gap was logged in ERROR_LOG.md and covered with a temporary local mock API.`
+- ai_motion_apply_retrospective: `task=apply motion loading to real AI page; score_total=6; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=previous preview-only task became real loading-state application after user approval; verification_outcome=syntax, mirror, cache/static checks, WORKSPACE_CONTEXT, diff check, 5510 load/console check, and mock-local browser loading-state check passed; collisions_or_reclassifications=existing broad dirty worktree preserved and changes stayed in actual AI frontend/static mirrors plus STATE.md/ERROR_LOG.md; next_rule_change=when an actual page is opened from a static-only port, either run the backend first or use a clearly logged mock-local browser harness for UI-only loading verification.`
+- ai_motion_preview_evidence: `2026-05-10 added a separate preview-only DABOYEO AI loading motion page. The motion storyboard combines selected poster cards, taste particles, a central taste vector, candidate sweep/elimination, and three recommendation-card skeletons. Added matching frontend files and backend static mirror files, with no changes to daboyeoAi.html, daboyeoAi.js, or daboyeoAi.css. Verification passed: node --check for the new JS, frontend/backend mirror Compare-Object checks for HTML/CSS/JS, no fetch/XMLHttpRequest/API references in the preview files, WORKSPACE_CONTEXT raw and section checks, git diff --check with line-ending warnings only, in-app browser opened http://127.0.0.1:5510/pages/daboyeoAiMotionPreview.html, expected preview text was present, and browser console warnings/errors were empty.`
+- ai_motion_preview_retrospective: `task=motion-only AI loading preview; score_total=5; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=previous deployment/security task was complete, so this was reclassified as a preview-only frontend slice; verification_outcome=syntax, mirror, no-API static scan, WORKSPACE_CONTEXT, diff check, and in-app browser check passed; collisions_or_reclassifications=existing dirty worktree preserved and only new preview files plus STATE.md were touched; next_rule_change=for loading-screen design work, keep preview pages isolated until the user explicitly chooses one to apply.`
+- ai_motion_preview_open_background_contract: `2026-05-10 score_total=5; selected_profile=single-session preview refinement; hard_trigger=browser-comment visual feedback; write_sets=STATE.md, frontend/src/pages/daboyeoAiMotionPreview.html, frontend/src/css/daboyeoAiMotionPreview.css, frontend/src/js/pages/daboyeoAiMotionPreview.js, backend static mirrors; reason=the selected browser comment says the preview should not use a section box and should look like the actual loading screen over the background. Acceptance is the preview removes visible section/viewport boxes, keeps motion elements as ambient background layers, uses loading-screen centered copy, preserves preview-only isolation, and passes syntax/mirror/diff/browser checks.`
+- ai_motion_preview_open_background_evidence: `2026-05-10 applied the browser-comment feedback to the separate motion preview. Removed the visible section/viewport box styling and changed the preview to an open-background loading composition: centered loading copy over the AI background, taste-vector animation above the title, poster/candidate/result motion as ambient background layers, subtle status track and text, and top status set to 분석 중. Frontend and backend static mirror files were synchronized. Verification passed: node --check for the preview JS, frontend/backend mirror Compare-Object checks for HTML/CSS/JS, no fetch/XMLHttpRequest/API references in preview files, no diff in real daboyeoAi.html/js/css, WORKSPACE_CONTEXT raw and section checks, git diff --check with line-ending warnings only, in-app browser reload of http://127.0.0.1:5510/pages/daboyeoAiMotionPreview.html, expected text present, and browser console warnings/errors empty.`
+- ai_motion_preview_open_background_retrospective: `task=open-background motion loading preview refinement; score_total=5; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=browser comment changed visual structure from framed preview card to actual-loading-style open composition; verification_outcome=syntax, mirror, no-API scan, no-live-AI diff, WORKSPACE_CONTEXT, diff check, and in-app browser check passed; collisions_or_reclassifications=existing dirty worktree preserved and real AI loading files remained untouched; next_rule_change=for loading previews, start from the actual loading-state geometry first and add motion as ambient layers rather than framed demo panels.`
+- ai_motion_preview_responsive_contract: `2026-05-10 score_total=6; selected_profile=single-session visual QA; hard_trigger=responsive frontend visual verification; write_sets=STATE.md, frontend/src/pages/daboyeoAiMotionPreview.html, frontend/src/css/daboyeoAiMotionPreview.css, frontend/src/js/pages/daboyeoAiMotionPreview.js, backend static mirrors; reason=user asked to fully correct the proportions after moving the animation from boxed layout to full-background layout. Acceptance is stable geometry across mobile 390x844, current comment-like 655x957, laptop 1365x768, and desktop 1920x1080; no clipped visible ambient cards on narrow screens; no text/status overlap; deterministic preview motion; static mirrors synced; real AI loading files untouched; and browser captures show the corrected result.`
+- ai_motion_preview_responsive_evidence: `2026-05-10 fully corrected the open-background motion preview proportions. CSS now uses viewport-safe loading geometry, bounded min/max heights, center-relative left/right ambient zones, narrow-screen hiding for right-side candidate/result layers, short-height compaction, and cache-busted CSS/JS links. JS particle generation is deterministic instead of Math.random-based so reloads do not change the visual field. Frontend and backend static mirror files are synced. Browser QA used viewport overrides for 390x844, 655x957, 1365x768, and 1920x1080 plus late-animation captures; narrow late frame no longer clips result cards, desktop late frames keep poster/result layers in safe zones, and console warnings/errors were 0. Verification passed: node --check, HTML/CSS/JS mirror Compare-Object checks, no preview API/fetch references, no diff in real daboyeoAi.html/js/css, WORKSPACE_CONTEXT raw and section checks, git diff --check with line-ending warnings only, and final viewport override reset.`
+- ai_motion_preview_responsive_retrospective: `task=perfect responsive correction for open-background AI motion preview; score_total=6; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=visual QA found cached CSS and a missing result-assembly hide rule at 655px late animation, so cache-bust links and narrow-screen layer hiding were added; verification_outcome=syntax, mirror, no-API scan, no-live-AI diff, WORKSPACE_CONTEXT, diff check, multi-viewport browser captures, late-frame captures, and console check passed; collisions_or_reclassifications=existing dirty worktree preserved and only preview files plus STATE.md changed; next_rule_change=for preview pages, add cache-bust links immediately and test both early and late animation frames across breakpoints.`
+- oracle_env_cleanup_contract: `2026-05-10 score_total=4; selected_profile=single-session; hard_trigger=secret/env deployment config; write_sets=STATE.md, backend/src/main/resources/application.yml, .env; reason=the deployment env already contains TIDB_* keys, so Spring should fall back to those instead of requiring duplicated DABOYEO_DB_* mirror keys. Do not print secret values. Acceptance is application.yml resolves DB URL/username/password from DABOYEO_DB_* first and TIDB_* second, .env no longer carries duplicated DABOYEO_DB_* entries, and verification avoids exposing values.`
+- oracle_env_cleanup_evidence: `2026-05-10 changed backend application.yml so Spring datasource resolves DABOYEO_DB_* first and falls back to existing TIDB_HOST, TIDB_PORT, TIDB_DATABASE, TIDB_USER, TIDB_PASSWORD, and TIDB_SSL. Removed duplicated DABOYEO_DB_URL, DABOYEO_DB_USERNAME, and DABOYEO_DB_PASSWORD from .env without printing values. Verification passed: TIDB_* key presence 5/5, DABOYEO_DB_* mirror presence 0/3, application.yml key-only inspection, git diff --check with CRLF warnings only, and backend bootJar exit 0.`
+- oracle_env_minimal_cleanup_evidence: `2026-05-10 pruned .env to the Oracle free fallback minimum without printing values. Removed unused or redundant keys: DATABASE_URL, DABOYEO_RECOMMEND_OPENAI_MODEL, DABOYEO_AI_BRIDGE_TOKEN, DABOYEO_POSTER_PUBLIC_BASE_URL, DABOYEO_SYNC_ENABLED, DABOYEO_SYNC_TIMEOUT_SECONDS, DABOYEO_SHOWTIME_SYNC_ENABLED, DABOYEO_SHOWTIME_INCLUDE_CGV, DABOYEO_SHOWTIME_DATE_OFFSETS, and DABOYEO_SEAT_SYNC_ENABLED. Kept the explicit overrides that matter for deployment: backend port, fallback provider, Flyway enabled, python3 sync executable, startup sync disabled, bounded sync cron, TIDB, and R2 keys. Verification passed: required minimal key presence 18/18 and git diff --check with CRLF warnings only.`
+- oracle_env_tidb_single_source_contract: `2026-05-10 score_total=3; selected_profile=single-session; hard_trigger=secret/env deployment config; write_sets=STATE.md, backend/src/main/resources/application.yml, .env.example/docs if stale examples exist; reason=DABOYEO_DB_* remains a confusing duplicate override even if actual .env no longer has it. Acceptance is Spring datasource uses TIDB_* directly, stale DABOYEO_DB_* examples are removed, actual .env still has no DABOYEO_DB_* keys, and no secret values are printed.`
+- oracle_env_tidb_single_source_evidence: `2026-05-10 removed DABOYEO_DB_* as a supported visible env path for the portfolio deployment. Spring datasource now reads TIDB_HOST, TIDB_PORT, TIDB_DATABASE, TIDB_USER, TIDB_PASSWORD, and TIDB_SSL directly. Removed stale DABOYEO_DB_* and DATABASE_URL examples from .env.example, docs/AI_CODEX_OAUTH_DEPLOYMENT_PLAN.md, and docs/TEAM_DB_SETUP.md. Verification passed: key-only search found no DABOYEO_DB_URL, DABOYEO_DB_USERNAME, DABOYEO_DB_PASSWORD, or DATABASE_URL in env examples/docs/application.yml; actual .env has no DABOYEO_DB_* or DATABASE_URL keys; git diff --check passed with CRLF warnings only; sandbox bootJar failed due known Gradle loopback restriction, and elevated bootJar passed.`
+- oracle_vm_ssh_bootstrap_contract: `2026-05-10 score_total=6; selected_profile=single-session; hard_triggers=deployment/external service connection, secret/env handling, VM bootstrap; write_sets=STATE.md and deployment scripts/docs only if needed; reason=the Oracle VM now exists and .env has ORACLE_HOST, ORACLE_USER, and ORACLE_SSH_KEY_PATH, so the next bounded stage is SSH connectivity and server readiness discovery before any deploy writes. Do not print secret env values or private key contents. Acceptance is SSH connectivity verified or blocked with exact non-secret cause, OS/user detected, and next bootstrap steps identified.`
+- oracle_vm_deploy_evidence: `2026-05-10 deployed the portfolio backend to Oracle Ubuntu 24.04 aarch64. SSH connectivity was verified after narrowing the local private-key ACL. Installed Java 21, Python venv/pip, Nginx, curl, and netfilter-persistent. Uploaded app.jar, sanitized server .env without ORACLE_* keys, collectors, scripts, and requirements.txt to /opt/daboyeo. Installed Python dependencies in /opt/daboyeo/.venv, locked /opt/daboyeo/.env to 600, registered daboyeo.service with systemd, and configured Nginx 80 -> 127.0.0.1:5500. Existing TiDB has no Flyway history table, so deployment env uses DABOYEO_FLYWAY_ENABLED=false until migrations are handled separately. Fixed PosterSeedService constructor injection with @Autowired, then focused recommendation tests and bootJar passed and the jar was redeployed. Opened VM iptables tcp/80 before the Oracle image reject rule and persisted it. Verification passed: daboyeo and nginx active, VM-internal /api/health 200 through both 5500 and Nginx, external public-IP /api/health 200, external root page 200, external /src/pages/daboyeoAi.html 200, and external /api/recommendation/providers/health 200.`
+- oracle_codex_demo_gate_contract: `2026-05-10 score_total=6; selected_profile=single-session; hard_triggers=deployed provider boundary, secret/env handling, external Oracle runtime, local Codex bridge enablement; write_sets=STATE.md, backend recommendation/bridge config and tests, scripts/ai_bridge_agent.py, env examples/docs if needed, Oracle /opt/daboyeo/.env and service state only through SSH; reason=the deployed site must be able to use Codex only during demonstrations, controlled by DABOYEO_AI_BRIDGE_TOKEN. Acceptance is token absent or blank disables Codex provider and rejects bridge work; token present plus bridge heartbeat enables Codex provider; deployed default can be switched to Codex for a demo by env, and removing token returns to fallback/no-Codex behavior without code changes. No secret values are printed.`
+- oracle_codex_demo_gate_evidence: `2026-05-10 implemented and deployed the demo-only Codex gate. RecommendationService now downgrades codex to fallback when the bridge token is missing, CodexRecommendationClient exposes bridge token presence, and scripts/ai_bridge_agent.py loads .env defaults so a demo operator can run the worker without passing secrets on the command line. Oracle /opt/daboyeo/.env was updated without ORACLE_* keys and with provider=codex plus token present, app.jar and ai_bridge_agent.py were redeployed, and daboyeo.service restarted active. Verification passed: focused recommendation tests, bootJar, remote env key-only check, external /api/health 200, external AI page 200, provider health shows codex offline when no worker heartbeat is active, bridge --once makes codex ready, fallback recommendation smoke returns 3 items, a temporary local bridge worker produced an Oracle codex recommendation smoke with status ok, model gpt-5.4-mini, count 3, the worker process was stopped, and provider health returned codex offline again after the heartbeat TTL. The first install attempt assumed a missing daboyeo Linux user and is logged resolved in ERROR_LOG.md. No secret values were printed.`
+- selfdex_oracle_deploy_repeatability_evidence: `2026-05-10 Selfdex read-only planner timed out at 120 seconds and again at 180 seconds with --limit 1, so next-task selection fell back to local evidence from the completed Oracle deployment. Added scripts/deploy/deploy_oracle_portfolio.ps1 to make the manual deploy path repeatable: it reads .env, requires ORACLE_HOST/ORACLE_USER/ORACLE_SSH_KEY_PATH, excludes ORACLE_* keys from the uploaded env, uploads the jar and ai_bridge_agent.py, detects the actual systemd service user or /opt/daboyeo owner, restarts the service in real mode, checks public health, and keeps output to non-secret status values. Updated scripts/README.md and docs/portfolio-free-r2-ai-plan.md with dry-run and deploy commands. Verification passed: PowerShell parser check, deploy script dry-run, temp deploy env absence check, static output review for Write-Host/printf sites, WORKSPACE_CONTEXT raw and section checks, and git diff --check with CRLF warnings only. No live redeploy was executed in this task.`
+- selfdex_oracle_deploy_repeatability_retrospective: `task=Selfdex-selected Oracle deploy repeatability script; score_total=6; selected_profile=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=Selfdex planner timeout forced local evidence fallback; verification_outcome=PowerShell parse, dry-run, temp cleanup, static output review, WORKSPACE_CONTEXT checks, and diff check passed; collisions_or_reclassifications=existing broad dirty worktree was preserved and the new write set stayed in scripts/deploy, scripts/README.md, docs/portfolio-free-r2-ai-plan.md, STATE.md, and ERROR_LOG.md; next_rule_change=Selfdex planner should support a bounded file allowlist or timeout-safe partial candidate mode for very large STATE.md histories.`
+- deployed_site_security_review_contract: `2026-05-10 score_total=7; selected_profile=single-session read-only; hard_triggers=deployed public runtime review, authentication/secret boundary, external request surface, AI bridge internal endpoint exposure; selected_skills=codex-security/security-scan; write_sets=STATE.md and ERROR_LOG.md only if scan errors require logging; reason=user explicitly requested codex-security review of the deployed site. Acceptance is a non-destructive security review covering threat model, public runtime probes, code-supported finding discovery, validation, attack-path analysis, and clear prioritized findings. No secrets are printed, no destructive or load-generating probes are run, and no code/server changes are made in this review task.`
+- deployed_site_security_review_evidence: `2026-05-10 completed non-destructive Codex Security review of the deployed Oracle site. Runtime probes confirmed public HTTP 200 for root, AI page, health, and provider health; HTTPS health unavailable; checked security headers absent except Server; tokenless AI bridge jobs returned 401; non-dev malicious origin preflights returned 403; dev-port wildcard origin http://evil.example:5173 was allowed by CORS; invalid parameter probes returned clean JSON without stack traces. Code-supported findings: public refresh/crawl endpoints can trigger provider collection and TiDB writes, production CORS defaults allow arbitrary hosts on dev ports, public GET routes can trigger collector work, and deployed runtime is HTTP-only with missing browser hardening headers. No live crawl/refresh POSTs or load-generating probes were executed, no secrets were printed, and no app code/server config was changed. Artifacts are under .local/security-scans/daboyeo/3358463_20260510-154338/.`
+- portfolio_security_bridge_gui_evidence: `2026-05-10 implemented the /goal portfolio stabilization stage. Public collection triggers now go through PortfolioAccessGate and are disabled by default unless DABOYEO_PUBLIC_COLLECTION_ENABLED or X-DABOYEO-ADMIN-TOKEN with DABOYEO_ADMIN_TOKEN is used. Public nearby refresh and CGV seat-layout live collector triggers are disabled by default behind DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED and DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED. CORS now uses exact allowedOrigins with no wildcard dev-port defaults and the duplicate CorsConfig was removed. Added tools/bridge-gui Electron app that never auto-starts, reads .env locally, shows only token presence, starts scripts/ai_bridge_agent.py as a child process, kills the process tree, and sanitizes token/password-like log output. Docs and .env.example document exact origins, public trigger flags, admin token, and GUI usage. Verification passed: node --check for Electron main/preload/renderer, wildcard CORS static check found only explanatory docs, focused Gradle tests for security gate/controllers/nearby/bridge/recommendation, backend bootJar, WORKSPACE_CONTEXT checks, and git diff --check with CRLF warnings only. No live deploy, DB mutation, provider crawl write, paid API call, or secret printing was performed.`
+- bridge_gui_runtime_hotfix_contract: `2026-05-10 score_total=3; selected_profile=single-session tiny runtime hotfix; write_sets=STATE.md, start-bridge-gui.cmd, tools/bridge-gui/src/main.js; reason=provider health shows the remote server is reachable and configured for codex, but codex is offline and this machine lacks Python in PATH, so the Electron bridge GUI must fall back to the bundled Codex Python runtime and installed codex.exe without printing secrets. Acceptance is launcher/GUI can resolve Python/Codex defaults without requiring .env edits, syntax checks pass, and no bridge auto-start is introduced.`
+- bridge_gui_runtime_hotfix_evidence: `2026-05-10 diagnosed Codex fallback as bridge offline, not server/provider mismatch. Local 127.0.0.1:5500 was not running, .env uses provider=codex and a remote bridge server, remote provider health was reachable but codex=offline, and no bridge process was running. Added bundled Codex Python fallback and installed codex.exe fallback to start-bridge-gui.cmd and tools/bridge-gui/src/main.js without printing token values. Verification passed: node --check tools/bridge-gui/src/main.js, git diff --check for touched files, one-shot ai_bridge_agent.py --once heartbeat using bundled Python and installed codex.exe, and remote provider health changed to codex=ready. The worker was not left running after the one-shot check.`
+- ai_three_result_hotfix_contract: `2026-05-10 score_total=4; selected_profile=single-session hotfix; hard_trigger=recommendation provider behavior and deployed runtime UX; write_sets=STATE.md, backend recommendation config/client tests, .env.example; reason=the deployed AI page can show only two results because Codex fast mode sends only three distinct-movie candidates by default and the fast prompt/schema allows one to three picks. Acceptance is fast Codex receives a wider candidate pool by default, asks for exactly three picks when possible, keeps no-secret behavior, focused tests pass, and the Oracle site is redeployed if verification succeeds.`
+- ai_three_result_hotfix_evidence: `2026-05-10 fixed the two-result AI recommendation symptom. Codex fast candidate default now matches the documented 12-candidate pool, precise default matches 20, and the Codex prompt plus JSON schema require exactly three picks whenever at least three candidates are supplied. Added a focused schema test. Verification passed: CodexRecommendationClientTests, bootJar, git diff --check, Oracle deploy completed with service active, retry health returned ok after an immediate restart-time 502, provider health showed codex ready, and a valid deployed fast Codex recommendation smoke returned status=ok, model=gpt-5.4-mini, count=3. No secret values were printed.`
+- loading_preview_contract: `2026-05-10 score_total=5; selected_profile=single-session preview-only frontend slice; hard_trigger=frontend UX visual verification; write_sets=STATE.md, frontend/src/pages/daboyeoAiLoadingPreview.html, frontend/src/css/daboyeoAiLoadingPreview.css, frontend/src/js/pages/daboyeoAiLoadingPreview.js, backend/src/main/resources/static mirrors; reason=user wants the A loading concept implemented as a separate repeat-animation page first, not applied to the production AI flow. Acceptance is an isolated preview page that matches the existing AI page shell, loops the seat-light scan animation, avoids claiming seat analysis, passes JS syntax/static checks, and can be visually captured.`
+- loading_preview_evidence: `2026-05-10 added a preview-only loading animation page for the A concept without changing daboyeoAi.html or the production loading path. The page keeps the existing AI shell, uses a looping seat-light scan visual as a proxy for showtime candidate and remaining-seat availability review, cycles estimated progress and stages, and mirrors frontend files to backend static resources. Verification passed: node --check for both JS files, frontend/static mirror hashes match for HTML/CSS/JS, git diff --check for the preview write set and STATE.md, and a headless Chrome screenshot was captured at C:\tmp\daboyeo-loading-preview-a.png.`
+- hyperframes_loading_preview_contract: `2026-05-10 score_total=5; selected_profile=single-session preview-only frontend slice; selected_skills=hyperframes; hard_trigger=frontend motion UX visual verification; write_sets=STATE.md, frontend/src/pages/daboyeoAiHyperframesPreview.html, frontend/src/css/daboyeoAiHyperframesPreview.css, frontend/src/js/pages/daboyeoAiHyperframesPreview.js, backend static mirrors; reason=user asked to try Remotion/HyperFrames-style HTML motion graphics as another separate page. Remotion tooling is not available in this session, so use a HyperFrames-style deterministic HTML composition that is previewable in the app browser and does not alter the real AI loading path. Acceptance is a separate looping motion graphic page with composition metadata, existing DABOYEO visual identity, no seat-analysis overclaim, JS/static checks, mirror parity, and app-browser URL opened.`
+- ai_loading_design_concepts_contract: `2026-05-10 score_total=5; selected_profile=single-session design/spec generation; selected_skills=imagegen,browser; hard_trigger=frontend UX visual direction mismatch; write_sets=STATE.md, docs/design.md, docs/design-assets/*.png; reason=the user rejected the prior motion preview as visually mismatched and asked to extract the site's design rules before generating five AI-analysis loading motion concepts. Acceptance is a design.md grounded in current daboyeoAi page styles, five loading-screen motion concept plans, and five generated mock images that follow the design.md without changing the real AI loading path.`
+- ai_loading_design_concepts_evidence: `2026-05-10 created docs/design.md with DABOYEO AI page design tokens, loading-motion constraints, five motion concept plans, and generated image references. Generated and copied five preview-only mock images into docs/design-assets: Poster Taste Scan, Recommendation Assembly, Showtime Candidate Matrix, Genre Signal Ribbon, and Cinematic Result Reveal. The real AI loading path was not changed.`
+- portfolio_free_r2_ai_evidence: `2026-05-09 implemented the free portfolio contract. Poster binaries now flow to Cloudflare R2 through collectors/common/poster_storage.py and collectors/common/storage.py, with fixed seed upload available at scripts/storage/upload_seed_posters_to_r2.py and crawler-discovered poster URLs mirrored during collect_all_to_tidb.py ingest when R2 config exists. TiDB schema contract and migrations now store poster_url, poster_source_url, poster_r2_key, poster_etag, poster_storage_status, and poster_stored_at. Recommendation provider routing now defaults to free fallback, keeps Codex as local demo-only, and leaves OpenAI API as a disabled future provider boundary. PosterSeedService can rewrite local seed manifest paths to an R2 public base URL when configured. Verification passed: R2 seed poster dry-run configured=true checked=76 planned=76 missing=0; actual R2 seed upload uploaded=76 failed=0; R2 object inspect succeeded; py_compile for touched Python storage/ingest scripts; node --check for frontend and backend static AI JS; focused Gradle recommendation/ingest tests; gradle bootJar; WORKSPACE_CONTEXT raw and section checks; git diff --check with CRLF warnings only. The initial sandbox R2 upload timed out and was logged resolved in ERROR_LOG.md; no secret values were printed in final evidence.`
+- portfolio_free_r2_ai_retrospective: `task=Portfolio-free R2 poster storage and AI provider contract; score_total=10; evaluation_fit=full fit because the work crosses R2 storage, TiDB schema, recommendation provider defaults, frontend copy, static mirrors, docs, and secret-handling boundaries; orchestration_fit=single-session staged because the user authorized /goal execution but not subagents, and the implementation surfaces were highly coupled; predicted_topology=single-session staged; actual_topology=single-session staged; spawn_count=0; rework_or_reclassification=the previous Codex-bridge direction shifted into a free portfolio contract with R2 poster ownership and fallback-first recommendations; reviewer_findings=the stable portfolio shape is R2 for poster binaries, TiDB for metadata, free code-score fallback for deployed demos, Codex only for local recorded demos, and OpenAI API only behind a future opt-in boundary; verification_outcome=passed seed dry-run, actual R2 seed upload, R2 inspect, Python compile, JS syntax checks, focused Gradle tests, bootJar, WORKSPACE_CONTEXT checks, and diff check; next_gate_adjustment=before live deployment, run the SQL migration against the target TiDB and keep DABOYEO_RECOMMEND_PROVIDER=fallback unless a paid API budget is explicitly approved.`
+- enrichment_refactor_evidence: `2026-05-08 completed the approved Selfdex /goal candidate inside scripts/ingest/enrich_movie_tags.py only. The long enrich_movie_tags orchestration was split into explicit phase helpers: new_enrichment_result, movie_tag_report, skipped_movie_report, upsert_planned_genres, enrich_provider_auto_tags, enrich_provider_detail_metadata, enrich_kobis_metadata, and apply_override_tags. Removed the unused apply_genre_tags helper after git grep confirmed no tracked references. CLI arguments, validate-only output, confidence/source constants, dry-run behavior, KOBIS/provider opt-in behavior, and movie_tags upsert calls were preserved. Verification passed: py_compile enrich_movie_tags.py, validate-only override parse with 8 entries/8 tags, compileall scripts/ingest, WORKSPACE_CONTEXT section checks, git diff --check with CRLF warnings only, and final git status shows only STATE.md plus enrich_movie_tags.py modified.`
+- enrichment_refactor_retrospective: `task=Refactor movie tag enrichment script boundaries; score_total=5; evaluation_fit=light fit because compile, validate-only, and diff review cover the bounded behavior contract; orchestration_fit=single-session fit because one script owns the full enrichment sequence and splitting workers would add handoff cost; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=none after /goal approval; reviewer_findings=phase helpers make DB writes and external metadata paths clearer while keeping public CLI/result shape compatible; verification_outcome=all local checks passed with CRLF warnings only; next_gate_adjustment=if this script grows again, split provider detail and KOBIS enrichment into separate modules with tests instead of adding more inline phases.`
+- commit_gate_blocker: `2026-05-08 user asked to keep Selfdex commit gate on and commit. Pre-commit checks for the daboyeo change passed, but C:\lsh\git\selfdex\scripts\check_commit_gate.py blocked the commit because Selfdex root STATE.json still describes the old daboyeo-selfdex-planning-timeout-repair contract and does not include scripts/ingest/enrich_movie_tags.py in its write_sets. First gate attempt also hit Selfdex checkout git dubious-ownership when include-git-diff was enabled, so the retry used --changed-path plus --no-git-diff and failed on budget-out-of-contract-path. No commit was created.`
+- commit_gate_override: `2026-05-08 user explicitly overrode the Selfdex gate blocker with "그냥 커밋 푸시 ㄱㄱ"; proceed with normal git commit and push of the verified daboyeo change without changing Selfdex root STATE.json.`
+- branch_merge_evidence: `2026-05-08 committed the dirty lsh recommendation baseline as 21ec604 fix: stabilize AI recommendation flow, then fetched origin and audited origin/main, origin/ksg, origin/kmh, and origin/feature/ksg-event. origin/main had only the old scaffold commit. origin/ksg was imported as the latest AI page spacing/copy/cache-bust patch into frontend and Spring static mirrors. origin/feature/ksg-event had unrelated history, so the safe event slice was selectively imported: Docker metadata, Lotte movie-event crawler/service/controller/domain/repository/scheduler/migrations/tests, and matching event static UI in both backend static and frontend localhost paths. The branch port overwrite was not imported because the active local browser/server contract is localhost:5500. origin/kmh was selectively imported for the backend map/nearby refresh work: TheaterMapRepository/Service/tests, CGV bridge no-op handling, Megabox skip-master area flow, nearby target/service/repository enhancements, showtime sync optional CGV movieNo handling, live nearby nearest-provider behavior, liveMovies provider normalization, and focused tests. Stale kmh deletions of frontend/src/js/constants/regions.js and frontend/src/map/theaters.json were not accepted because current index/script imports still depend on them; wholesale kmh homepage/map rewrites were also not accepted because they would break the current region-select and direct-compare contract. Verification passed: node --check for touched AI/live/event JS mirrors, python py_compile and compileall for collectors, gradle -p backend bootJar, focused Gradle tests for live nearby/nearby refresh/theater map, conflict-marker search, git diff --check with CRLF warnings only, and WORKSPACE_CONTEXT section checks.`
+- branch_merge_retrospective: `task=Commit lsh baseline and integrate updated teammate branches; score_total=8; evaluation_fit=full fit because the user explicitly required no missed branch updates and every remote branch needed an import or skip reason; orchestration_fit=single-session fit because the branches overlap shared frontend/static/backend contracts and one conflict-resolution lane reduced rework; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=feature/ksg-event had no merge base and kmh carried stale route-deleting frontend changes, so full merge shifted to selective import with explicit omissions; reviewer_findings=the safe core was to import event functionality and backend map/nearby runtime changes while preserving localhost:5500, Codex recommendation UI, current region data dependencies, and static mirror parity; verification_outcome=syntax checks, Python compile checks, bootJar, focused Gradle tests, conflict-marker search, WORKSPACE_CONTEXT checks, and diff check passed; next_gate_adjustment=for future teammate branch merges, audit branch tips and deletion diffs before accepting broad UI rewrites, especially when a branch is old or unrelated-history.`
+- event_front_visibility_task: `2026-05-08 new task after user reported the frontend still looked unchanged on localhost:5500. score_total=4; selected profile=single-session; hard trigger=runtime DB schema mismatch from imported event frontend/API; write_sets=STATE.md and movie_events migration files only; contract_freeze=make imported event frontend visible by fixing the missing movie_events.event_url schema, applying the local DB schema patch, and verifying /api/events plus served root/static assets without changing unrelated frontend design.`
+- event_front_visibility_evidence: `2026-05-08 served root HTML already included the imported event frontend: events.css, main-event-section, main-event-grid, and event JS. The visible gap was backend data/runtime: /api/events returned 503 because movie_events was missing, then after applying V005/V006 locally it returned 503 again because MovieEvent.eventUrl expected an event_url column omitted by the migration. Fixed the repository migration by adding event_url to V005 and adding V007__movie_events_event_url.sql for already-created schemas. Applied the local DB column patch, then /api/events returned 200. Ran /api/events/crawl successfully and /api/events now returns 77 event rows, so the main event section has data to render after refresh/cache-bust. Verification passed: LotteCinemaCrawlerTest, served root event markers, and /api/events 200 with rows.`
+- ksg_event_refresh_task: `2026-05-08 new continuation after user said ksg-event had another update. score_total=5; selected profile=single-session; hard trigger=unrelated-history branch with already-selectively-imported event code; write_sets=STATE.md, backend event crawler/service files, backend and frontend event page mirrors if needed; contract_freeze=fetch origin/feature/ksg-event, isolate changes after previously imported 772308b, import only the new db3942f Megabox event crawler slice, preserve current localhost:5500/runtime fixes and event_url migration, verify compile/tests/API/static assets, then commit.`
+- ksg_event_refresh_evidence: `2026-05-08 fetched origin and confirmed origin/feature/ksg-event tip db3942f, with the only new commit after imported 772308b being "메가박스 이벤트 크롤링". Imported only that slice: MegaboxEventCrawler, MegaboxEventApiClient, MegaboxEventCategory, MovieEventService wiring for Lotte+Megabox, and the event provider dropdown order into both backend static and frontend mirrors. Preserved current localhost:5500 contract, event_url migration, TheaterMapService, recommendation work, and all prior selective-import guardrails. Verification passed: gradle -p backend bootJar, LotteCinemaCrawlerTest, git diff --check with CRLF warnings only, served index/events.css/api/events 200 after restarting Spring from the rebuilt jar, /api/events/crawl-test returned LotteCount=77 and MegaboxCount=32, and POST /api/events saved data so /api/events now returns TotalEstimate=109 with MegaboxCount=32.`
+- bridge_recovery_evidence: `2026-05-08 diagnosed the bridge-dead report. /api/health was ok and provider health reported codex ready, but .local/ai-bridge.err.log showed the real failure: a precise gpt-5.5 job with xhigh reasoning timed out after 180 seconds, then result reporting hit HTTP 404 because Spring had already timed out/removed the job. The repair changed local precise defaults in backend/src/main/resources/application.yml to gpt-5.4, medium reasoning, 8 candidates, 900 max tokens, 75s Spring result wait, and 90s job TTL. scripts/ai_bridge_agent.py now defaults DABOYEO_BRIDGE_WORKER_TIMEOUT to 70s so worker failures report before Spring drops the job. Spring restarted on localhost:5500 as PID 12952 with startup showtime sync disabled for the process; bridge worker restarted as PID 13540 using the .env token through process environment only and workspace-local backend/build/codex-bin/codex.exe. Provider health now reports expectedModels=[gpt-5.4-mini,gpt-5.4], available=true, status=ready. A live precise POST /api/recommendations smoke completed in 18.8s with status=ok, mode=precise, model=gpt-5.4, and 3 recommendations. New bridge recovered logs had no tail errors.`
+- bridge_recovery_retrospective: `task=Recover Codex AI bridge runtime; score_total=5; evaluation_fit=light fit because provider health plus one live recommendation smoke directly covered the reported failure; orchestration_fit=single-session fit because Spring config, worker timeout, restart, and smoke were one local runtime handshake; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=heartbeat-ready was not enough evidence, so the task shifted to job execution timeout alignment; reviewer_findings=the old defaults let the worker hold a precise job for twice as long as Spring waited, making the bridge appear alive but functionally dead; verification_outcome=py_compile, bootJar, /api/health, provider health, live precise recommendation smoke, bridge log tail, WORKSPACE_CONTEXT checks, and git diff --check passed with CRLF warnings only; next_gate_adjustment=for future bridge health reports, check provider health and an actual recommendation job before deciding the worker is healthy.`
+- responsive_scroll_evidence: `2026-05-08 tuned the AI result scroller after the user reported the previous smooth scroll felt too slow and laggy. The JS-controlled result list now uses RESULT_SCROLL_ANIMATION_MS=300, RESULT_SCROLL_WHEEL_THRESHOLD=6, RESULT_SCROLL_WHEEL_RESET_MS=80, and a front-loaded cubic ease-out curve instead of the previous 720ms ease-in-out. .ai-result-list now uses scroll-behavior:auto so native CSS smooth scrolling does not stack with requestAnimationFrame updates. setupResultListScrollAnimation now skips non-scrollable lists, preserving the mobile/non-scroll fallback. Cache key is 20260508-result-snap-responsive. Frontend, Spring static, and backend build JS/CSS/HTML hashes match; bootJar passed; localhost:5500 was restarted from the rebuilt jar; /api/health returned ok; served HTML/CSS/JS confirmed the responsive cache key, CSS auto scroll behavior, 300ms animation, 6px wheel threshold, and ease-out curve.`
+- responsive_scroll_retrospective: `task=Tune AI result scroll responsiveness; score_total=3; evaluation_fit=light fit because the issue was a direct interaction-feel regression; orchestration_fit=single-session fit because JS timing, CSS scroll behavior, cache keys, static mirrors, and localhost refresh were one tight surface; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=the previous smooth-scroll fix was too slow in real use, so the contract shifted from softer motion to responsive motion; reviewer_findings=the likely lag source was stacked CSS smooth scrolling plus long JS rAF duration and ignored wheel input during a long animation; verification_outcome=node checks, source/static/build parity, bootJar, localhost health, served cache/CSS/JS checks, WORKSPACE_CONTEXT checks, and git diff --check passed with CRLF warnings only; next_gate_adjustment=for scroll UX, keep animation under roughly 300ms unless the user explicitly wants cinematic pacing.`
+- smooth_scroll_evidence: `2026-05-08 made the AI result one-card scroller feel softer by adding a scoped requestAnimationFrame scroll controller in daboyeoAi.js. Multiple-result lists now intercept only vertical wheel input inside the result list, buffer tiny wheel deltas, animate card-to-card movement over 720ms with cubic ease-in-out, support Arrow/Page/Space/Home/End navigation, temporarily disable scroll-snap during the animation, and immediately jump for prefers-reduced-motion users. Frontend and Spring static JS/HTML mirrors were synchronized, cache key is 20260508-result-snap-smooth, backend build resources match source/static hashes, bootJar passed, localhost:5500 was restarted from the rebuilt jar, /api/health returned ok, served HTML confirms the smooth cache key, and served JS confirms RESULT_SCROLL_ANIMATION_MS, setupResultListScrollAnimation, requestAnimationFrame, wheel timer cleanup, and reduced-motion support.`
+- smooth_scroll_retrospective: `task=Smooth AI result card scroll animation; score_total=3; evaluation_fit=light fit because the request was a narrow browser-comment motion polish; orchestration_fit=single-session fit because one JS controller plus HTML cache key and static mirrors are tightly coupled; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=none; reviewer_findings=the main risk was double-trigger jitter from native scroll-snap fighting programmatic movement, handled by disabling snap during the eased animation and buffering wheel deltas; verification_outcome=node checks, source/static/build parity, bootJar, localhost health, served cache/JS checks, WORKSPACE_CONTEXT checks, and git diff --check passed with CRLF warnings only; next_gate_adjustment=for future motion tweaks, test the input controller separately from layout math so card sizing fixes do not get mixed with animation tuning.`
+- one_card_snap_evidence: `2026-05-08 applied browser review comments to the AI result screen. The result layout now hides page-level vertical scroll on desktop result screens, the result list is a one-card scrollport with grid-auto-rows:100%, zero inter-card gap, one-card height via --ai-result-list-height, mandatory vertical snap, hidden scrollbar chrome, and a small CSS-only animated scroll cue when multiple recommendations exist. Result cards no longer allow metadata to spill visually: body overflow is clipped inside the card, card content uses tighter spacing, result text is line-clamped on desktop, showtime metadata is a 4-column desktop grid, and showtime labels are shortened by formatting startsAt as M월 D일 HH:mm instead of duplicating showDate plus the raw ISO value. Frontend, Spring static source, and backend build resources have matching CSS/JS/HTML hashes; cache key is 20260508-result-snap-clean. Verification passed: node --check for both AI JS mirrors, gradle -p backend bootJar, /api/health ok on restarted PID 9160, served HTML/CSS/JS checks confirmed the new cache key, one-card scroll CSS, scroll cue CSS, 4-column showtime grid, result layout multiple-results class, and date-time formatter. Browser visual automation was not completed because the browser-use plugin cache was missing browser-client.mjs; this gap was logged in ERROR_LOG.md.`
+- one_card_snap_retrospective: `task=Polish AI result one-card snap viewport; score_total=5; evaluation_fit=light mostly fit because the requested fixes were concrete browser-comment visual behaviors, though final pixel confirmation had a browser-tool gap; orchestration_fit=single-session fit because CSS, tiny JS formatting/class changes, static mirrors, and localhost refresh were one coupled result-page slice; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=previous snap still allowed next-card peek and metadata overflow, so the list was changed from a padded scroller into a one-card scrollport; reviewer_findings=the overflow was caused by card content exceeding the fixed snap height and a 4th showtime tile wrapping below the first row; verification_outcome=syntax/static/build/served checks passed, browser automation unavailable due missing plugin file; next_gate_adjustment=for future visual fixes, prefer a one-card grid row contract before tuning small spacing values.`
+- snap_scroll_evidence: `2026-05-08 tightened the AI recommendation result list into a hidden-scrollbar snap scroller. The result list now uses fixed viewport-relative height, mandatory vertical scroll snapping, scroll-snap-stop: always per card, hidden Firefox/WebKit scrollbar chrome, smoother scroll behavior, reduced result card/list vertical padding, a smaller floating poster scale, and a result-screen-specific .ai-screen :has() padding override so the visible section fits better. Frontend and Spring static CSS/HTML mirrors have matching hashes and cache key 20260508-floating-snap; backend build/resources and bootJar were refreshed. Spring was restarted on localhost:5500 as PID 16476 after the old PID 10580 served stale jar resources; /api/health returned ok and served HTML/CSS checks confirmed the floating-snap cache key, hidden scrollbar, mandatory snap, snap-stop, result list height calc, and card snap-height CSS. Browser completed a fast recommendation flow to the result page with 2 result cards, console error count 0, and keyboard PageDown on the focused result list snapped the visible item from the 1st recommendation to the 2nd recommendation.`
+- snap_scroll_retrospective: `task=Tighten AI result full-page snap scrolling; score_total=4; evaluation_fit=light fit because acceptance was concrete CSS/static behavior; orchestration_fit=single-session fit because source CSS/HTML, static mirrors, build resources, and localhost refresh were one tightly coupled page slice; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=the live server was stale and needed processResources, bootJar, and an out-of-sandbox persistent restart; reviewer_findings=the main UX bug was list/card vertical math plus visible scroll chrome, not recommendation data or JS rendering; verification_outcome=passed static parity, served checks, WORKSPACE_CONTEXT checks, bootJar, health, and diff checks; next_gate_adjustment=for result-screen visual tweaks, check served cache key before judging browser state.`
+- floating_poster_evidence: `2026-05-08 implemented selected image F on the AI result screen. Result cards now use a detached absolute poster layer with strict 2:3 sizing, contain object-fit, perspective rotate, glow, shadow, floating animation, rank tab, and mobile fallback that returns the poster to a centered non-overlapping block. The old rigid poster well is removed from the desktop layout. Multiple recommendations now render in a vertically scrollable .ai-result-list with scroll snapping, keyboard focus ring, role=list/listitem semantics, and per-card booking/seat-map actions preserved. Frontend and Spring static source mirrors have matching hashes and cache key 20260508-floating-poster; backend build/resources and bootJar were refreshed. Verification passed: node --check for both AI JS files, frontend/static/build hash parity, WORKSPACE_CONTEXT checks, git diff --check with CRLF warnings only, localhost:5500 restarted from rebuilt jar as PID 10580, /api/health 200, served HTML/CSS/JS checks confirmed the new cache key, aiFloatingPoster, has-multiple-results, absolute poster positioning, scroll-snap rule, and list/listitem roles, and the in-app browser opened the AI page with console error count 0.`
+- poster_quality_evidence: `2026-05-08 active PosterSeedService manifests are korea-boxoffice-top50-posters.json and korea-animation-boxoffice-top30-posters.json; audit found 76/76 active poster paths are .webp and /api/recommendation/poster-seed?limit=40 returned 40/40 .webp URLs. frontend/src/assets/R2/posters and backend static mirror each contain 76 .webp poster files with matching hashes; the only non-webp item is .gitkeep. Legacy recommendation/poster-seed.json still contains 30 TMDB w342 .jpg URLs but rg found no active service reference. WebP dimension audit found one low-resolution file, movie/transformers-dark-of-the-moon.webp at 198x288, and one wide-ratio outlier, movie/extreme-job.webp at 2296x2526 ratio 0.909. Updated AI poster CSS to bound seed cards to 174px outer width (190px single-column mobile), preserve 2:3 boxes, switch seed/result images from cover to contain, center artwork, lower hover zoom, and add small-source result handling. Updated AI JS to set width/height/sizes/decoding/fetchPriority hints and provide TMDB w342/w500/w780 srcset when legacy TMDB URLs ever appear. Frontend and Spring static HTML/JS/CSS mirrors have matching hashes and cache key 20260508-poster-quality. Verification passed: node --check for frontend/backend AI JS, active manifest/asset/dimension audits, gradle -p backend bootJar, Spring restarted on localhost:5500 as PID 13640, /api/health ok, served HTML/CSS/JS checks confirmed cache key/object-fit contain/no cover/image hints, sampled low-res poster returned image/webp, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only. Browser automation screenshot was not completed because Playwright CLI required npm cache/package execution and the elevated request was rejected; static served checks covered the deployed files.`
+- poster_quality_retrospective: `task=Optimize AI poster display quality and aspect ratio; score_total=6; evaluation_fit=light fit because checks were source/served/static plus visual-risk reasoning; orchestration_fit=single-session fit because CSS/JS/HTML/static mirrors were one coupled page slice; predicted_topology=single-session; actual_topology=single-session; spawn_count=0; rework_or_reclassification=server restart needed one retry because old PID 5736 still owned 5500 and PowerShell Start-Process hit duplicate Path/PATH again; reviewer_findings=the real visual risk was not active non-webp seed data but cover-cropping and over-scaling of one low-res and one wide-ratio poster; verification_outcome=passed with browser screenshot gap documented; next_gate_adjustment=for poster quality bugs, audit active manifests and natural dimensions before replacing assets or changing recommendation data.`
+- granular_mismatch_score_evidence: `2026-05-08 replaced flat genre-mismatch score capping with RecommendationScorer.reserveScoreForNoDirectTasteMatch. The shared helper compresses evidence scores into a lower reserve band instead of returning min(score, 68), and applies an extra taste_mismatch penalty when the scored candidate itself has no direct taste match. RecommendationService now uses the same helper for fallback and Codex-picked items; Codex display score first takes min(modelScore, codeScore), then compresses, so model scores cannot inflate genre-mismatched reserves. Updated tests assert service fallback scores 64/59 instead of only <=68, Codex genre-miss score 65 instead of 68, and mixed direct/reserve Codex scores 96/56/52 instead of 96/68/68. Added a scorer test proving strong and weak no-direct reserves keep score spread below the direct-match band. Verification passed: focused Gradle tests for RecommendationScorerTests and RecommendationServiceCandidateFilterTests, bootJar, Spring restarted on localhost:5500 as PID 5736, /api/health ok, /api/recommendation/providers/health Codex ready, live romance fast smoke returned status=ok model=gpt-5.4-mini with scores 66/53/50, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only.`
+- poster_first_flow_evidence: `2026-05-08 changed the AI guide flow to audience -> mood -> avoid -> posters -> genres -> mode. Poster seed now calls getPosterSeed with an empty genre list and a balanced cache key, so poster taste is captured before any genre bias. Genre selection now allows up to 3 values, preserves existing poster choices, and still submits survey.preferredGenres as an array. Back navigation from genres to posters preserves liked posters, and mode back to genres preserves selected genres. Frontend and Spring static JS/HTML mirrors have matching hashes; cache key is 20260508-poster-first; initial HTML progress is 1 / 6. Verification passed: node --check for frontend and backend static JS, dead poster genre-filter helper search returned no matches, static source checks confirmed neutral poster seed and poster->genre->mode order, bootJar passed, Spring restarted on localhost:5500 as PID 16288, /api/health ok, /api/recommendation/providers/health returned Codex ready, served HTML/JS checks passed, in-app browser confirmed poster step 4/6 before genre step 5/6, three simultaneous genres selected with aria-pressed=true, mode step 6/6 rendered, browser console error count=0, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only.`
+- poster_only_fallback_evidence: `2026-05-08 implemented selected-genre-missed poster-only fallback scoring. CandidateSearchResult now records selectedGenreRelaxed only when the service has to drop required selected genres after direct selected-genre searches miss. In that path RecommendationService derives a new analysis profile with preferredGenres removed, poster-liked genres retained, nonposter selected genre weights removed, and audience/mood/avoid/non-genre weights preserved. scorer.score, rankTasteAwareCandidates, and Codex rankAndExplain receive the poster-only profile; validatedModelScore/fallbackScore and caution grounding still use the original selected-genre profile so genre-mismatched reserves cap at <=68. Focused RecommendationServiceCandidateFilterTests passed and assert Codex receives no preferredGenres in the miss path. bootJar passed. Local Spring health passed on localhost:5500. Romance selected-genre-miss API smoke returned status=fallback, model=gpt-5.4-mini, count=3, scores=68,68,68, and genre-mismatch cautions. Persistent Spring is available on localhost:5500 through PID 22484. WORKSPACE_CONTEXT checks passed and git diff --check passed with CRLF warnings only.`
+- genre_cleanup_fallback_evidence: `2026-05-07 live audit confirmed the tag issue: movie_tags had 79 noncanonical tag_type=genre rows, including 일반콘텐트=54, mega only=6, 스페셜콘텐트=4, 공연실황=3, and a title-like 킬 빌 &#40;2026&#41; row; future showtime genres had no romance rows. Added scripts/ingest/cleanup_movie_genre_tags.py and deleted only noncanonical genre rows; post-cleanup noncanonical genre rows=0. Provider detail enrichment now checks already-tagged current/future movies too; live run checked 44 movies, planned/upserted 0 new tags, and skipped 3 no-canonical genre detail pages, proving the remaining romance gap is not a fakeable tag bug. Future canonical genre audit after cleanup: drama=19 movies, animation=10, action=4, music=4, history=3, horror=3, sf=3, adventure=2, fantasy=2, comedy=1, family=1, romance=0. RecommendationService now relaxes selected-genre hard filtering when no direct selected genre rows exist and returns low-score reserve recommendations instead of no_selected_genre_candidates. Focused RecommendationServiceCandidateFilterTests passed, bootJar passed, Spring restarted on localhost:5500 as PID 20428 after resolving local Path/PATH restart errors, /api/health returned ok, and a live romance fast smoke returned status=ok, model=gpt-5.4-mini, count=3, message='선택한 장르와 직접 일치하는 상영이 없어 조건을 넓혀 예비 추천했어.', scores 66/63/60. git diff --check and WORKSPACE_CONTEXT checks passed with CRLF warnings only.`
+- bounded_enrichment_evidence: `2026-05-07 added opt-in bounded enrichment after lightweight collection. scripts/ingest/enrich_movie_tags.py now supports --include-provider-details with --provider-detail-limit and fetches provider movie detail only for current/future movies still missing genre tags. Megabox detail lookup now uses representative_movie_id before external_movie_id because movieNo variants such as 26022302 do not expose reliable genre detail while rpstMovieNo 26022300 does. Live tag run checked 12 untagged movies, matched 11, and upserted 12 provider_detail genre tags; the only skipped row was a Seventeen live-viewing item with no canonical provider genre. Added scripts/ingest/enrich_showtime_prices.py for current/future showtimes with missing min_price_amount; live run --provider all --limit 50 checked 50 showtimes in about 42s, priced 48, upserted 321 showtime_prices, and had 0 fetch errors. Post-write audit: current/future genre coverage LOTTE_CINEMA 9/10, MEGABOX 56/56; provider_detail genre rows by value action=1, animation=3, drama=6, sf=1, thriller=1; future price coverage LOTTE_CINEMA 361/6595 and MEGABOX 113/5644; showtime_price rows LOTTE_CINEMA 2172 rows/361 showtimes, MEGABOX 870 rows/113 showtimes. Verification passed: py_compile changed ingest/collector files, override validate-only, CLI assertions, WORKSPACE_CONTEXT checks, git status --short, and git diff --check returned CRLF warnings only.`
+- collect_all_enrichment_wiring_evidence: `scripts/ingest/collect_all_to_tidb.py keeps default collection lightweight, but can now opt into post-crawl enrichment with --include-metadata-tags --include-provider-detail-tags --provider-detail-tag-limit N for missing genre tags and --enrich-missing-prices --missing-price-limit N for missing current/future showtime prices. CLI assertion confirmed defaults remain skip_metadata_tags=true, include_provider_detail_tags=false, enrich_missing_prices=false, include_provider_details=false, and missing_price_limit=100.`
+- fourteen_day_ingest_evidence: `2026-05-07 attempted 14-day provider-separated ingest with price hydration capped at 25 showtimes per date. The initial broad Lotte loop timed out after committing through 2026-05-14, and 2026-05-15 first retry lost the TiDB connection after long provider lookup; collectors/common/repository.py now pings/reconnects before DB execute. Lotte then completed 2026-05-15 through 2026-05-20 as date-specific writes. Current audit: LOTTE_CINEMA total_showtimes=6904, future_showtimes=6595, max_starts_at=2026-05-20 22:55, priced_showtimes=350, price_rows=2115. Megabox completed write checks for 20260507, 20260508, and 20260509, plus the earlier 20260514 single-showtime price probe. Current audit: MEGABOX total_showtimes=2998, future_showtimes=2208, max_starts_at=2026-05-14 16:30, priced_showtimes=76, price_rows=606. Long-running full 14-day continuation was stopped after the user asked to just confirm collection works because Lotte schedule discovery is combination-heavy and price hydration adds extra seat/price endpoint calls.`
+- megabox_to_20260520_evidence: `2026-05-07 filled Megabox showtime coverage through 2026-05-20. First 20260510 run without price still took about 236s, proving the main latency was provider movie-detail page fetches, not price. Added --skip-provider-details so Megabox collection-confirmation runs skip mobile movie detail pages inside build_movie_records/build_schedule_records. Then ran 20260511 through 20260520 with --skip-provider-details, --skip-metadata-tags, no --include-prices, and limit_schedules=500. All runs completed with price_fetch_errors=0 and schedule_date_mismatches=0. Final DB audit for MEGABOX 2026-05-07..2026-05-20 has rows for every date: 2026-05-07=901, 05-08=806, 05-09=500, 05-10=500, 05-11=500, 05-12=500, 05-13=500, 05-14=307, 05-15=301, 05-16=251, 05-17=231, 05-18=145, 05-19=150, 05-20=52. Provider summary: total_showtimes=6434, future_showtimes=5644, max_starts_at=2026-05-20 22:30, priced_showtimes=76 from earlier price runs. Verification passed: py_compile collectors/megabox/collector.py scripts/ingest/collect_all_to_tidb.py collectors/common/repository.py; WORKSPACE_CONTEXT section checks; git diff --check returned CRLF warnings only.`
+- lightweight_collection_evidence: `2026-05-07 made routine collection lightweight by default. collect_all_to_tidb.py now defaults provider movie-detail pages off, post-crawl metadata enrichment off, price off, seat snapshots off, and eager master movie/theater upserts off. --include-provider-details restores provider detail hydration, --include-metadata-tags restores post-crawl enrichment, --eager-master-upserts restores pre-upserting all discovered movies/theaters, and --lotte-schedule-strategy movie-theater preserves the old Lotte scan style. Lotte build_schedule_records now accepts include_details=false, and Lotte default schedule scan uses theater-wide blank-movie queries that the live API probe confirmed return all movies for one theater/date; blank cinema does not work. On-demand upsert now writes only movies/theaters referenced by schedules. Verification: py_compile collectors/lotte/collector.py collectors/megabox/collector.py scripts/ingest/collect_all_to_tidb.py collectors/common/repository.py passed; CLI assertions confirmed default details=false, skip_metadata_tags=true, eager_master_upserts=false, lotte_schedule_strategy=theater, and full enrichment flags still work. Lotte small write smoke for 2026-05-20 limit_schedules=20 went from the earlier 61.72s broad-default path to 14.11s with movies_upserted=2, theaters_upserted=3, schedule_queries=45, price rows=0, seats=0. Megabox small write smoke for 20260520 limit_schedules=20 completed in 11.47s with schedule_queries=2, movies_upserted=2, theaters_upserted=5, price rows=0, seats=0, mismatches=0. WORKSPACE_CONTEXT checks passed and git diff --check returned CRLF warnings only.`
+- price_ingest_evidence: `2026-05-07 implemented bounded price ingestion for Lotte and Megabox in scripts/ingest/collect_all_to_tidb.py. Price rows are extracted from Lotte Fees.Items and Megabox seatTicketAmtList/seatPolicyList, upserted into showtime_prices by provider_code + external_showtime_key + price_key, and mirrored into showtimes.min_price_amount only from real provider amounts. showtime upsert no longer overwrites an existing min_price_amount with NULL during no-price refreshes. Added --include-prices and --max-price-showtimes so normal crawls can keep price endpoint cost bounded and avoid seat snapshot writes. Megabox API retry was strengthened with browser-like headers, a cookie session, and non-JSON retry/reset handling. Bounded live writes passed: Lotte 2026-05-09 with limit_schedules=1 checked 1 showtime, priced 1, upserted 4 price rows, errors 0; the same Lotte command rerun kept total showtime_prices at 4 rows for 1 Lotte showtime, proving no duplicate growth. Megabox 20260514 with limit_schedules=1 checked 1 showtime, priced 1, upserted 8 price rows, errors 0, date mismatches 0. Final DB price summary: LOTTE_CINEMA rows=4 distinct_showtimes=1 min=5000 max=15000; MEGABOX rows=8 distinct_showtimes=1 min=49000 max=49000. db/SCHEMA_CONTRACT.md now marks showtime_prices active via bounded ingest and documents that movie/theater price aggregates must not be persisted separately. Verification passed: py_compile scripts/ingest/collect_all_to_tidb.py collectors/megabox/api.py; inline Lotte/Megabox extraction assertions; WORKSPACE_CONTEXT section checks; git diff --check returned CRLF warnings only.`
+- megabox_collection_scope_evidence: `2026-05-07 read-only Megabox investigation found the provider JSON path is still viable. Official booking/timetable HTML contains the selectPlayTimeMasterList.do reference, but the static HTML does not reliably include actual schedule rows. Live probes showed selectPlayTimeMasterList.do returns JSON for playDe 20260514/20260520/20260603 when requests use browser-like Accept/Accept-Language/Origin/Referer and retry with a fresh session after transient non-JSON Workload is so high responses. schedulePage.do returned movieFormList rows with playDe matching requested dates, including 20260514, 20260520, and 20260603. Existing collector still fails because _post_json raises immediately on JSONDecodeError and does not classify/retry provider non-JSON bodies. Seat endpoint selectSeatList.do returned seatTicketAmtList and seat rows for one sampled showtime after several transient Workload responses; therefore price/seat data exists but is expensive and should not be bulk-fetched by default. Dynamic HTML fallback via scripts/megabox_timetable_probe.py is lower priority because scrapling is not installed and JS rendering is heavier than the JSON API. Current DB has MEGABOX theaters=116 with coordinates=0 and future MEGABOX showtimes usable_nearby=0, so theater coordinates must be enriched once per branch via a cached theater master/Kakao geocode path rather than per-showtime crawling. Minimal default ingest should persist only scheduled movie/theater/screen/showtime rows, provider genre tags for scheduled movies, and a small raw debug subset; seat snapshots and price rows should be on-demand or bounded optional fetches.`
+- refresh_ingest_evidence: `2026-05-07 reran showtime ingest after DB audit showed max starts_at=2026-05-08 22:20. All-provider dry-run failed when Megabox fetch_master returned non-JSON; Megabox explicit playDe=20260507 dry-run failed the same way, so ERROR_LOG.md keeps that blocker open and no Megabox write was attempted. Lotte dry-run succeeded with provider_play_dates=28 and selectable dates 2026-05-07 through 2026-06-03. First Lotte all-provider write used max_provider_dates=14 and upserted 1000 showtimes but did not advance max because the global schedule limit filled on early dates. Follow-up explicit Lotte writes succeeded: 2026-05-09 upserted 500 showtimes, then 2026-05-10 through 2026-05-14 upserted 350/350/350/350/343 showtimes. Final DB aggregate: total showtimes=5181, current_future=4082, overall max_starts_at=2026-05-14 23:35:00. Provider max: LOTTE_CINEMA=2026-05-14 23:35:00 with 3589 total and 3280 current/future rows; MEGABOX remains 2026-05-08 22:20:00 with 1592 total and 802 current/future rows due provider non-JSON blocker.`
+- kakao_key_mirror_evidence: `2026-05-07 copied the root Kakao Maps SDK appkey from frontend/index.html to backend/src/main/resources/static/index.html. Initial backend/build/resources/main/static/index.html was stale, so gradle -p backend processResources was run; it failed inside sandbox with the known native-platform.dll issue and passed outside sandbox with approval. Final Select-String comparison showed frontendIndexAppkey, backendSourceAppkey, and backendBuildAppkey all equal. A broad --no-ignore rg saw only the new key in frontend root index, backend source static index, and backend build static index before hitting known access-denied paths under backend/build/tmp. Follow-up user-requested rebuild ran gradle -p backend bootJar outside sandbox and produced daboyeo-backend-0.1.0-SNAPSHOT.jar with BOOT-INF/classes/static/index.html containing the expected Kakao appkey. git diff --check returned CRLF warnings only.`
+- selfdex_megabox_split_evidence: `2026-05-07 Selfdex selected scripts/ingest/collect_all_to_tidb.py responsibility separation as the broad next task. Frozen /goal kept the write boundary to collect_all_to_tidb.py plus STATE.md and forbade DB write crawls. Implemented init_megabox_result, register_megabox_movie, register_megabox_branch, matching_megabox_schedules_for_query, and ingest_megabox_schedule so ingest_megabox now orchestrates play dates, movie/branch discovery, area queries, date-filtered schedules, and per-row persistence. The existing Megabox row-date guard remains before upsert_showtime, and movie id mapping, theater fallback, tag counters, showtime/screen counters, and optional seat snapshots stay in the same order. Verification passed: python -m py_compile scripts/ingest/collect_all_to_tidb.py; python -m compileall -q scripts/ingest; inline Megabox date assertion kept 20260509/2026-05-09 and rejected 20260507; static helper usage search found the new helper calls and upsert_showtime only inside Lotte and the Megabox schedule helper; WORKSPACE_CONTEXT section checks passed; git diff --check returned CRLF warnings only.`
+- verification_evidence: `2026-05-06 read-only crawlability investigation found provider detail genre data is available for Lotte and Megabox but current ingest mostly reads shallow ticketing/master lists. Lotte ticketing list rows expose MovieGenreNameKR fields but current samples are null; Lotte movie detail endpoint /LCWS/Movie/MovieData.aspx MethodName=GetMovieDetailTOBE by representationMovieCode returned genres for sampled current movies: 왕과 사는 남자=사극/드라마, 살목지=공포(호러), 프로젝트 헤일메리=SF, 슈퍼 마리오 갤럭시=애니메이션, 악마는 프라다를 입는다 2=드라마, 마녀배달부 키키=애니메이션/드라마/가족. Megabox master list rows lack genre, but mobile detail HTML https://m.megabox.co.kr/movie-detail?rpstMovieNo={movieNo} contains <span>장르</span>; sampled current movies returned 마이클=드라마, 악마는 프라다를 입는다 2=드라마, 군체=스릴러/액션, 살목지=공포(호러), 리마인더스 오브 힘=드라마/로맨스, 슈퍼 마리오 갤럭시=애니메이션, 프로젝트 헤일메리=SF, 걸즈 밴드 크라이=애니메이션, 피어스=드라마/스릴러. CGV collector could not be tested because CGV_API_SECRET is not configured in this environment; public mobile CGV detail pages historically include genre text, but current repo CGV signed API path remains blocked without secret. Verdict: for Lotte/Megabox this is not an impossible external enrichment problem; it is a crawler depth problem. Minimal next implementation should add provider detail fetch + canonical normalization after movie list discovery, cache/throttle detail calls, store raw detail in raw_json or provider_meta_json, and feed canonical_genres_from_provider_row with MovieGenreNameKR1/2/3 and Megabox parsed genre.`
+- implementation_evidence: `2026-05-07 implemented Lotte GetMovieDetailTOBE detail fetch and Megabox mobile movie-detail genre parsing, cached detail calls, merged detail genres into movie and schedule rows, expanded canonical provider-row genre extraction, and kept dry-run movie discovery lightweight. Bounded live ingest wrote provider-backed tags: Lotte movie_tags_upserted=62, Megabox movie_tags_upserted=136. Current/future DB audit found candidates for action, animation, horror, sf, adventure, drama, fantasy, history, music, and family; thriller/comedy/romance/crime remained honest no-candidate genres because current/future canonical tag count was 0. Follow-up split Codex mode config: fast now uses the Codex bridge with gpt-5.4-mini, default reasoning, 3 distinct candidates, 420 max tokens, and shorter prompt/output; precise uses gpt-5.5, reasoning_effort=xhigh, 20 candidates, and 1700 max tokens. Provider health reports expectedModels=[gpt-5.4-mini,gpt-5.5], and the bridge worker forwards per-job --model plus -c model_reasoning_effort only when the request includes reasoning. Spring restarted on localhost:5500 and bridge restarted with workspace-local codex.exe. Previous benchmark before this split: drama fast 3-run avg=0.77s while scorer-only, precise 3-run avg=22.48s. Final all-genre fast benchmark returned candidates for 10/14 UI genres and no_selected_genre_candidates for the 4 DB-empty genres. Price audit found priced current/future recommendations=0 because min_price_amount is not collected by current provider ingest. Verification: py_compile scripts/ai_bridge_agent.py, Python bridge command-construction check, focused Gradle recommendation tests outside sandbox, bootJar outside sandbox, /api/health ok, /api/recommendation/providers/health ready with both expected models, WORKSPACE_CONTEXT checks, and git diff --check passed with CRLF warnings only.`
+- megabox_date_validation_evidence: `2026-05-07 Socratic review concluded Megabox master rows and generated playDe lists are not enough; the only reliable ingest gate is row-level equality between requested playDe and returned schedule.play_date after db_date normalization. Implemented megabox_schedule_date_matches and megabox_schedules_for_requested_date in scripts/ingest/collect_all_to_tidb.py, and ingest_megabox now filters raw_schedules before any theater/screen/showtime/tag upsert. Result JSON tracks schedule_date_mismatches, bounded schedule_date_mismatch_dates, and schedule_queries_with_only_date_mismatches. Verification passed: python -m py_compile scripts/ingest/collect_all_to_tidb.py; inline helper assertion kept 20260509/2026-05-09 rows and rejected 20260507 for requested 20260509; bounded Megabox dry-run selected 20260507-20260509; git diff --check passed with CRLF warnings only. A no-write live mismatch probe for 20260611 was attempted after earlier successful probes, but Megabox returned non-JSON, so it was logged and not used as acceptance evidence.`
+
+## Retrospective
+
+- task: `Implement floating poster result layout from image F`
+- score_total: `6`
+- evaluation_fit: `light fit; acceptance was concrete visual structure, scroll behavior, static mirror parity, and served resource freshness`
+- orchestration_fit: `single-session fit; CSS layer geometry, JS list semantics, cache keys, and static mirrors were one coupled frontend slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the previous completed poster quality task became a new implementation after the user selected image F and clarified that multiple result cards must remain browsable`
+- reviewer_findings: `the result card no longer has a poster well; each recommendation owns a floating strict-ratio poster, the list scrolls vertically for multiple movies, and mobile collapses the poster safely above the body`
+- verification_outcome: `node --check passed for both AI JS mirrors; frontend/backend/build static hashes matched; bootJar passed; localhost:5500 restarted from rebuilt jar as PID 10580; served checks confirmed floating-poster cache/CSS/JS markers; in-app browser opened the page with zero console errors; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `for future result-screen visual work, update build resources or rebuilt jar before trusting localhost because a running Spring process can serve stale static files`
+
+- task: `Granular reserve scores for genre-mismatched recommendations`
+- score_total: `6`
+- evaluation_fit: `light fit; focused service/scorer tests directly cover score spread, model-score bounding, and direct-match preservation`
+- orchestration_fit: `single-session fit; scoring helper, service validation, and tests were one coupled backend semantics slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the user flagged that genre-mismatched reserves looked like a flat 68-point bucket, so the task shifted from frontend flow polish to backend score semantics`
+- reviewer_findings: `the old min(score, 68) path collapsed many high reserves; the new path compresses code-supported evidence scores and uses the lower of Codex and code scores before display`
+- verification_outcome: `focused Gradle tests passed, bootJar passed, Spring localhost:5500 restarted as PID 5736, provider health is Codex ready, live romance fast smoke returned variable reserve scores 66/53/50, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `future scoring caps should be expressed as transforms with spread-preserving tests, not only as max-score assertions`
+
+- task: `Poster-first preference flow with multi-select viewing genres`
+- score_total: `6`
+- evaluation_fit: `light fit; the acceptance was concrete UI flow order, neutral poster seed request, bounded multi-select genre payload, and Spring-served freshness`
+- orchestration_fit: `single-session fit; HTML cache, AI page JS, static mirror, build, restart, and browser check were one coupled frontend runtime slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the earlier selected-genre poster-priority idea was superseded by the user clarification to pick unbiased posters first, then choose viewing genres`
+- reviewer_findings: `poster seed no longer depends on selected genres, multi-select genres no longer clear poster picks, back navigation preserves poster and genre choices in the new adjacent steps, and Spring static files match frontend source`
+- verification_outcome: `node --check passed for both JS mirrors; static source checks passed; bootJar passed; Spring restarted on localhost:5500 as PID 16288; provider health reports Codex ready; in-app browser verified poster 4/6 -> genre 5/6 -> mode 6/6 and three selected genres; browser console had 0 errors; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when wizard step order changes, verify back navigation state retention as part of the contract instead of only checking forward CTA paths`
+
+- task: `Poster-only fallback scoring when selected genre has no direct candidates`
+- score_total: `7`
+- evaluation_fit: `full fit; the change affected candidate search state, Codex profile grounding, fallback/AI score caps, and runtime recommendation trust`
+- orchestration_fit: `single-session fit; one RecommendationService path plus focused tests was tightly coupled and had no useful disjoint write lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the queued planning-only handoff was promoted to active /goal; implementation stayed within the frozen backend service/test write set`
+- reviewer_findings: `selected-genre hits keep the existing path, selected-genre misses now send poster-only likedGenres to scorer/Codex, and final scores are still capped by the original selected-genre mismatch`
+- verification_outcome: `focused RecommendationServiceCandidateFilterTests passed, bootJar passed, localhost romance selected-genre-miss smoke returned three 68-point reserve results, WORKSPACE_CONTEXT checks passed, and git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `future sparse-genre fallback work should distinguish analysis profile, candidate search filter, and final confidence cap explicitly before changing prompts or UI copy`
+
+- task: `Fix polluted genre tags and sparse romance recommendations`
+- score_total: `8`
+- evaluation_fit: `full fit; the fix required live DB cleanup, provider-detail re-enrichment, backend fallback semantics, tests, rebuild, and runtime smoke evidence`
+- orchestration_fit: `single-session fit; tag normalization, cleanup, enrichment, and recommendation fallback were one coupled acceptance path with no useful disjoint write lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the task moved from suspecting missing romance tags to proving both genre-tag pollution and strict selected-genre empty-state behavior; Spring restart also needed a local Path/PATH environment repair`
+- reviewer_findings: `noncanonical provider category labels are no longer recommendation-visible genres, existing-genre movies are no longer skipped by provider detail enrichment, and romance fallback returns honest low-score reserves without pretending direct romance metadata exists`
+- verification_outcome: `py_compile passed; cleanup deleted 79 noncanonical genre rows and post-audit found 0 remaining; detail enrichment checked 44 current/future movies; future genre audit is canonical-only with romance still 0; focused Gradle tests and bootJar passed; localhost:5500 health ok; live romance smoke returned 3 reserve recommendations`
+- next_gate_adjustment: `selected-genre UX should distinguish metadata absence from recommendation absence; future collection should clean canonical genre tags after ingest and use provider detail enrichment as a bounded quality pass, not a default crawl cost`
+
+- task: `Bounded genre/tag and price enrichment after lightweight collection`
+- score_total: `8`
+- evaluation_fit: `full fit; provider detail ID correctness, live DB mutation, and price endpoint behavior all needed evidence`
+- orchestration_fit: `single-session fit; tag enrichment and price enrichment share the same lightweight-ingest contract and were cheaper to keep in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `first Megabox tag run produced no genres because it used external movieNo variants; current_movies now carries representative_movie_id and provider detail lookup uses it first`
+- reviewer_findings: `default collection remains lightweight; genre detail and showtime price hydration are opt-in, bounded, current/future scoped, and idempotent`
+- verification_outcome: `live tag enrichment added 12 genre tags for 11 movies, live price enrichment added 321 price rows for 48 of 50 checked showtimes, aggregate DB audit matched expectations, and local static checks passed`
+- next_gate_adjustment: `routine refresh should run lightweight schedule ingest first, then small provider-detail and price enrichment batches instead of re-enabling full detail/price crawling by default`
+
+- task: `Make default provider collection lightweight`
+- score_total: `8`
+- evaluation_fit: `full fit; runtime behavior, CLI defaults, opt-in enrichment, and live small-write timing all needed evidence`
+- orchestration_fit: `single-session fit; Lotte and Megabox shared one ingest CLI contract and one schedule/detail toggle`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `after skip-provider-details helped Megabox but Lotte still took 62s for 20 showtimes, the task expanded to remove eager master upserts and switch Lotte's default scan to theater-wide schedule queries`
+- reviewer_findings: `routine collection no longer fetches provider detail pages, prices, seat snapshots, post-crawl metadata enrichment, or all master rows by default; richer tag/metadata runs remain explicit opt-in`
+- verification_outcome: `compile and CLI assertions passed; Lotte 20-showtime smoke dropped to 14.11s and Megabox 20-showtime smoke completed in 11.47s; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `next Lotte optimization should prioritize theaters from recent DB activity or provider availability hints to reduce empty theater queries on sparse future dates`
+
+- task: `Fill Megabox showtime coverage through 2026-05-20`
+- score_total: `8`
+- evaluation_fit: `full fit; the user needed live DB write evidence and exact date coverage after earlier partial Megabox collection`
+- orchestration_fit: `single-session fit; one provider/date sequence plus a small skip-detail option was cheaper than delegating`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `after the first no-price Megabox date was still slow, the task narrowed from enriched collection to collection-confirmation and skipped provider detail pages`
+- reviewer_findings: `Megabox rows now exist for every date through 2026-05-20; the final report must not imply full price coverage for the later dates because --include-prices was intentionally omitted`
+- verification_outcome: `Megabox DB audit shows total_showtimes=6434, future_showtimes=5644, max_starts_at=2026-05-20 22:30, and per-date rows from 2026-05-07 through 2026-05-20; compile and git diff checks passed`
+- next_gate_adjustment: `use --skip-provider-details for fast coverage checks, then run separate bounded detail/tag enrichment only where recommendation quality needs it`
+
+- task: `Bounded showtime price ingestion`
+- score_total: `8`
+- evaluation_fit: `full fit; DB price correctness, provider endpoint behavior, idempotent duplicate prevention, and recommendation-visible min_price_amount all needed evidence`
+- orchestration_fit: `single-session fit; the extractor, upsert contract, Megabox retry, and bounded live writes were one tightly coupled ingest path`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `user flagged duplicate risk, so the contract was pinned around showtime-level keys rather than separate movie-price or theater-price aggregates`
+- reviewer_findings: `price rows are real provider amounts only, keyed by provider/showtime/price_key, normal showtime refreshes no longer null out collected prices, and price endpoint calls remain opt-in and capped`
+- verification_outcome: `local compile and extraction assertions passed; bounded Lotte and Megabox live writes populated showtime_prices and min_price_amount; Lotte rerun did not grow duplicate rows; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when collecting expensive per-showtime details, keep default discovery rows lean and make detail hydration bounded by explicit CLI caps`
+
+- task: `Refresh live Lotte and Megabox showtime ingest`
+- score_total: `8`
+- evaluation_fit: `full fit; live DB contents, provider dry-run behavior, write result JSON, and post-write aggregates were all needed`
+- orchestration_fit: `single-session fit; the run was sequential and provider-specific failures determined the next command`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `all-provider write was split after Megabox dry-run failed with non-JSON; Lotte all-date write was followed by explicit future-date writes after the global limit filled on early dates`
+- reviewer_findings: `Lotte data refreshed through 2026-05-14; Megabox was not written because its master API response was not JSON; the blocker is logged instead of pretending full refresh succeeded`
+- verification_outcome: `post-write DB aggregate shows total=5181, current_future=4082, LOTTE max=2026-05-14 23:35:00, MEGABOX max=2026-05-08 22:20:00`
+- next_gate_adjustment: `future multi-date refreshes should run provider/date-specific batches instead of one global limit when the goal is extending max date coverage`
+
+- task: `Mirror frontend Kakao Maps SDK key into backend static index`
+- score_total: `2`
+- evaluation_fit: `light fit; exact appkey comparison covered source and build resources`
+- orchestration_fit: `single-session fit; one static mirror edit and one resource-copy command`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `build resources were stale after the source edit, so processResources was added as verification/runtime prep`
+- reviewer_findings: `only backend/src/main/resources/static/index.html root SDK appkey changed; price comparison page SDK keys were left untouched`
+- verification_outcome: `frontend, backend source, backend build resources, and rebuilt bootJar appkeys match; processResources and bootJar passed outside sandbox; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `for Spring-served frontend mirrors, compare frontend source, backend static source, and backend build resources when the running page may be served from build output`
+
+- task: `Selfdex selected collect_all_to_tidb Megabox responsibility split`
+- score_total: `6`
+- evaluation_fit: `light fit; this was a behavior-preserving ingest refactor with deterministic compile/static checks`
+- orchestration_fit: `single-session fit; one script owned the full Megabox write path and delegation would have added handoff cost`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `none; the Selfdex candidate stayed valid after checking STATE.md and the Megabox ingest surface`
+- reviewer_findings: `ingest_megabox is now orchestration-focused, mismatched Megabox schedule rows still cannot reach upsert_showtime, and result counters remain bounded`
+- verification_outcome: `py_compile, compileall, inline date assertion, static helper usage search, WORKSPACE_CONTEXT section checks, git status, and git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `future collect_all_to_tidb.py work can now target provider detail fetch, date selection, or schedule persistence helpers independently instead of editing one large nested loop`
+
+- task: `Megabox schedule date validation before ingest`
+- score_total: `6`
+- evaluation_fit: `light fit; deterministic row-date filtering is the source of truth, while external Megabox probes can be flaky`
+- orchestration_fit: `single-session fit; one ingest script owns the validation path`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `previous broad future-date probes showed false positives because some schedule responses returned 20260507 for much later requested playDe values`
+- reviewer_findings: `mismatched Megabox schedule rows cannot reach upsert_showtime after the filter, and mismatch evidence is bounded in result JSON`
+- verification_outcome: `py_compile, inline helper assertion, bounded Megabox dry-run, and git diff --check passed; a later external probe returned non-JSON and was excluded from acceptance`
+- next_gate_adjustment: `for provider-generated future dates, prove row-level requested-date equality before claiming a maximum collectible date`
+
+- task: `Split Codex recommendation models by fast and precise modes`
+- score_total: `7`
+- evaluation_fit: `full fit; request construction, bridge command behavior, provider health, and focused recommendation tests all needed evidence`
+- orchestration_fit: `single-session fit; the model split touched one sequential server-bridge contract and no disjoint write lane was worth the handoff`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `bridge option check caught that fast jobs without reasoning would inherit DABOYEO_CODEX_REASONING_EFFORT, so the worker now treats a per-job model request with no reasoning as true default reasoning`
+- reviewer_findings: `fast and precise no longer collapse to one codex-model default; fast is lighter by candidate count, token budget, and absent reasoning override; precise alone carries xhigh reasoning`
+- verification_outcome: `py_compile and bridge option check passed; focused Gradle tests and bootJar passed outside sandbox after native-platform.dll sandbox failure; Spring PID 23132 and bridge are running; provider health is ready with gpt-5.4-mini and gpt-5.5; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when changing model routing, test both server request fields and worker CLI options because env fallbacks can silently override a mode-specific default`
+
+- task: `Provider-detail genre ingestion and fast recommendation split`
+- score_total: `9`
+- evaluation_fit: `full fit; collector depth, live DB mutation, bridge runtime, fast/precise timing, and all-genre behavior all needed direct evidence`
+- orchestration_fit: `single-session fit; Lotte/Megabox detail fetch, tag normalization, recommendation mode split, and bridge restart were sequential and tightly coupled`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `initial live benchmark showed fast still used Codex and averaged about 20s, so the frozen contract expanded to make fast scorer-only while keeping precise on the bridge; bridge restart also exposed a transient server-restart crash and the agent now retries polling`
+- reviewer_findings: `provider tags are sourced from provider detail metadata, generic buckets remain excluded, no title-only genre inference was introduced, price is not fabricated when min_price_amount is absent, and no-candidate genres stay explicit when live canonical tags are absent`
+- verification_outcome: `changed Python files compiled; focused RecommendationService tests passed; bootJar passed; Spring and bridge are running; provider health is ready; live all-genre fast benchmark passed with honest empty genres; fast/precise 3-run benchmark passed; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when fast UX is expected to be quick, benchmark with bridge healthy before deciding the mode contract; otherwise a broken bridge can accidentally hide latency by falling back`
+
+- task: `Server-safe automatic recommendation genre tagging`
+- score_total: `9`
+- evaluation_fit: `full fit; the work needed normalization checks, live DB mutation evidence, selected-genre API smokes, bridge runtime smokes, and benchmark timing`
+- orchestration_fit: `single-session fit; Selfdex planning was read-only and the actual write path was tightly coupled across ingest helper, metadata enrichment, repository prefilter, service gating, and bridge startup`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `live smoke exposed two runtime issues after the tag fix: selected-genre DB prefilter was needed for long-tail family candidates, and bridge jobs needed --disable plugins in addition to --ignore-user-config; a restart script also hit the known PowerShell $db? interpolation bug and was corrected`
+- reviewer_findings: `new recommendation genre tags are evidence-backed only; generic provider buckets remain excluded; KOBIS enrichment is optional/env-gated; selected genres now prefilter in SQL so broad popular showtimes cannot hide rare tagged movies; no fake recommendations are made when a genre has no current tag evidence`
+- verification_outcome: `script compile, override validation, enrichment dry-run/write, live DB audit, focused Gradle tests, bootJar, Spring/bridge restart, all-genre API smoke, fast/precise 3-run benchmark, and git diff --check all completed`
+- next_gate_adjustment: `for future selected-genre bugs, check three layers before prompt/scoring edits: canonical metadata presence, SQL candidate eligibility window, and AI bridge status ok versus fallback`
+
+- task: `Lighten fast AI recommendation and repair result CTA details`
+- score_total: `7`
+- evaluation_fit: `full fit; the change touched browser-visible copy/CSS, official provider CTA fallbacks, and backend fast-mode defaults`
+- orchestration_fit: `single-session fit with one read-only explorer; implementation write sets were tightly coupled and cheaper to keep in main`
+- predicted_topology: `single-session + read-only explorer`
+- actual_topology: `single-session + read-only explorer`
+- spawn_count: `1`
+- rework_or_reclassification: `Selfdex generic collect_all_to_tidb.py suggestion was rejected as stale for this browser-comment request, then /goal was frozen around fast recommendation UX and CTA behavior`
+- reviewer_findings: `No fake price values were added; provider split is display-only from providerCode; booking CTA keeps safeUrl and falls back only to fixed http/https provider pages`
+- verification_outcome: `node --check passed for both JS mirrors; focused Gradle tests passed outside sandbox; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `For AI result-card fixes, first distinguish data-contract fields already present from UX copy gaps before adding backend model fields`
+
+- task: `Add post-crawl movie tag enrichment pipeline`
+- phase: `verified`
+- scope: `Turn the one-off current animation movie tag backfill into a repeatable post-crawl metadata enrichment step so selected-genre recommendations do not depend on provider APIs exposing normalized genres; widen candidate fetch depth for explicit selected-genre flows so popular repeated showtimes do not crowd out later tagged movies.`
+- verification_target: `A source-controlled override catalog can validate curated movie tag evidence, the enrichment script can dry-run and write current/future movie_tags without title-only inference, collect_all_to_tidb.py runs the enrichment after write by default, ambiguous title-only cases remain untagged, and animation-selected recommendations return a full tagged candidate set when enough tagged movies exist.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- reason: `Hard triggers: recommendation genre contract, live DB write path, external-provider metadata gaps, and post-crawl pipeline behavior. Selfdex suggested collect_all_to_tidb.py responsibility cleanup, but Socratic review showed refactoring alone does not solve missing provider genres; the smallest useful /goal is a bounded metadata-tag enrichment pipeline.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; scripts/ingest/collect_all_to_tidb.py; scripts/ingest/enrich_movie_tags.py; scripts/ingest/current_movie_tag_overrides.json; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java`
+- contract_freeze: `Do not infer genres from arbitrary title substrings. Keep showtime crawling as provider truth, then add recommendation tags from exact provider/external_movie_id overrides with explicit evidence notes. Run enrichment after successful collect_all_to_tidb.py writes by default, allow --skip-metadata-tags, and support validate-only/dry-run modes. For explicit selected genre flows, fetch a wider upcoming candidate pool before tag filtering so one heavily scheduled movie cannot hide later tagged movies. No secrets or raw auth output.`
+- verification_evidence: `override catalog validate-only passed with 8 exact-id entries and 8 tags; enrich_movie_tags.py dry-run/write matched 8 and left ambiguous Jjanggu title untagged; collect_all_to_tidb.py bounded Megabox write ran metadata_tag_enrichment by default; focused RecommendationServiceCandidateFilterTests passed outside sandbox; bootJar passed; localhost:5500 Spring + Codex bridge health is ready; animation-selected Codex smoke returned 3 recommendations including Mario dubbed, Kiki, and Girls Band Cry instead of only the first crowded movie.`
+
+- task: `Fill live showtime data via crawler ingest`
+- phase: `verified`
+- scope: `Run the repository crawler/ingest script to collect current and future Lotte/Megabox showtime data and write it into the configured TiDB/MySQL database for the local recommendation/runtime flow; if provider genre tags are too coarse for animation matching, add a small curated DB tag backfill only for externally verified animated titles.`
+- verification_target: `Dry-run enumerates provider dates, bounded write ingest completes without exposing secrets, showtimes/current-future row counts increase or remain populated, externally verified current animation titles get genre:animation tags, and localhost recommendation/search paths have fresh candidate data.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- reason: `Hard triggers: external provider crawl, live database writes, recommendation data freshness, and provider-specific raw data preservation. No subagent because the user did not authorize delegation and the task is one sequential dry-run/write/verify pipeline.`
+- write_sets: `STATE.md; ERROR_LOG.md if material crawl/DB/runtime failures occur; configured TiDB/MySQL data via scripts/ingest/collect_all_to_tidb.py and curated movie_tags backfill; ignored runtime logs under backend/build/** if needed`
+- contract_freeze: `Use the existing collector ingest script, do not edit collector code unless a blocking script bug appears, do not print DB passwords/API secrets/raw auth, dry-run provider date selection first, then run a bounded all-provider future-date write before expanding. Keep CGV out of this script because collect_all_to_tidb.py currently ingests Lotte and Megabox only. Do not infer animation from arbitrary title substrings; only add genre:animation tags for current movies with direct public/official evidence or existing curated poster metadata.`
+
+- task: `Connect Codex bridge runtime`
+- phase: `verified`
+- scope: `Start/restart the local Spring server and Codex bridge worker on localhost:5500 so the Codex-only recommendation provider is actually connected, not just configured in source.`
+- verification_target: `Provider health returns only codex with ready status, and a real POST /api/recommendations request through the Codex provider returns an ok/model-backed response rather than bridge_error or code-score fallback caused by Codex process launch failure.`
+- classification: `score_total=5; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `Runtime integration touches bridge token, Spring process, Codex CLI launch path, and live recommendation behavior, but no source-code contract change is requested. No subagent because the work is one tightly coupled local process handshake.`
+- write_sets: `STATE.md; ERROR_LOG.md if material runtime failures need recording; ignored runtime files under backend/build/**`
+- contract_freeze: `Do not print bridge tokens or Codex auth contents. Restart Spring and the bridge with the same ephemeral DABOYEO_AI_BRIDGE_TOKEN, prefer the copied workspace-local Codex executable if WindowsApps launch is blocked, keep startup showtime sync disabled, and verify with both provider health and an actual recommendation request.`
+
+- task: `Remove local model provider and rebuild Codex-only fallback`
+- phase: `verified`
+- scope: `Delete the local Gemma/LM Studio recommendation path from backend, frontend, scripts, and config; keep GPT through the Codex bridge as the only AI provider; rebuild the code-score fallback so fallback results are taste-anchored, score-calibrated, and written as natural recommendation copy instead of awkward tag fragments.`
+- verification_target: `Runtime recommendation requests resolve to Codex only, provider health exposes only Codex, no LM Studio/local Gemma env/config/script path remains in active source, frontend has no provider switch/local storage, fallback result copy is natural and score caps no-direct reserves, focused backend tests plus JS syntax checks plus bootJar/git diff checks pass when feasible.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- reason: `Hard triggers: recommendation provider contract, external-request/runtime config removal, AI bridge behavior, fallback scoring semantics, and frontend/static mirror UX. No subagent because the user did not request delegation and the backend/frontend/script changes share one tightly coupled provider contract.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; backend/src/main/java/kr/daboyeo/backend/config/RecommendationProperties.java; backend/src/main/java/kr/daboyeo/backend/domain/recommendation/RecommendationModels.java; backend/src/main/java/kr/daboyeo/backend/service/recommendation/**; backend/src/main/resources/application.yml; backend/README.md; backend/src/test/java/kr/daboyeo/backend/service/recommendation/**; scripts/ai_bridge_agent.py; .env.example; frontend/src/js/api/client.js; backend/src/main/resources/static/src/js/api/client.js; frontend/src/js/pages/daboyeoAi.js; backend/src/main/resources/static/src/js/pages/daboyeoAi.js; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Keep the existing recommendation request/response shape for browser compatibility, but treat blank/local/gpt/codex aiProvider inputs as Codex. Remove local LM Studio/Gemma and direct GPT HTTP provider branches from active runtime/config/script/UI. Keep the Codex bridge job flow and provider health endpoint with Codex only. Fallback must select distinct movies from scorer output, preserve taste-first ordering, cap no-direct taste reserves below direct matches, and return Korean narrative reason/analysis/value/caution fields without leaking internal tags or score mechanics.`
+
+- task: `Fix anime fallback genre evidence and score badge layout`
+- phase: `verified`
+- scope: `Stop fallback scoring from treating title keywords as genre evidence for animation, and make result-card score badges resilient to long movie titles.`
+- verification_target: `A movie with an animation-looking title but no explicit genre:animation tag must not count as a direct animation taste match; real tagged animation candidates still rank as direct matches; result card heading wraps without score badge overlap in frontend and Spring static CSS; focused scorer/service tests plus JS/CSS static checks pass.`
+- classification: `score_total=6; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `User flagged a browser layout break risk and a recommendation correctness bug caused by title-based genre inference. The fix is a tight domain-model/CSS/test patch with no delegation value.`
+- write_sets: `STATE.md; backend/src/main/java/kr/daboyeo/backend/domain/recommendation/RecommendationModels.java; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationScorer.java if needed; backend/src/test/java/kr/daboyeo/backend/service/recommendation/**; frontend/src/css/daboyeoAi.css; backend/src/main/resources/static/src/css/daboyeoAi.css; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Do not infer genre:animation or other content genres from movie title substrings in live showtime candidates. Use explicit movie_tags/provider metadata for genre evidence; title may remain display text only. Keep screen/age convenience tags only when they do not create genre matches. Result card heading should reserve space for the score badge and allow long titles to wrap naturally.`
+
+- task: `Make fallback ranking require selected genre metadata`
+- phase: `verified`
+- scope: `Rebuild fallback/AI candidate selection so selected genres are scored from explicit candidate genre tags and non-matching reserve candidates are not shown as recommendations when a genre was explicitly selected.`
+- verification_target: `When preferredGenres contains animation and no candidate has genre:animation, recommendation returns a no selected-genre candidate response instead of 왕사남/other reserve movies; when explicit genre:animation exists, only tagged animation candidates are sent to Codex/fallback; title-only anime-looking candidates still do not qualify; focused recommendation tests, bootJar, and localhost smoke pass.`
+- classification: `score_total=7; single-session; orchestration_value=low; agent_budget=0; evaluation_need=full`
+- reason: `Hard trigger: recommendation acceptance semantics changed from reserve-fill to explicit selected-genre gating. The user explicitly rejected non-animation reserve output after selecting animation, so fallback ranking must use tag/genre evidence as a candidate eligibility contract.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; backend/src/main/java/kr/daboyeo/backend/service/recommendation/RecommendationService.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceCandidateFilterTests.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/RecommendationServiceQualityTests.java if needed`
+- contract_freeze: `If survey.preferredGenres is non-empty, recommendation eligibility requires an explicit candidate genre tag overlap with at least one selected genre. Do not fill the result list with poster-genre, mood, audience, schedule, or practical reserve candidates when selected-genre matches are absent or fewer than three. If no explicit selected-genre match exists, return a no_selected_genre_candidates style response with an honest message instead of recommendations. Keep no-genre-selected flows able to use broader fallback scoring.`
+
+- task: `Make AI genre selection single-choice`
+- phase: `implementation`
+- scope: `Change the AI recommendation genre step from multi-select up to five genres to one selected genre only, while keeping the backend preferredGenres array contract for compatibility.`
+- verification_target: `Frontend and Spring static daboyeoAi.js expose GENRE_LIMIT=1, selecting a new genre replaces the old one, genre copy says one genre, HTML module cache keys are bumped, and localhost serves the updated module.`
+- classification: `score_total=4; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `User clarified the missed requested behavior. This is a narrow browser-visible frontend/static mirror change with cache-bust and runtime refresh, no backend API contract change, and no delegation value.`
+- write_sets: `STATE.md; frontend/src/js/pages/daboyeoAi.js; backend/src/main/resources/static/src/js/pages/daboyeoAi.js; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Genre step allows at most one selected genre. Clicking the selected genre clears it; clicking a different genre replaces the selection. Continue remains disabled until one genre is selected. Send the selected genre as the existing one-item preferredGenres array. Mirror source and Spring static files and bump cache keys.`
+
+- task: `Force fresh AI poster seed resources after poster rename`
+- phase: `implementation`
+- scope: `User reports the AI page still looks unapplied after poster filename/tag/duplicate merge. Server API already returns English slug poster URLs, so force the browser-visible AI page to reload the latest module and poster-seed response.`
+- verification_target: `Served daboyeoAi.html references a new cache key; frontend/static getPosterSeed adds a cache-busting query value and no-store fetch option; localhost poster-seed still returns 18 slug paths for default and animation.`
+- classification: `score_total=3; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `Browser-visible stale state/cache symptom after verified backend asset/tag change. Tiny static/frontend mirror hotfix with no backend contract change and no delegation value.`
+- write_sets: `STATE.md; frontend/src/js/api/client.js; backend/src/main/resources/static/src/js/api/client.js; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Keep poster-seed API behavior unchanged, add only client-side fresh fetch/cache-bust behavior for poster seed loading, and bump AI page module/style cache keys in both frontend source and Spring static mirror.`
+
+- task: `Rename poster assets to English title slugs and enrich poster tags from web research`
+- phase: `implementation`
+- scope: `Rename every movie/anime poster WebP in frontend and Spring static mirrors from rank/movieCd filenames to English movie-title slugs, update poster manifests to the new paths, enrich poster tag JSON from web-researched title/genre/context evidence, and merge/delete anime duplicates that currently live in the general movie poster pool.`
+- verification_target: `All manifest posterPath/posterFile/staticPosterFile references point to existing renamed files; no old numeric poster filenames remain under movie/anime poster directories except .gitkeep; movie-pool animation duplicates are removed after matching movieCd against the anime pool; PosterSeedService still loads enriched tags; localhost poster-seed APIs return valid renamed poster URLs.`
+- classification: `score_total=8; single-session; orchestration_value=medium; agent_budget=0; evaluation_need=full`
+- reason: `Hard triggers: shared recommendation data contract, asset path rewrite, and user-requested duplicate deletion. Scope spans generated poster assets, backend recommendation manifests, frontend/static mirrors, web-researched tag data, focused backend loading tests, bootJar, and localhost API checks. No subagents because current tool policy requires explicit user request for delegation and write ownership is one tightly coupled manifest/assets slice.`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; frontend/src/assets/R2/posters/movie/**; frontend/src/assets/R2/posters/anime/**; backend/src/main/resources/static/src/assets/R2/posters/movie/**; backend/src/main/resources/static/src/assets/R2/posters/anime/**; backend/src/main/resources/recommendation/korea-boxoffice-top50-posters.json; backend/src/main/resources/recommendation/korea-animation-boxoffice-top30-posters.json; backend/src/main/resources/recommendation/korea-boxoffice-top50-poster-tags.json; backend/src/main/resources/recommendation/korea-animation-boxoffice-top30-poster-tags.json; backend/src/test/java/kr/daboyeo/backend/service/recommendation/PosterSeedServiceTests.java; backend/src/test/java/kr/daboyeo/backend/service/recommendation/PreferenceProfileBuilderTests.java`
+- contract_freeze: `Use English movie-title slugs for poster filenames without rank/movieCd noise unless a collision requires a suffix. Prefer KOBIS/Wikipedia/Wikidata-style English title and genre evidence; keep KOBIS movieCd as the stable manifest id. For movieCd overlaps between movie and anime pools, keep the anime-pool asset/manifest/tag entry, remove the movie-pool duplicate entry, and delete the duplicate movie-pool files in frontend and Spring static mirrors. Enrich only recommendation tag JSON fields already consumed by PosterSeedService unless code changes are explicitly needed. Mirror every frontend poster rename into Spring static resources.`
+
+- task: `Limit poster choice flow to 18 items with visible 3-page progress`
+- phase: `implementation`
+- scope: `Reduce AI poster selection seed requests from 40 to 18 and make the poster pagination visibly communicate that the flow has 3 pages of 6 posters.`
+- verification_target: `Frontend and Spring static AI page request 18 posters, render exactly 3 page buttons when 18 posters are available, and cache-busted Spring-served HTML loads the updated module.`
+- classification: `score_total=4; single-session; orchestration_value=low; agent_budget=0; evaluation_need=light`
+- reason: `Narrow frontend/static mirror UX adjustment with no backend API contract change; keep page size 6, reduce poster limit to 18, show one page/total text indicator that updates on arrow navigation, and verify with JS syntax plus static checks.`
+- write_sets: `STATE.md; frontend/src/js/pages/daboyeoAi.js; backend/src/main/resources/static/src/js/pages/daboyeoAi.js; frontend/src/css/daboyeoAi.css; backend/src/main/resources/static/src/css/daboyeoAi.css; frontend/src/pages/daboyeoAi.html; backend/src/main/resources/static/src/pages/daboyeoAi.html`
+- contract_freeze: `Set POSTER_LIMIT=18, keep POSTER_BATCH_SIZE=6, render one non-button page/total text indicator above the poster grid, update the number through existing previous/next arrow navigation, mirror frontend source to Spring static resources, and bump module cache keys.`
+
+- task: `Wire anime poster pool into recommendation flow`
+- phase: `verified`
+- scope: `Connect the verified anime poster manifest/assets to the recommendation poster-selection flow. When animation is selected as a preferred genre, the poster seed API and frontend should show the R2/posters/anime pool first while preserving the existing general movie pool for other genres.`
+- verification_target: `GET /api/recommendation/poster-seed?genres=animation should return anime poster URLs and namespaced anime ids; GET without genres should keep general movie poster URLs and existing ids; frontend poster loading should pass selected genres; recommendation profile building should resolve selected anime seed ids without colliding with general movieCd values.`
+- previous_task_note: `Poster assets are already split into R2/posters/movie and R2/posters/anime. The current work wires that pool into API/frontend selection logic.`
+- runtime_dependency_note: `Spring is running on localhost:5500 from the updated bootJar with listener PID 27076.`
+- spring_runtime_note: `Keep DABOYEO_SHOWTIME_STARTUP_ENABLED=false for local restart if needed to avoid duplicate startup crawling.`
+- current_blocker: `none`
+
+## Next Task
+
+- task: `none`
+- status: `the queued poster-only fallback task was promoted to Current Task on 2026-05-08.`
+
+## Orchestration Profile
+
+- score_total: `6`
+- score_breakdown: `DB-backed default ordering policy 2; frontend index/allMovies fetch and label text 1; static mirror/cache freshness 1; Oracle deploy/public smoke 1; dirty worktree preservation 1`
+- hard_triggers: `public API surface, DB read model, HTML rendering of DB strings, deployment/external service checks, existing dirty worktree`
+- selected_rules: `freeze API contract before edits; keep releaseState parameter whitelisted; use DOM-safe rendering/textContent for DB content; do not print secrets; preserve unrelated dirty worktree changes; mirror frontend files into Spring static resources; deploy only after local verification passes`
+- selected_skills: `none`
+- execution_topology: `single-session`
+- orchestration_value: `low`
+- agent_budget: `0`
+- spawn_decision: `no spawn; the user did not request subagents and the API contract plus two frontend renderers are tightly coupled enough to keep in one lane.`
+- efficiency_basis: `Delegation would add handoff overhead for a bounded API/frontend/static-mirror repair while the main lane can verify the full contract quickly.`
+- selection_reason: `User clarified that future-release movies with real high booking/rank signals should remain in popularity rankings and be labeled 상영예정.`
+
+## Evaluation Plan
+
+- evaluation_need: `full`
+- project_invariants:
+  - `Do not mutate TiDB rows or run crawlers for this classification fix.`
+  - `Do not call paid AI APIs or change bridge behavior.`
+  - `Do not print secrets or connection strings.`
+  - `Do not overwrite unrelated frontend/backend/user edits.`
+  - `Keep frontend and backend static mirror files fresh.`
+- task_acceptance:
+  - `/api/live/movies` returns `release_date` and `release_state` for catalog movies.`
+  - `Default /api/live/movies?limit=3 can include future-release rows such as 마이클 when ranked high by source data.`
+  - `Future-release rows such as 마이클 remain `upcoming` in API data and are labeled 상영예정 in UI.`
+  - `Index and allMovies render readable release-state labels without unsafe HTML interpolation.`
+  - `Local tests/build/static checks and public deployed smoke pass or gaps are reported.`
+- non_goals:
+  - `No event schema or renderer rewrite.`
+  - `No crawler/provider implementation in this round.`
+  - `No DB schema migration; release_date already exists.`
+  - `No redesign of unrelated pages.`
+  - `No push unless explicitly requested.`
+- hard_checks:
+  - `Focused LiveMovieControllerTests`
+  - `backend bootJar`
+  - `node --check frontend/src/js/pages/homePopularMovies.js frontend/src/js/pages/allMovies.js`
+  - `Compare-Object frontend/backend mirror files for touched JS/CSS`
+  - `Get-Content -Raw WORKSPACE_CONTEXT.toml`
+  - `Select-String -Path WORKSPACE_CONTEXT.toml -Pattern '^\\[workspace\\]','^\\[architecture\\]','^\\[editing_rules\\]','^\\[verification\\]'`
+  - `git diff --check`
+  - `Public smoke for /api/live/movies?query=마이클 and /api/live/movies?releaseState=now_playing`
+- llm_review_rubric:
+  - `Check releaseState whitelist behavior, TiDB SQL mode compatibility, response backward compatibility, DOM-safe rendering, static mirror freshness, and deployed API behavior.`
+- evidence_required:
+  - `API response field/filtration evidence`
+  - `Michael/upcoming evidence when present`
+  - `JS syntax and static mirror results`
+  - `focused backend test and build results`
+  - `WORKSPACE_CONTEXT command result`
+  - `git diff --check result`
+  - `deploy and public smoke result`
+  - `final git status`
+
+## Writer Slot
+
+- writer_slot: `main`
+- write_sets: `STATE.md; ERROR_LOG.md if material failures occur; backend/src/main/java/kr/daboyeo/backend/api/LiveMovieController.java; backend/src/main/java/kr/daboyeo/backend/service/LiveMovieService.java; backend/src/main/java/kr/daboyeo/backend/repository/LiveMovieRepository.java; backend/src/test/java/kr/daboyeo/backend/api/LiveMovieControllerTests.java; frontend/src/js/pages/homePopularMovies.js and backend mirror; frontend/src/js/pages/allMovies.js and backend mirror; frontend/src/css/style.css and allMovies.css plus backend mirrors; index cache key if needed.`
+
+## Contract Freeze
+
+- status: `frozen for live movie release-state classification`
+- source_basis: `User identified 마이클 as a future-release movie that currently appears indistinguishable in the live catalog; schema already contains movies.release_date and current public API lacks release_date/release_state fields.`
+- output_code: `Keep release_date/release_state and whitelisted strict releaseState filters; make default popularity rankings include upcoming rows by source rank/booking signals; remove now_playing filter from main/allMovies popularity fetches; render 상영예정 labels across allMovies/index cards.`
+- output_tests: `Focused controller tests, JS syntax checks, mirror comparison, WORKSPACE_CONTEXT checks, diff check, bootJar, deploy, and public API/static smoke.`
+- output_docs: `STATE evidence only; no separate docs required for this bounded API/UI repair.`
+- write_sets: `STATE.md; backend LiveMovie API/service/repository/tests; frontend homePopularMovies/allMovies JS and CSS plus Spring static mirrors.`
+
+## Reviewer
+
+- review_required: `self-review`
+- reviewer_focus: `Confirm releaseState semantics, whitelist behavior, TiDB SQL compatibility, DOM-safe rendering, main TOP3 now-playing filtering, static mirror freshness, and deployed smoke evidence.`
+
+## Last Update
+
+- timestamp: `2026-05-11 00:21:00 +09:00`
+- note: `Completed and deployed ranked-upcoming policy. Default popularity API now includes 마이클 as rank 1 upcoming, index/allMovies popularity fetches no longer force now_playing, and deployed JS labels upcoming rows as 상영예정.`
+
+- timestamp: `2026-05-11 00:03:00 +09:00`
+- note: `Completed and deployed live movie release-state classification. Public smoke confirmed 마이클 is upcoming with release_date=2026-05-13, now_playing filter returns only now_playing rows, upcoming filter returns only upcoming rows, and deployed static HTML/JS includes the release-state cache/filter changes.`
+
+- timestamp: `2026-05-10 22:04:00 +09:00`
+- note: `Reclassified current work from completed allMovies/event data wiring to live movie release-state classification after user reported that 마이클 is an upcoming title but is not distinguished. Public smoke confirmed the deployed /api/live/movies response has no release_date/release_state fields.`
+
+- timestamp: `2026-05-10 20:46:41 +09:00`
+- note: `Completed perfect responsive correction for the open-background motion preview. QA covered 390x844, 655x957, 1365x768, 1920x1080, late animation frames, cache-busted assets, deterministic particles, synced static mirrors, no API calls, no real AI file diff, and console warnings/errors 0.`
+
+- timestamp: `2026-05-10 20:30:18 +09:00`
+- note: `Applied browser-comment feedback to the motion preview. The visible section/viewport boxes are removed, motion now sits on the page background like the actual loading screen, static mirrors are synced, and syntax/mirror/no-API/no-live-AI-diff/WORKSPACE_CONTEXT/diff/browser checks passed.`
+
+- timestamp: `2026-05-10 20:23:42 +09:00`
+- note: `Completed DABOYEO AI motion loading preview page. Added frontend and backend static mirror files, verified syntax/mirror/no-API checks, WORKSPACE_CONTEXT, diff check, and opened the preview in the in-app browser with no console errors.`
+
+- timestamp: `2026-05-10 20:17:21 +09:00`
+- note: `Started separate motion-only AI loading preview task. Reclassified to score_total=5 single-session preview slice, frozen to add a standalone page only and leave the real daboyeoAi.html loading path untouched.`
+
+- timestamp: `2026-05-10 19:47:00 +09:00`
+- note: `Completed local /goal implementation for portfolio security hardening and Electron bridge GUI. Focused backend tests, bootJar, Electron syntax checks, WORKSPACE_CONTEXT checks, and diff check passed; live deploy and DB/provider writes were intentionally skipped.`
+
+- timestamp: `2026-05-10 19:26:25 +09:00`
+- note: `Started /goal for portfolio deployment stabilization. Reclassified current work to score_total=10 single-session staged: public API security hardening, production CORS cleanup, and Electron Codex bridge start/kill GUI. No subagents are used because the user did not explicitly request delegation.`
+
+- timestamp: `2026-05-08 17:23:05 +09:00`
+- note: `Completed approved Selfdex /goal refactor for scripts/ingest/enrich_movie_tags.py. The script now has explicit phase helpers for result setup, provider auto tags, provider detail metadata, KOBIS metadata, and curated overrides; verification passed with CRLF warnings only.`
+
+- timestamp: `2026-05-08 13:03:40 +09:00`
+- note: `Completed image F floating-poster implementation for the AI recommendation result screen. Result cards now use detached rotating poster layers and the recommendation list supports vertical scrolling for multiple movies; localhost:5500 is running rebuilt jar PID 10580 with served static checks passing.`
+
+- timestamp: `2026-05-08 10:43:29 +09:00`
+- note: `Completed granular genre-mismatch reserve scoring. Flat 68-point capping is replaced with compressed score spread; focused tests and live romance smoke now show variable reserve scores.`
+
+- timestamp: `2026-05-08 10:38:36 +09:00`
+- note: `Reclassified active task from completed poster-first flow to granular genre-mismatch reserve scoring. score_total=6, single-session, agent_budget=0. Current bug: scorer/service both use a flat 68 cap, causing high reserve candidates to collapse to the same score.`
+
+- timestamp: `2026-05-08 10:08:25 +09:00`
+- note: `Completed poster-first AI flow. Poster seed is now genre-neutral, genre selection moved after posters and supports up to 3 selections, browser flow verified through mode step, Spring restarted on localhost:5500 as PID 16288, and Codex bridge health is ready.`
+
+- timestamp: `2026-05-08 09:53:18 +09:00`
+- note: `Reclassified the active task. The previous selected-genre DB poster priority idea is superseded by poster-first unbiased taste selection, followed by multi-select viewing genres. score_total=6, single-session, agent_budget=0, frontend/static mirror write set only.`
+
+- timestamp: `2026-05-08 09:35:25 +09:00`
+- note: `Completed poster-only fallback scoring. Focused RecommendationServiceCandidateFilterTests and bootJar passed. Runtime smoke for romance selected-genre miss returned three capped reserve recommendations at 68 with mismatch cautions. Spring localhost:5500 health is ok on PID 22484.`
+
+- timestamp: `2026-05-08 09:22:43 +09:00`
+- note: `Promoted the queued poster-only fallback scoring plan to the active /goal. score_total=7, single-session, agent_budget=0, write set limited to RecommendationService, its focused candidate/filter tests, STATE, and ERROR_LOG only if needed.`
+
+- timestamp: `2026-05-07 17:55:00 +09:00`
+- note: `Planning-only handoff saved for the next computer: implement poster-only fallback scoring when a selected genre has no direct candidates. No implementation, tests, DB writes, or server restart were performed for this follow-up.`
+
+- timestamp: `2026-05-07 17:50:00 +09:00`
+- note: `Completed the genre tag cleanup and sparse selected-genre fallback fix. Live DB cleanup removed 79 noncanonical genre tags and left 0 noncanonical rows. Provider detail enrichment checked 44 current/future movies and found no additional canonical romance rows, so the runtime now returns honest low-score reserve recommendations when romance has no direct live candidates. Focused backend tests, bootJar, Spring restart, health check, and live romance smoke passed.`
+
+- timestamp: `2026-05-06 14:47:24 +09:00`
+- note: `Verified the score_total=8 single-session /goal. The final fix is exact provider/external_movie_id metadata tag enrichment plus a selected-genre candidate fetch-depth repair so popular repeated showtimes cannot crowd out later tagged movies before genre filtering. Focused tests, bootJar, script validation, collect_all integration, DB tag assertions, and localhost Codex animation smoke passed; sandbox Gradle/native and bridge CLI argument mismatches were recorded or handled as resolved runtime issues.`
+
+- timestamp: `2026-05-06 14:39:00 +09:00`
+- note: `Expanded the frozen write set after verification found 8 future animation-tagged movies but the animation recommendation smoke returned only 2 items. Root cause: RecommendationService queried only the first 240 upcoming showtime rows before selected-genre filtering, so heavily repeated Mario showtimes crowded out later tagged movies. The service patch is limited to widening candidate fetch depth for explicit selected-genre flows.`
+
+- timestamp: `2026-05-06 14:17:00 +09:00`
+- note: `Verified crawler data fill. Dry-run selected 2026-05-06, 2026-05-07, and 2026-05-08 for both Lotte and Megabox. First bounded write upserted 80 Lotte and 80 Megabox showtimes; expanded bounded write upserted 300 Lotte and 300 Megabox showtimes. Final DB counts: showtimes_total=1596, current/future=1596, movies=193, theaters=249, screens=349, movie_tags=296, max starts_at=2026-05-08 22:20:00, by provider LOTTE_CINEMA=310 and MEGABOX=1286 current/future showtimes. Provider raw genre tags were generic, so externally verified current animation titles received 8 curated genre:animation tags, while 짱구/Audition 109 remained untagged. /api/live/nearby returned 8 results, /api/health stayed ok, provider health stayed codex ready, and animation-selected POST /api/recommendations returned status=ok, model=codex, count=3. Retrospective: score_total=8, evaluation_fit=full fit, predicted_topology=single-session, actual_topology=single-session, spawn_count=0, rework_or_reclassification=expanded from crawler-only ingest to curated animation tag backfill after provider tags proved too coarse, reviewer_findings=do not rely on title-only inference and report CGV exclusion, verification_outcome=passed, next_gate_adjustment=for selected-genre recommendations verify both future showtimes and explicit genre tags after ingest.`
+
+- timestamp: `2026-05-06 14:02:25 +09:00`
+- note: `Opened a new score_total=8 single-session ingest task after the user asked to run the crawler script and fill data. The frozen contract is to use scripts/ingest/collect_all_to_tidb.py, dry-run all-provider future date selection first, then run a bounded Lotte/Megabox write, avoid secret disclosure, and verify DB current/future showtime coverage plus localhost runtime behavior.`
+
+- timestamp: `2026-05-06 14:14:46 +09:00`
+- note: `Expanded the ingest contract after runtime smoke showed animation selection still returned no_selected_genre_candidates even though current showtimes now include animated titles. Provider raw tags are generic 일반콘텐트, so the next bounded DB write is a curated movie_tags backfill for externally verified animation titles only; ambiguous title-only cases such as 짱구/Audition 109 stay untagged.`
+
+- timestamp: `2026-05-06 13:26:19 +09:00`
+- note: `Verified Codex bridge runtime connection. Restarted localhost:5500 Spring and the Python bridge worker with one shared ephemeral bridge token and startup sync disabled, using the workspace-local backend/build/codex-bin/codex.exe path because the previous WindowsApps/default Codex launch produced WinError 5 during actual jobs. /api/health returned ok on Spring PID 7648, provider health returned one ready codex provider, and a live POST /api/recommendations smoke with aiProvider=codex returned status=ok, model=codex, and 3 recommendations. Retrospective: score_total=5, evaluation_fit=light fit, predicted_topology=single-session, actual_topology=single-session, spawn_count=0, rework_or_reclassification=runtime launch path switched from default/WindowsApps to copied workspace Codex executable, reviewer_findings=heartbeat alone was insufficient so real recommendation smoke was required, verification_outcome=passed, next_gate_adjustment=always verify Codex bridge with a job completion, not provider heartbeat only.`
+
+- timestamp: `2026-05-06 13:23:55 +09:00`
+- note: `Opened a new score_total=5 single-session runtime task to connect the Codex bridge. The contract is to restart Spring and the bridge with one shared ephemeral token if needed, avoid printing token/auth contents, keep startup sync disabled, and verify readiness with provider health plus a real Codex recommendation smoke rather than heartbeat alone.`
+
+- timestamp: `2026-05-06 12:55:35 +09:00`
+- note: `Verified selected-genre fallback gating. RecommendationService now filters AI/fallback candidate pools to explicit selected-genre overlaps when preferredGenres is non-empty, returns no_selected_genre_candidates instead of reserve movies when no tagged candidate exists, and does not send mismatched candidates to Codex. Focused RecommendationService/Scorer tests and bootJar passed outside sandbox after the known native-platform.dll failure, localhost:5500 restarted on PID 20516 with /api/health 200, and an animation-selected smoke returned no_selected_genre_candidates with zero recommendations instead of non-animation fallback items.`
+
+- timestamp: `2026-05-06 13:03:00 +09:00`
+- note: `Opened a new score_total=7 single-session task after the user rejected non-animation fallback results after selecting animation. The frozen contract now treats selected genre as explicit candidate eligibility: if preferredGenres is non-empty, recommendations must come only from candidates with overlapping genre tags, and no explicit selected-genre matches should return a no-candidate style response instead of reserve movies.`
+
+- timestamp: `2026-05-06 12:47:00 +09:00`
+- note: `Verified anime fallback evidence and score badge layout repair. ShowtimeCandidate.allTags no longer derives genre/content tags from title substrings; explicit movie_tags still drive genre matches. Added RecommendationScorer regressions proving title-only anime-like names do not match genre:animation while explicit genre:animation still scores higher. The result heading now uses a two-column grid with minmax title space, nowrap score badge, and overflow wrapping for long titles in both frontend and Spring static CSS. Focused RecommendationScorer/Service tests passed outside sandbox, bootJar passed, title-keyword inference leftover search returned no active-source matches, localhost:5500 restarted from PID 10116 to PID 20196 with /api/health 200, served HTML/CSS contains 20260506-score-layout and the grid/wrap rules, a live animation-genre fallback request returned only 68-point reserve items with direct-match caution, and git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-06 12:45:00 +09:00`
+- note: `Opened a new score_total=6 single-session task after the user flagged anime fallback correctness and score badge layout. The frozen contract now says live showtime genre evidence must come from explicit movie tags/provider metadata, not title substrings; result-card headings must reserve score badge space so long titles wrap without overlap.`
+
+- timestamp: `2026-05-06 12:32:00 +09:00`
+- note: `Verified Codex-only recommendation cleanup. Active local/Gemma/LM Studio provider paths were removed from backend config/domain/client/service/script/frontend/static mirrors and legacy aiProvider values now resolve to Codex for compatibility. Fallback scoring/copy now keeps no-direct taste reserves capped below direct taste matches and emits Korean narrative reason/analysis/value/caution copy instead of tag fragments. Leftover search for LocalModel/local model/Gemma/LM Studio/provider switch env/UI terms returned no active-source matches, node --check passed for both AI page JS mirrors, py_compile passed for scripts/ai_bridge_agent.py, focused recommendation Gradle tests passed outside sandbox, bootJar passed, git diff --check passed with CRLF warnings only, localhost:5500 is running from PID 13548, served daboyeoAi.html has cache key 20260506-codex-only, served JS exposes GPT (Codex) only, and provider health returns one provider: codex.`
+
+- timestamp: `2026-05-06 11:43:00 +09:00`
+- note: `Reclassified the new user goal as score_total=8, single-session, evaluation_need=full. The active contract is now Codex-only recommendation runtime plus fallback quality repair: remove local Gemma/LM Studio and direct GPT HTTP provider branches, keep aiProvider payload compatibility by resolving legacy inputs to Codex, remove frontend provider switching, keep Codex bridge health/job flow, and rebuild fallback copy/scoring so code-score results are less awkward and no-direct reserves stay below direct taste matches.`
+
+- timestamp: `2026-05-06 11:31:00 +09:00`
+- note: `Verified AI genre single-choice hotfix. The genre step now uses GENRE_LIMIT=1, selectedGenres normalizes and slices to one item, toggleGenre clears the selected genre when clicked again and replaces the previous genre when a different one is clicked, and the copy now says one genre only. The frontend and Spring static daboyeoAi.js mirrors import client.js with cache key 20260506-single-genre, and both daboyeoAi.html mirrors use the same module/style cache key. node --check passed for both JS mirrors, bootJar passed, localhost:5500 restarted from PID 16984 to PID 14000 with startup sync disabled, /api/health returned 200, served daboyeoAi.html has the single-genre cache key and no prior poster cache keys, served daboyeoAi.js has GENRE_LIMIT=1, replacement toggle assignment, and no 5-item genre-limit text, and git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-06 11:18:00 +09:00`
+- note: `Verified browser-visible freshness hotfix after user reported the AI page looked unapplied. Server inspection showed localhost:5500 already returned English slug poster URLs, but the AI page still referenced the prior 20260506-poster-page-text module/style cache key and poster-seed requests had no explicit no-store/cache-bust. Updated frontend and Spring static client.js so getPosterSeed appends a Date.now() query value and fetches with cache: no-store, bumped both daboyeoAi.html cache keys to 20260506-poster-rename-fresh, rebuilt bootJar, and restarted localhost:5500 from PID 13688 to PID 16984. node --check passed for both client.js mirrors, bootJar passed, /api/health returned 200, served daboyeoAi.html has the fresh key and no old key, served client.js has Date.now() and no-store, default poster-seed with cache-bust returned 18 movie slug paths, animation poster-seed returned 18 anime slug paths, and git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-06 11:08:00 +09:00`
+- note: `Verified poster filename rename, tag enrichment, and anime duplicate merge. All movie/anime WebP files in frontend and Spring static mirrors now use English title slugs; general movie pool is 46 entries after removing anime-owned duplicate movieCd values 20136803, 20197803, 20235974, and 20252432, while anime pool remains 30 entries. Manifest/tag integrity check passed with movie=46, anime=30, tag counts matching manifests, zero movie/anime movieCd overlap, all posterPath/posterFile/staticPosterFile references resolving, and no stale numeric rank/movieCd filename pattern in API output. Tags now include titleEn and enriched genres/moods/pace/audiences/avoid/ageRating/tagSources based on KOBIS plus Wikipedia/Wikidata-style public title/genre research and conservative local taxonomy normalization. Focused PosterSeedServiceTests and PreferenceProfileBuilderTests passed outside sandbox after the known native-platform.dll failure; bootJar passed outside sandbox; node --check passed for both daboyeoAi.js mirrors; git diff --check passed with CRLF warnings only. Runtime was refreshed from stale PID 16648 to PID 13688 on localhost:5500 with startup sync disabled, /api/health returned 200, default poster-seed limit=18 returned 18 movie slug paths with 0 anime paths and 0 stale numeric paths, animation poster-seed limit=18 returned 18 namespaced anime slug paths, and sampled static assets returned 200. Retrospective: score_total=8, evaluation_fit=full matched the asset/data contract risk, predicted_topology=single-session, actual_topology=single-session, spawn_count=0, rework/reclassification=runtime stale PID only, reviewer_findings=none after self-review, verification_outcome=passed, next_gate_adjustment=use netstat before Spring restarts because Get-NetTCPConnection can miss the live listener in this environment.`
+
+- timestamp: `2026-05-06 10:38:00 +09:00`
+- note: `Verified single text poster page indicator follow-up. Replaced the three page buttons with one non-button ai-poster-page-indicator text node that renders currentPage / totalBatches from state.posters.activeBatchIndex, so existing previous/next arrow navigation changes only the number. Removed renderPosterRounds, ai-poster-rounds, and ai-round-button code/styles from frontend and Spring static mirrors. Cache keys were bumped to 20260506-poster-page-text. node --check passed for both JS mirrors, bootJar passed outside the sandbox after the known native-platform.dll failure, localhost:5500 restarted from PID 10344 to PID 16648 with /api/health 200, served HTML/JS/CSS confirmed the new cache key, indicator code, and no old round-button code, and git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-06 10:29:00 +09:00`
+- note: `Verified 18-poster 3-page AI poster-step UX adjustment. Frontend and Spring static daboyeoAi.js now request POSTER_LIMIT=18 while keeping POSTER_BATCH_SIZE=6. Poster page controls render above the grid as page/total labels such as 1 / 3 instead of open-ended round labels, with active and completed states styled in both CSS mirrors. daboyeoAi.html CSS and JS cache keys were bumped to 20260506-poster-pages. node --check passed for frontend and Spring static JS, bootJar passed outside the sandbox after the known native-platform.dll failure, stale localhost:5500 PID 18824 was replaced with PID 10344, /api/health returned 200, served HTML/JS/CSS all contained the updated cache keys and poster page code, and animation poster-seed limit=18 returned 18 anime paths for 3 pages. git diff --check passed with CRLF warnings only.`
+
+- timestamp: `2026-05-05 20:25:01 +09:00`
+- note: `Verified anime poster pool recommendation wiring. PosterSeedService now loads general movie and anime seed pools, namespaces anime seed ids as anime:<movieCd>, keeps default poster-seed calls on R2/posters/movie, and prioritizes R2/posters/anime when genres includes animation or genre:animation. RecommendationController/Service accept optional genres, frontend getPosterSeed passes selectedGenres, daboyeoAi module cache keys were bumped, and Spring static JS/HTML mirrors match. Focused PosterSeedServiceTests and PreferenceProfileBuilderTests passed, bootJar passed, node --check passed for touched frontend/static JS, git diff --check passed with CRLF warnings only, WORKSPACE_CONTEXT verification commands ran, localhost default poster API returned 8 movie paths with 0 anime ids, localhost animation API returned 8 anime paths with 8 namespaced ids, comma genre:animation,sf also returned anime paths, and localhost:5500 is healthy on PID 27076. Self-review found no blocking issues. Commit and push remain as the final handoff step for this /goal.`
+
+- timestamp: `2026-05-05 20:15:33 +09:00`
+- note: `Reclassified /goal into anime poster pool recommendation wiring. score_total 8; single-session/no-spawn. Frozen contract: keep default poster-seed behavior for general movies, add genre-aware API behavior for animation, namespace anime seed ids to avoid movieCd collision, pass selected frontend genres to poster loading, mirror JS static resources, verify focused tests/runtime checks, then commit and push.`
+
+- timestamp: `2026-05-05 20:08:36 +09:00`
+- note: `Verified poster asset folder split. Existing general movie posters now live under R2/posters/movie and anime posters under R2/posters/anime across frontend source, Spring static mirror, and build runtime resources. Updated top50/anime poster manifests and scripts/recommendation/fetch_anime_top30_posters.py to use the new paths. Bundled Python anime verify-only passed, manifest integrity/hash checks passed for movie=50 and anime=30, no anime-posters or root poster WebP paths remain in source/static references, localhost:5500 was restarted as listener PID 15412 with /api/health 200, /api/recommendation/poster-seed returns movie poster paths under posters/movie, and both movie/anime static asset URLs returned 200.`
+
+- timestamp: `2026-05-05 20:03:44 +09:00`
+- note: `Reclassified into poster asset folder split. score_total 5; single-session/no-spawn. Frozen contract: move general movie posters under R2/posters/movie and anime posters under R2/posters/anime in both frontend and Spring static mirrors, update poster manifests and the anime poster fetch script, sync localhost:5500 runtime resources if needed, and leave recommendation-flow wiring queued.`
+
+- timestamp: `2026-05-05 15:48:00 +09:00`
+- note: `Verified Selfdex-selected ingest duplicate cleanup. collect_all_to_tidb.py now uses provider_ingest_result for shared provider result keys and finalize_provider_ingest for shared movie backfill plus showtime repair counters while leaving Lotte/Megabox provider-specific loops and payloads unchanged. Bundled Python compileall passed for scripts/ingest/collect_all_to_tidb.py, AST key check confirmed the helper preserves all result keys and both ingest functions use the new helpers, git diff --check passed with CRLF warnings only, and scripts/plan_next_task.py was not run because this repo does not contain that Selfdex-suggested command. No DB write, provider crawl, Spring restart, or runtime mutation was performed.`
+
+- timestamp: `2026-05-05 15:27:20 +09:00`
+- note: `Verified anime theatrical poster top30 seed. KOBIS all-time rows were de-duplicated by movieCd, movie detail genre containing animation was used as the filter, 400 official rows were scanned to collect 30 unique animation entries, and local WebP posters were written to frontend and Spring static anime-posters directories. JSON parse, script verify-only, 30/30 frontend and static file counts, mirror/hash/dimension checks, git diff --check, localhost /api/health 200, and served asset checks for rank 1 and rank 30 passed. Spring restarted on PID 21432 with startup sync disabled for the local restart.`
+
+- timestamp: `2026-05-05 15:40:00 +09:00`
+- note: `Post-review fixes completed for anime poster seed. Reviewer flagged future PosterSeedService movieCd collision risk for anime/general pool wiring, all-zero screens metadata, and a 150x215 Kung Fu Panda poster. Current task fixed the metadata/asset issues by reading KOBIS td_totScrnCnt, selecting the best portrait poster candidate from KOBIS business detail pages for the selected 30, and enforcing a 400x600 minimum poster verification floor. Regenerated manifest/assets now have screens_zero=0, minimum poster size 600x861, Kung Fu Panda 600x861, verify-only passed, runtime resources were synced, and /src/assets/R2/anime-posters/12-20080653.webp returned 200. The movieCd collision warning is carried into the future recommendation-flow wiring contract.`
+
+- timestamp: `2026-05-05 14:11:50 +09:00`
+- note: `Reclassified into selective kmh update import. score_total 8; single-session/no-spawn. origin/kmh latest commit 204fab1 is the import source, while full branch merge is blocked by heavy divergence and conflicts across state, backend, frontend, docs, and generated region data. Contract: import compatible real-time nearby search sync/UI improvements only, preserve current lsh recommendation and runtime contracts, and exclude stale kmh STATE/ERROR_LOG content.`
+
+- timestamp: `2026-05-05 14:20:00 +09:00`
+- note: `Expanded write set to include backend static mirror files because localhost:5500 serves backend/src/main/resources/static, not frontend/ directly. The import must update both frontend source and served static copies for browser-visible kmh UI changes.`
+
+- timestamp: `2026-05-05 14:21:30 +09:00`
+- note: `Verified selective kmh import. Imported compatible parts of origin/kmh 204fab1: nearby refresh wait/pending metadata, scoped Megabox bundle persistence, configured refresh radius/wait, frontend pending-refresh auto retry, map-to-region dropdown synchronization, and layout width/stability fixes. Excluded stale kmh STATE/ERROR_LOG branch content and avoided wholesale merge. node --check passed for touched frontend/static JS, focused live/nearby Gradle tests passed outside sandbox after the known loopback failure and one localized error-message test repair, bootJar passed after static mirror copy, served localhost:5500 static markers were present, and Spring restarted on PID 30992 with /api/health 200.`
+
+- timestamp: `2026-05-05 14:46:00 +09:00`
+- note: `Runtime restart complete on localhost:5500. Existing Spring PID 30992 was stopped, sandbox Java startup failed with the known Tomcat loopback limitation, and the server was restarted with normal Windows execution as PID 2004. /api/health returned HTTP 200.`
+
+- timestamp: `2026-05-04 17:32:50 +09:00`
+- note: `Verified Codex-scored reserve recommendation pool. Selfdex read-only planner ran but suggested an unrelated collector refactor, so the user-fixed /goal overrode it. RecommendationService now builds a taste-aware distinct pool that keeps direct selected-genre matches first and fills shortfalls with scored reserve candidates. GPT/Codex prompts and schema now require numeric score s, AiPick stores the model score, and RecommendationService uses the validated model score while capping no-direct taste reserves at 74. Codex defaults were widened to 12 fast / 20 precise candidates with larger token budgets. Focused RecommendationServiceCandidateFilterTests, LocalModelRecommendationClientTests, and RecommendationScorerTests passed outside sandbox after the known native-platform.dll issue and one duplicate-helper compile repair; bootJar passed. Runtime is Spring PID 15568 and bridge PID 14580 on localhost:5500 with Codex ready; action/SF local fallback returned 3 items Project Hail Mary 100, Prada 74, Mario 74, and Codex returned 3 items Project Hail Mary 94, Prada 72, Kiki 68.`
+
+- timestamp: `2026-05-04 17:40:00 +09:00`
+- note: `Queued next task only: add a separate, richer anime poster pool for the genre-guided recommendation flow. No implementation was started for that task before commit/push.`
+
+- timestamp: `2026-05-04 15:14:00 +09:00`
+- note: `Verified GPT/Codex analysis taste-match fix. LocalModelRecommendationClient now keeps tasteMatch candidate-specific and tells GPT/Codex not to claim poster-taste match when tasteMatch is empty. Focused LocalModelRecommendationClientTests passed outside sandbox after the known native-platform.dll failure; bootJar passed; Spring restarted on localhost:5500 as PID 8388 with startup sync disabled only for local restart, and provider health reports Codex ready with Python bridge PID 22172.`
+
+- timestamp: `2026-05-04 15:22:09 +09:00`
+- note: `Reclassified into genre-guided recommendation flow work. score_total 8; full evaluation; single-session/no-spawn. Frozen contract: add genre selection before posters, filter/prioritize poster seeds by selected genres, allow three liked posters minimum with five max, send preferredGenres to backend profile scoring, and improve GPT/Codex analysis prompt while keeping candidate tasteMatch honest.`
+
+- timestamp: `2026-05-04 15:33:00 +09:00`
+- note: `Runtime smoke with preferredGenres action/SF returned status ok/model codex/count 3 but surfaced a live music title first, showing selected genre weights were working only when candidate tags existed. Scope expanded within the same task to strengthen current-release title-derived genre tags and add RecommendationScorerTests before final verification.`
+
+- timestamp: `2026-05-04 15:37:53 +09:00`
+- note: `Verified genre-guided recommendation flow. AI page now has a genre step before posters, filtered/prioritized poster choices, and a three-poster minimum. Backend survey/profile now accepts preferredGenres, GPT/Codex prompt asks for richer concrete analysis, current-release title inference tags Project Hail Mary and Demon Slayer-style titles, and runtime codex smoke returned Project Hail Mary first for action/SF preferredGenres. Spring is running on localhost:5500 as PID 14008 and AI bridge as PID 11528.`
+
+- timestamp: `2026-05-04 15:48:36 +09:00`
+- note: `Reclassified into a scoring calibration repair. score_total 7; single-session/no-spawn. Root issue: generic audience, mood, seat, price, and short-runtime bonuses can saturate a no-direct-liked-genre candidate to 100, making Devil Wears Prada-style candidates look like perfect matches for unrelated selected/poster genre profiles.`
+
+- timestamp: `2026-05-04 15:51:58 +09:00`
+- note: `Runtime smoke reproduced Prada at 100 after the first cap because explicit preferredGenres and poster-derived likedGenres share one scoring bucket. Reclassified to score_total 8 and expanded write set to separate explicit preferredGenres from secondary poster-derived genres before applying score caps.`
+
+- timestamp: `2026-05-04 15:56:30 +09:00`
+- note: `Runtime smoke after preferredGenre separation reduced Prada from 100 to 84, but 84 still reads like a strong recommendation. Scope expanded inside the frozen score calibration repair to lower the no-anchor cap and make GPT/Codex tasteMatch plus fallback analysis use preferredGenres as the direct taste anchor when present.`
+
+- timestamp: `2026-05-04 16:03:23 +09:00`
+- note: `Verified genre-anchor scoring repair. No-direct selected-genre match candidates are capped at 74, GPT/Codex tasteMatch now uses preferredGenres when present, focused profile/scorer/prompt tests and bootJar passed outside sandbox after the known native-platform.dll failure, Spring is running on localhost:5500 as PID 14920, bridge as PID 1056, local provider remains offline, Codex provider is ready, local and Codex smokes both kept Prada below 100 with Codex explicitly describing it as a secondary non-direct-match option.`
+
+- timestamp: `2026-05-04 16:10:45 +09:00`
+- note: `Reclassified into candidate-pool repair. score_total 8; full evaluation; single-session/no-spawn. Root issue: scored weak fillers still enter AI/fallback pools when direct selected-genre candidates exist, so Prada can remain visible even though it is not the nearest taste match.`
+
+- timestamp: `2026-05-04 16:16:49 +09:00`
+- note: `Verified candidate-pool repair. RecommendationService now gates AI/fallback pools to direct preferredGenre matches when any exist, then poster-derived liked genre matches, then broad candidates only when no taste match exists. Distinct movie selection no longer backfills duplicate showtimes. Focused service/scorer tests and bootJar passed outside sandbox after known native-platform.dll failure; Spring localhost:5500 is running as PID 23484 and bridge as PID 10872. Action/SF local fallback and Codex smokes both returned only Project Hail Mary, no Prada, no duplicate titles.`
+
+- timestamp: `2026-05-04 15:08:00 +09:00`
+- note: `Reclassified into a new analysis-quality bugfix. score_total 5; single-session/no-spawn. Root cause: LocalModelRecommendationClient.tasteMatchHints copied user-level liked poster genres into candidate tasteMatch when a candidate had no direct liked-genre overlap, allowing GPT/Codex to overclaim that unrelated movies matched action/SF/adventure/history poster taste.`
+
+- timestamp: `2026-05-04 14:56:00 +09:00`
+- note: `Verified the five recommendation-smoke goal. RecommendationService now tries exact filters first, then relaxed filters and broad TiDB candidates before returning no_filtered_candidates. Focused recommendation tests and bootJar passed; Spring is running on localhost:5500 as PID 22240 and AI bridge as PID 9200. Five local-provider recommendation smokes all returned count 3, and one Codex sanity smoke returned status ok/model codex/count 3. Local model provider remains offline until 127.0.0.1:1234/v1 is running, so local-provider API responses use fallback scoring.`
+
+- timestamp: `2026-05-04 14:40:00 +09:00`
+- note: `Reclassified current /goal from hourly crawling to recommendation reliability. score_total 7; full evaluation; Selfdex selected; single-session/no-spawn. Frozen contract: exact search filters must be tried first, relaxed only when empty, and five localhost:5500 recommendation smokes must all return non-empty recommendations if any usable TiDB candidates exist.`
+
+- timestamp: `2026-05-04 14:27:00 +09:00`
+- note: `Verified hourly server-side Lotte/Megabox sync direction. Browser entry/recommend flows no longer call /api/showtimes/refresh; scheduler defaults are hourly/startup with includeCgv=false; Lotte date-time release strings are normalized; recommendation run-history persistence is best-effort. Focused JS checks, backend tests, bootJar, served static checks, provider health, and recommendation smoke passed. Spring is running on localhost:5500 as PID 16960 with AI bridge python PID 17416. Local runtime was restarted with DABOYEO_SHOWTIME_STARTUP_ENABLED=false only to avoid duplicate startup crawl after the verified startup sync attempt; application default remains true.`
+
+- timestamp: `2026-05-04 14:10:00 +09:00`
+- note: `Reclassified current /goal from button-triggered crawling to deployed-server periodic crawling. score_total 8; full evaluation; single-session/no-spawn. Frozen contract: backend showtime sync should default to hourly/startup Lotte/Megabox TiDB collection with CGV excluded, while AI recommendation/direct-compare frontend flows stop calling the refresh endpoint and use stored TiDB data.`
+
+- timestamp: `2026-05-04 14:16:00 +09:00`
+- note: `Runtime startup sync exposed a Lotte ingest date parsing failure for strings shaped like yyyy-MM-dd 오전/오후 hh:mm:ss. Reclassified within the same task to score_total 9 with data_fidelity_risk and added CollectorBundleIngestCommand plus ingest tests to the write set before repairing normalization.`
+
+- timestamp: `2026-05-04 14:24:00 +09:00`
+- note: `Runtime recommendation smoke during startup sync exposed a transient TiDB communications timeout while saving recommendation_runs. Added RecommendationService and focused tests to the write set so run-history persistence can fail soft without blocking recommendation results.`
+
+- timestamp: `2026-05-04 13:36:00 +09:00`
+- note: `Verified button-triggered Lotte/Megabox TiDB refresh path. Added /api/showtimes/refresh, main-page AI/direct-compare entry refresh calls, AI recommendation preflight refresh, CGV-deferred response contract, bounded entry discovery defaults, and schedule trimming. Spring is running on localhost:5500 as PID 2700 with bridge worker PID 13688; refresh smoke completed as recent with 4 bundles and 80 showtimes, and recommendation API returned fallback/model gemma-4-e2b-it/count 3 from TiDB candidates while local model remains offline and Codex provider health remains ready.`
+
+- timestamp: `2026-05-04 13:06:23 +09:00`
+- note: `Reclassified to the user-fixed /goal. score_total 9; full evaluation; Selfdex selected. Selfdex read-only planner timed out after 180s, so main continues with Selfdex contract discipline and two read-only explorer slices while keeping all implementation writes in main. Goal is button-triggered bounded Lotte/Megabox crawl into TiDB, CGV deferred, backend recommendation/direct-comparison data backed by TiDB.`
+
+- timestamp: `2026-05-04 12:59:47 +09:00`
+- note: `Started bounded TiDB data refresh. score_total 8; full evaluation; single-session/no-spawn. Scope is current DB inspection, provider-date dry-run, bounded Lotte/Megabox crawl write, and post-write recommendation candidate verification while preserving the localhost:5500 Codex bridge runtime.`
+
+- timestamp: `2026-05-04 12:56:17 +09:00`
+- note: `Verified Codex recommendation analysis runtime on localhost:5500. ACL was updated only for C:\Users\pc07-00\.codex\sessions and C:\Users\pc07-00\.codex\tmp after user approval; an ignored backend/build/tools/codex.exe runtime copy made codex exec available to the bridge worker; Spring is running on PID 19928, bridge worker on PID 13796, provider health reports Codex ready, and POST /api/recommendations with aiProvider=codex returned status ok/model codex/count 3. Local provider remains offline until the OpenAI-compatible local model server is running on 127.0.0.1:1234/v1.`
+
+- timestamp: `2026-05-04 12:51:01 +09:00`
+- note: `User explicitly approved the ACL change needed for Codex exec. Continuing with a scoped permission update for C:\Users\pc07-00\.codex\sessions and C:\Users\pc07-00\.codex\tmp only, followed by Codex exec smoke, bridge worker restart, and recommendation POST verification.`
+
+- timestamp: `2026-05-04 12:46:47 +09:00`
+- note: `Blocked at Codex exec permission gate. Patched scripts/ai_bridge_agent.py for Windows executable resolution, UTF-8 subprocess decoding, and repo-local manual temp directories; py_compile and git diff --check passed. Spring 5500 and bridge worker can report Codex provider ready, but actual Codex recommendation POST still falls back because codex exec cannot create .codex session files without an ACL change. Local model remains offline because 127.0.0.1:1234/v1/models is not running.`
+
+- timestamp: `2026-05-04 12:40:00 +09:00`
+- note: `Runtime smoke found a bridge worker defect: provider health became Codex ready after tokenized Spring/worker restart, but a Codex recommendation POST fell back because Python subprocess execution of codex hit WinError 5. Scope expanded to patch scripts/ai_bridge_agent.py executable resolution and output decoding.`
+
+- timestamp: `2026-05-04 12:35:46 +09:00`
+- note: `Started Selfdex-guided runtime finalization. score_total 7; full evaluation; single-session/no-spawn; Selfdex planner command timed out after 180s, so the contract is frozen from local source, STATE evidence, provider health, Codex CLI readiness, and local model endpoint checks.`
+
+- timestamp: `2026-05-04 12:27:00 +09:00`
+- note: `Verified frontend GPT wording restore. The AI page source and Spring static mirror now show GPT/GPT-5.5 copy again, while internal provider value remains codex for the bridge route; Spring was rebuilt and restarted on localhost:5500 as PID 18360.`
+
+- timestamp: `2026-05-04 11:45:00 +09:00`
+- note: `Started frontend GPT wording restore. score_total 3; single-session/no-spawn; visible provider copy will return from Codex Worker to GPT while keeping the internal codex bridge route intact.`
+
+- timestamp: `2026-05-04 11:38:00 +09:00`
+- note: `Verified local Spring port migration to 5500. Default backend port, frontend API fallback origin, bridge worker server, env example, and local docs now point to 5500; Spring is running on localhost:5500 as PID 5228 and the browser search for 서현 renders Kakao map output plus 10 nearby theaters.`
+
+- timestamp: `2026-05-04 11:35:00 +09:00`
+- note: `Started local Spring port migration to 5500. score_total 6; single-session/no-spawn; scope is default port/origin alignment plus 5500 runtime/browser verification while preserving nearby map and AI bridge changes.`
+
+- timestamp: `2026-05-04 11:28:00 +09:00`
+- note: `Verified nearby theater Kakao SDK fallback repair. score_total 7; single-session/no-spawn; Spring static mirror rebuilt and restarted on 8080 as PID 6572; localhost browser search for 서현 now returns 10 nearby theaters with 목록 모드 fallback instead of SDK not ready / 0 results.`
+
+- timestamp: `2026-05-04 10:30:00 +09:00`
+- note: `Verified Codex/local-model AI bridge task. score_total 8; single-session/no-spawn; bridge endpoints, worker script, frontend Codex provider, .env example, focused tests, bootJar, runtime restart, token auth, and persistent provider heartbeat checks are complete.`
+
+- timestamp: `2026-04-30 15:46:00 +09:00`
+- timestamp: `2026-04-30 16:18:00 +09:00`
+- timestamp: `2026-04-30 17:43:00 +09:00`
+- note: `Reclassified PR #2 runtime check into a narrow runtime_fix. score_total remains 9; selected profile remains single-session/no-spawn because the issue is a Spring static mirror mismatch. User confirmed Kakao Maps is registered for port 5500 and the frontend key is correct; Spring on localhost:5500 served index.html with the old Kakao JS key, so backend static index must be aligned and the boot jar refreshed.`
+- timestamp: `2026-04-30 17:48:00 +09:00`
+- note: `Verified Spring localhost:5500 Kakao Maps key correction. backend static index now uses the same Kakao JS key as frontend/index.html, bootJar was rebuilt with system gradle, Spring was restarted on localhost:5500, /api/health returned 200, and /index.html contains the frontend key with the old key absent.`
+- note: `Verified PR #2 Spring static mirror correction. score_total remains 9; single-session; backend static index/style/script/map/region constants now mirror selected frontend files, bootJar was rebuilt, Spring restarted as PID 2368, and 8080/index.html contains kmh region/nearby markers.`
+
+## Verification Results
+
+- movie_tag_enrichment_refactor_20260508:
+  - `timestamp`: `2026-05-08 17:23:05 +09:00`
+  - `classification`: `score_total 5; light evaluation; single-session/no-spawn because one script owns the approved Selfdex candidate and the write boundary is not separable.`
+  - `implementation`: `Split scripts/ingest/enrich_movie_tags.py into clearer internal phase helpers for result setup, provider auto metadata, provider detail metadata, KOBIS metadata, and curated overrides; removed unused apply_genre_tags after tracked-reference search found no users.`
+  - `checks`: `py_compile passed; validate-only parsed 8 overrides/8 tags; compileall scripts/ingest passed; WORKSPACE_CONTEXT section checks found workspace/architecture/verification/editing_rules; git diff --check passed with CRLF warnings only.`
+  - `status`: `modified files are STATE.md and scripts/ingest/enrich_movie_tags.py; no live DB write, migration, runtime config, frontend/backend app, commit, or push was performed.`
+
+- taste_focused_candidate_pool_20260504:
+  - `timestamp`: `2026-05-04 16:16:49 +09:00`
+  - `classification`: `score_total 8; full evaluation; single-session/no-spawn because DB candidate selection, AI handoff, fallback rendering, and distinct movie behavior are one coupled recommendation surface.`
+  - `implementation`: `RecommendationService now derives a taste-focused scored pool before AI/fallback selection: direct preferredGenres first, poster-derived likedGenres second, broad candidates only if no taste matches exist. selectDistinctMovieItems no longer fills result slots with duplicate showtimes of the same movie.`
+  - `focused_tests`: `gradle test --tests kr.daboyeo.backend.service.recommendation.RecommendationServiceCandidateFilterTests --tests kr.daboyeo.backend.service.recommendation.RecommendationScorerTests passed outside sandbox after native-platform.dll failure.`
+  - `build`: `gradle bootJar passed outside sandbox.`
+  - `runtime`: `Spring localhost:5500 PID 23484; AI bridge python PID 10872; provider health local offline, codex ready.`
+  - `smoke`: `local fallback action/SF request returned count 1, Project Hail Mary 100, hasPrada=false, duplicateTitleCount=0; Codex request returned status ok/model codex/count 1, Project Hail Mary 100, hasPrada=false, duplicateTitleCount=0.`
+  - `diff_check`: `git diff --check passed with existing CRLF warnings only.`
+
+- task: `Taste-focused recommendation candidate pool`
+- score_total: `8`
+- evaluation_fit: `full fit; this directly affects user trust and needed service tests plus real local/Codex runtime evidence.`
+- orchestration_fit: `single-session fit; one service selection path plus focused tests was cheaper and safer than delegation.`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the score cap solved false confidence but not weak candidate visibility, so the task was reclassified to candidate-pool gating; runtime then exposed duplicate showtime backfill, which was also removed.`
+- reviewer_findings: `Prada-style candidates are no longer shown while any direct selected-genre current-showing movie exists; duplicate showtimes no longer fill movie result cards.`
+- verification_outcome: `focused tests, bootJar, provider health, local fallback smoke, Codex smoke, and git diff --check passed.`
+- next_gate_adjustment: `future recommendation changes should verify both score correctness and candidate-pool membership, not only final score values.`
+
+- genre_anchor_scoring_repair_20260504:
+  - `timestamp`: `2026-05-04 16:03:23 +09:00`
+  - `classification`: `score_total 8; full evaluation; single-session/no-spawn because scoring anchor, prompt hints, fallback analysis, and runtime smoke are one tightly coupled recommendation surface.`
+  - `implementation`: `Separated explicit preferredGenres from poster-derived likedGenres, used preferredGenres as the direct taste anchor when present, capped no-direct-anchor candidates at 74, and aligned GPT/Codex tasteMatch plus fallback analysis with that anchor.`
+  - `focused_tests`: `gradle test --tests kr.daboyeo.backend.service.recommendation.PreferenceProfileBuilderTests --tests kr.daboyeo.backend.service.recommendation.RecommendationScorerTests --tests kr.daboyeo.backend.service.recommendation.LocalModelRecommendationClientTests passed outside sandbox after native-platform.dll failure.`
+  - `build`: `gradle bootJar passed outside sandbox.`
+  - `runtime`: `Spring localhost:5500 PID 14920; AI bridge python PID 1056; provider health local offline, codex ready.`
+  - `smoke`: `local fallback action/SF request returned Project Hail Mary 100, Devil Wears Prada 2 74, Super Mario 74, hasPradaAt100=false; Codex request returned status ok/model codex/count 3, hasPradaAt100=false and described Prada as a secondary option without direct selected-genre match.`
+  - `diff_check`: `git diff --check passed with existing CRLF warnings only.`
+
+- task: `Genre-anchor scoring repair`
+- score_total: `8`
+- evaluation_fit: `full fit; user-facing recommendation trust depended on source-level tests plus runtime local/Codex evidence.`
+- orchestration_fit: `single-session fit; the changes touched one coupled recommendation scoring/prompt path and delegation would have raised handoff risk.`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `first cap fixed the perfect score but left a too-high 84 and prompt helpers still needed the same preferredGenre anchor.`
+- reviewer_findings: `Prada-style secondary genre matches no longer reach 100 or direct tasteMatch when action/SF is selected; they remain only as low-confidence filler when DB coverage lacks enough direct genre candidates.`
+- verification_outcome: `focused tests, bootJar, provider health, local fallback smoke, Codex smoke, and git diff --check passed.`
+- next_gate_adjustment: `future recommendation scoring changes should test explicit selected genres separately from poster-derived secondary genres before runtime smoke.`
+
+- genre_guided_recommendation_flow_20260504:
+  - `timestamp`: `2026-05-04 15:37:53 +09:00`
+  - `classification`: `score_total 9; full evaluation; single-session/no-spawn because frontend flow, backend survey/profile contract, candidate title inference, and GPT/Codex prompt are one coupled recommendation surface.`
+  - `implementation`: `Added a genre step before posters, selected-genre poster filtering with fallback priority when fewer than three matching seeds exist, preferredGenres payload, three-poster minimum with five max, backend preferred genre weighting, richer GPT/Codex prompt instructions, larger GPT explanation limits, and current-release title-derived genre tags for Project Hail Mary / Demon Slayer-style / action franchise titles.`
+  - `tests`: `node --check passed for frontend/src/js/pages/daboyeoAi.js and backend static mirror. Focused Gradle tests passed outside sandbox after the known native-platform.dll issue: PreferenceProfileBuilderTests, LocalModelRecommendationClientTests, RecommendationScorerTests. bootJar passed outside sandbox.`
+  - `runtime`: `Spring restarted on localhost:5500 as PID 14008 with startup sync disabled only for local restart; Python AI bridge restarted as PID 11528. /api/health returned ok and provider health reports codex ready, local offline.`
+  - `smoke`: `POST /api/recommendations with aiProvider=codex, preferredGenres action/SF, and three liked posters returned status ok/model codex/count 3; after title-tag repair the first recommendation was Project Hail Mary and the first explanation no longer led with direct-evidence-missing phrasing.`
+  - `verification`: `git diff --check completed with CRLF warnings only; WORKSPACE_CONTEXT.toml required sections were checked.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification one scope expansion after runtime smoke exposed weak current-release genre tags; reviewer_findings selected genre signal now affects poster selection, scoring, and prompt context while tasteMatch stays candidate-specific; verification_outcome clean; next_gate_adjustment recommendation-analysis fixes should check both prompt wording and upstream candidate tags before trusting runtime behavior.`
+
+- gpt_taste_match_prompt_fix_20260504:
+  - `timestamp`: `2026-05-04 15:14:00 +09:00`
+  - `classification`: `score_total 5; full evaluation; single-session/no-spawn because the bug is isolated to LocalModelRecommendationClient prompt construction and focused tests.`
+  - `root_cause`: `LocalModelRecommendationClient.tasteMatchHints fell back to analysisHints(profile) when a candidate had no liked-genre overlap, so user-level liked poster genres such as action/SF/adventure/history were copied into every candidate tasteMatch and GPT/Codex could overclaim that unrelated titles matched those genres.`
+  - `implementation`: `Removed the fallback from candidate tasteMatch and clarified the GPT/Codex prompt: liked_poster_hints are user-level context only, and the model must not claim poster-taste match when a candidate's tasteMatch is empty.`
+  - `tests`: `Added LocalModelRecommendationClientTests coverage for unmatched candidates producing "tasteMatch":[] and directly matching candidates retaining tasteMatch overlap. Focused test passed outside sandbox after native-platform.dll sandbox failure.`
+  - `runtime`: `gradle bootJar passed; Spring restarted on localhost:5500 as PID 8388 with DABOYEO_SHOWTIME_STARTUP_ENABLED=false only for local restart; Python AI bridge restarted as PID 22172; /api/health returned ok and provider health reports Codex ready, local offline.`
+  - `verification`: `git diff --check for touched files completed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification none after root-cause confirmation; reviewer_findings user-level poster hints remain present but are scoped away from candidate-specific evidence; verification_outcome clean; next_gate_adjustment GPT-visible candidate fields should be named and populated as evidence, not as fallback narrative hints.`
+
+- recommendation_five_smoke_20260504:
+  - `timestamp`: `2026-05-04 14:56:00 +09:00`
+  - `classification`: `score_total 7; full evaluation; Selfdex selected; single-session/no-spawn because candidate lookup, focused tests, rebuild, and runtime smoke are one coupled recommendation surface.`
+  - `implementation`: `RecommendationService now wraps candidate lookup in findCandidatesWithFallback: exact filters are queried first, active filters are progressively relaxed, and finally broad upcoming TiDB candidates are used before an honest no_filtered_candidates response is returned. The scorer receives the effective filters that found candidates.`
+  - `tests`: `gradle test --tests kr.daboyeo.backend.service.recommendation.RecommendationServiceCandidateFilterTests passed outside sandbox after the known native-platform.dll sandbox failure; added tests for relaxed region/time recovery and broad candidate fallback.`
+  - `build_runtime`: `gradle bootJar passed; Spring restarted on localhost:5500 as PID 22240 with local startup showtime sync disabled only for this runtime restart; Python AI bridge restarted as PID 9200 with a runtime-only token. /api/health returned ok and provider health reports codex ready, local offline.`
+  - `five_smoke`: `Five POST /api/recommendations calls with strict region/date/time/person filters all returned non-empty results: 01-seohyeon-expired-morning count 3, 02-gangnam-brunch count 3, 03-jeju-night count 3, 04-nowhere-large-party count 3, 05-busan-future-brunch count 3. All five local-provider calls returned fallback status because the local model server is offline, but the UI receives result cards.`
+  - `codex_sanity`: `One extra POST /api/recommendations with aiProvider=codex returned status ok, model codex, count 3.`
+  - `verification`: `git status --short, WORKSPACE_CONTEXT.toml read, WORKSPACE_CONTEXT section check, and git diff --check for the touched files completed; diff check reported CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification runtime restart exposed a PowerShell variable/API mismatch that was fixed and logged; reviewer_findings no fabricated recommendations, exact filters still run first, no-data remains honest if all searches are empty, and Codex token stays runtime-only; verification_outcome clean; next_gate_adjustment recommendation UX should distinguish exact-match recommendations from relaxed-condition recommendations.`
+
+- hourly_showtime_sync_20260504:
+  - `timestamp`: `2026-05-04 14:27:00 +09:00`
+  - `classification`: `score_total 9; full evaluation; Selfdex selected; single-session/no-spawn because scheduler defaults, frontend trigger removal, ingest normalization, and recommendation resilience are coupled in one runtime contract.`
+  - `implementation`: `Changed showtime scheduler defaults to hourly cron 0 0 * * * * and startup-enabled true, added DABOYEO_SHOWTIME_INCLUDE_CGV default false, made scheduled sync read includeCgv from config, removed browser entry/recommend refresh calls, cache-busted served JS, normalized Lotte date strings with attached Korean AM/PM time text, and made RecommendationService saveRun best-effort.`
+  - `frontend_contract`: `Served index.html references 20260504-hourly-sync, and served main/AI page JS contains no showtimes/refresh, refreshShowtimesForEntry, requestEntryRefresh, or refreshShowtimes call from entry/recommend flows. The manual refresh API/client helper remains available but unused by those flows.`
+  - `startup_sync_evidence`: `A real startup sync attempt logged trigger=scheduled, offsets=[0, 1, 2], includeCgv=false, cgvTargets=0, Lotte and Megabox auto-discovery, and successful TiDB writes for Lotte/Megabox bundles after the Lotte date parser repair.`
+  - `runtime`: `Latest Spring jar is running on localhost:5500 as PID 16960; AI bridge python process is PID 17416; /api/health returns ok; /api/recommendation/providers/health reports codex ready and local offline. Local restart used DABOYEO_SHOWTIME_STARTUP_ENABLED=false only to prevent duplicate startup crawling after the verified startup sync attempt; application config default remains true.`
+  - `recommendation_smoke`: `POST /api/recommendations with local provider returned status fallback, model gemma-4-e2b-it, count 3, first provider MEGABOX from TiDB-backed candidates. A first smoke during active sync exposed recommendation_runs save timeout; after fail-soft patch, focused tests passed and latest runtime returned recommendations.`
+  - `verification`: `node --check passed for frontend/static script.js and daboyeoAi.js; rg served/source checks confirm entry/recommend pages no longer call refresh; gradle test passed outside sandbox for ShowtimeSyncServiceTests, CollectorBundleIngestCommandTests, and RecommendationServiceCandidateFilterTests after sandbox native-platform.dll failure; gradle bootJar passed; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification runtime startup sync exposed Lotte source-date normalization and recommendation run-history persistence as necessary resilience fixes; reviewer_findings CGV stays excluded, browser no longer triggers crawl, secrets stay server-side, and nonessential run-history write failure no longer blocks recommendation results; verification_outcome clean; next_gate_adjustment periodic data collection should be verified under concurrent recommendation load, not only by unit tests.`
+
+- entry_showtime_refresh_20260504:
+  - `timestamp`: `2026-05-04 13:36:00 +09:00`
+  - `classification`: `score_total 9; full evaluation; Selfdex selected; main-owned writes with two read-only explorer slices for frontend hook mapping and backend sync architecture.`
+  - `selfdex`: `Read-only Selfdex planner timed out after 180s, so the task proceeded with the frozen local contract from STATE.md, source inspection, and read-only explorer evidence.`
+  - `implementation`: `Added POST /api/showtimes/refresh, EntryShowtimeRefreshService, entry-only ShowtimeSyncService path excluding CGV, bounded entry refresh config, max schedules per bundle trimming, frontend client helper, main-page AI/direct-compare pre-navigation refresh calls, and AI recommendation preflight refresh.`
+  - `runtime`: `Rebuilt bootJar and restarted Spring on localhost:5500 as PID 2700; restarted Codex bridge worker as PID 13688 with runtime-only token and ignored backend/build/tools/codex.exe command.`
+  - `refresh_smoke`: `/api/showtimes/refresh reason=ai-entry returned running in about 8s, then reason=recommend-start returned recent after the background job completed with providers LOTTE_CINEMA/MEGABOX, cgvDeferred true, dateCount 1, bundleRequests 4, movies 112, theaters 232, screens 24, showtimes 80.`
+  - `recommendation_smoke`: `POST /api/recommendations with local provider returned status fallback, model gemma-4-e2b-it, count 3, first provider MEGABOX; local model remains offline but TiDB-backed candidates are available.`
+  - `provider_health`: `/api/recommendation/providers/health reports local offline and codex ready.`
+  - `verification`: `node --check passed for changed frontend/static JS; gradle test --tests kr.daboyeo.backend.sync.showtime.ShowtimeSyncServiceTests passed outside sandbox after sandbox native-platform.dll failure; gradle bootJar passed; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit main integration plus read-only explorers fit; predicted_topology main integration with read-only explorer support; actual_topology same; spawn_count 2 read-only; rework_or_reclassification initial entry refresh was too broad and was tightened by date/discovery/schedule caps after thread evidence; reviewer_findings CGV is excluded from entry path and secrets are not returned to browser; verification_outcome clean; next_gate_adjustment button-triggered collection must cap schedules before TiDB persistence, not only discovery targets.`
+
+- local_codex_recommendation_runtime_20260504:
+  - `timestamp`: `2026-05-04 12:56:17 +09:00`
+  - `classification`: `score_total 7; full evaluation; single-session; no spawn because runtime token, Spring process, bridge worker, and Codex exec verification are one coupled surface.`
+  - `selfdex`: `The read-only Selfdex planner timed out after 180s, so the task proceeded from local source, STATE evidence, and live runtime checks.`
+  - `implementation`: `Patched scripts/ai_bridge_agent.py to resolve the Codex executable, decode subprocess output as UTF-8 with replacement, and create repo-local manual temporary directories instead of Python tempfile directories that hit Windows permission errors.`
+  - `runtime`: `After user-approved ACL update for C:\Users\pc07-00\.codex\sessions and C:\Users\pc07-00\.codex\tmp, copied the local Codex binary to ignored backend/build/tools/codex.exe because the WindowsApps packaged executable is denied from the sandbox-outside worker context.`
+  - `server`: `Spring is running on localhost:5500 as PID 19928; AI bridge worker is running as Python PID 13796 with a runtime-only bridge token.`
+  - `verification`: `Copied codex.exe --version passed outside the sandbox; codex exec schema smoke returned {"ok":true}; /api/health returned ok; /api/recommendation/providers/health reports codex ready and local offline; POST /api/recommendations with aiProvider=codex returned status ok, model codex, and 3 recommendations.`
+  - `local_provider_gap`: `Local model provider remains offline because 127.0.0.1:1234/v1/models is not reachable.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification runtime smoke exposed Windows-specific Codex executable and .codex ACL constraints; reviewer_findings bridge token stayed runtime-only and auth files were not copied; verification_outcome Codex analysis path live, local provider awaiting model server; next_gate_adjustment for local Codex bridge work, verify codex exec under the exact worker context before claiming ready.`
+
+- frontend_gpt_wording_restore_20260504:
+  - `timestamp`: `2026-05-04 12:27:00 +09:00`
+  - `classification`: `score_total 3; light evaluation; single-session; no spawn because this was a small frontend/static mirror copy correction.`
+  - `implementation`: `Restored the user-facing provider label/title/copy from Codex Worker/Codex analysis back to GPT/GPT-5.5/GPT analysis in frontend/src/js/pages/daboyeoAi.js and backend/src/main/resources/static/src/js/pages/daboyeoAi.js.`
+  - `route_preservation`: `The internal provider value remains codex so the current backend Codex bridge route is preserved while the frontend reads as GPT.`
+  - `runtime`: `gradle bootJar passed; Spring was restarted on localhost:5500 as PID 18360; GET /api/health on 127.0.0.1:5500 returned ok.`
+  - `verification`: `node --check passed for frontend and Spring-static daboyeoAi.js; git diff --check passed with CRLF warnings only; served JS contains label GPT and title GPT-5.5 and no Codex Worker/Codex analysis visible strings.`
+  - `retrospective`: `evaluation_fit light fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification none; reviewer_findings visible copy restored without breaking internal route; verification_outcome clean; next_gate_adjustment distinguish product-facing provider naming from wire provider naming.`
+
+- local_spring_port_5500_20260504:
+  - `timestamp`: `2026-05-04 11:38:00 +09:00`
+  - `classification`: `score_total 6; light evaluation; single-session; no spawn because the port/default-origin changes are one tightly coupled runtime path.`
+  - `implementation`: `Changed Spring default port to DABOYEO_BACKEND_PORT:5500, updated local frontend API defaults to 127.0.0.1:5500 with same-origin behavior for Spring-served pages, updated bridge worker/env defaults to 127.0.0.1:5500, added 5500 to fallback CORS defaults, mirrored changed frontend JS into Spring static resources, and updated local verification docs.`
+  - `runtime`: `Stopped old 8080 Spring PID 6572, rebuilt bootJar, and restarted the jar on localhost:5500 as PID 5228; netstat shows 5500 listening and no 8080 listener.`
+  - `browser_verification`: `In the in-app browser on http://localhost:5500/?v=20260504-port5500, entering 서현 produced feedback "경기 성남시 분당구 서현동 기준으로 주변 극장을 표시했습니다.", nearby-count 10, address "현재 위치: 경기도 성남시 분당구 중앙공원로39번길 35", list results including 메가박스 분당 and CGV 서현, and map text "현재 위치 100m".`
+  - `verification`: `node --check passed for frontend and Spring-static client.js/liveMovies.js/daboyeoAi.js; python -m py_compile passed for scripts/ai_bridge_agent.py; git diff --check passed with CRLF warnings only; gradle bootJar passed outside the sandbox; GET /api/health on 127.0.0.1:5500 returned ok.`
+  - `retrospective`: `evaluation_fit light fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification none; reviewer_findings default runtime and browser-visible origin are now aligned with Kakao localhost:5500 behavior; verification_outcome clean; next_gate_adjustment use 5500 as the default Spring local origin unless the user explicitly overrides DABOYEO_BACKEND_PORT.`
+
+- nearby_kakao_sdk_fallback_20260504:
+  - `timestamp`: `2026-05-04 11:28:00 +09:00`
+  - `classification`: `score_total 7; full evaluation; single-session; no spawn because SDK readiness, geolocation UI, manual search, Spring static mirror, and browser verification all touch the same main-page surface.`
+  - `root_cause`: `The Spring-served page could reach a state where Kakao Maps never exposed window.kakao.maps.load, while the frontend kept map/list rendering coupled to SDK readiness; manual search also depended on Kakao geocoding and stale browser cache could keep the old module active.`
+  - `implementation`: `Added autoload=false to the Kakao SDK script, added a cache-busted kakaoMap module URL, made Kakao readiness explicit, decoupled nearby list rendering from map rendering, added local theater-database fallback search, and mirrored frontend fixes into backend Spring static resources.`
+  - `runtime`: `gradle bootJar passed outside the sandbox; Spring restarted on 127.0.0.1:8080 as PID 6572; GET /api/health returned ok.`
+  - `browser_verification`: `In the in-app browser on http://localhost:8080/?v=20260504-nearby-final, entering 서현 and pressing Enter produced feedback "CGV 서현 기준으로 주변 극장을 표시했습니다.", nearby-count 10, first results including CGV 서현, 메가박스 분당, CGV 판교, and map fallback text instead of SDK not ready.`
+  - `verification`: `node --check passed for frontend/src/js/api/kakaoMap.js and backend/src/main/resources/static/src/js/api/kakaoMap.js; git diff --check passed with CRLF warnings only; bootJar passed.`
+  - `privacy_note`: `Real browser geolocation coordinates were not read during verification; the geolocation success handler now uses the same updateMapWithServerData fallback path verified through manual location search.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification browser evidence shifted the fix from SDK race only to SDK-unavailable fallback; reviewer_findings Spring static mirrors and cache busting are required for 8080; verification_outcome clean with graceful SDK fallback; next_gate_adjustment for external SDK UI, keep data/list rendering independent from map rendering.`
+
+- codex_local_ai_bridge_20260504:
+  - `timestamp`: `2026-05-04 10:30:00 +09:00`
+  - `classification`: `score_total 8; full evaluation; single-session; no spawn because the user invoked selfdex but did not explicitly request subagents and the provider/bridge/UI contract was tightly coupled.`
+  - `implementation`: `Added a token-protected Spring AI bridge job queue, internal heartbeat/job/result endpoints, Codex provider routing, local-model bridge fallback, Codex/local provider health, and a stdlib Python bridge worker for local OpenAI-compatible models or codex exec.`
+  - `frontend`: `Replaced the user-facing GPT provider option with Codex worker copy in frontend/src/js/pages/daboyeoAi.js and the Spring static mirror.`
+  - `security`: `Bridge endpoints require X-DABOYEO-BRIDGE-TOKEN; the browser never receives the bridge token, local model URL, or Codex auth state; codex exec runs with read-only sandbox and ask-for-approval never.`
+  - `runtime`: `gradle bootJar passed outside the sandbox; Spring restarted on 127.0.0.1:8080 as PID 4364; GET /api/health returned ok.`
+  - `bridge_smoke`: `Unauthenticated bridge job polling returns HTTP 401; scripts/ai_bridge_agent.py --once with the repo-local token sends a Codex heartbeat; the persistent bridge agent is running as PID 6236; provider health reports codex ready and local offline until the local OpenAI-compatible model server is reachable.`
+  - `verification`: `node --check passed for frontend and Spring-static daboyeoAi.js; python -m py_compile passed for scripts/ai_bridge_agent.py; codex --ask-for-approval never exec --help confirmed the CLI option ordering used by the bridge worker; focused Gradle tests passed for ApiExceptionHandlerTests, AiBridgeJobServiceTests, and LocalModelRecommendationClientTests; git diff --check passed with CRLF warnings only.`
+  - `tool_gap`: `Selfdex external planning command timed out after 120s and was logged; the implementation proceeded from local source files and the frozen STATE contract.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification runtime smoke exposed ResponseStatusException being wrapped as 500, so ApiExceptionHandler was narrowed to preserve 401/503/404 statuses; reviewer_findings bridge auth and fallback are now explicit; verification_outcome clean; next_gate_adjustment when adding internal endpoints, smoke unauthenticated and authorized paths before runtime signoff.`
+
+- spring_5500_kakao_key_fix_20260430:
+  - `timestamp`: `2026-04-30 17:48:00 +09:00`
+  - `classification`: `score_total 9 continuation; single-session/no-spawn; runtime_fix inside the frozen PR #2 static mirror scope.`
+  - `root_cause`: `frontend/index.html used the valid Kakao JS key for the localhost:5500 setup, but backend/src/main/resources/static/index.html still used the old key, so Spring-served index on port 5500 loaded the wrong Kakao SDK URL.`
+  - `implementation`: `Updated backend static index.html to use the frontend Kakao JS key, rebuilt bootJar with system gradle, and restarted Spring on localhost:5500.`
+  - `verification`: `GET /api/health on localhost:5500 returned 200; GET /index.html returned 200 with dapi.kakao.com, the frontend Kakao key present, the old key absent, and #map present; backend/build/resources/main/static/index.html also contains the corrected key.`
+  - `tool_gap`: `In-app browser automation could not be used because node_repl failed to start with Access denied, so verification used local HTTP/static checks.`
+  - `diff_check`: `git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit light runtime fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification port 5500 made the key mismatch visible; reviewer_findings Spring static mirrors must include key-bearing script tags, not only local JS/CSS files; verification_outcome clean; next_gate_adjustment compare external SDK script tags when mirroring frontend pages into Spring static resources.`
+
+- kmh_index_static_mirror_20260430:
+  - `timestamp`: `2026-04-30 17:32:35 +09:00`
+  - `classification`: `score_total 9 continuation; full evaluation; single-session; no spawn because the fix was a static mirror gap inside the already frozen PR #2 selective import.`
+  - `root_cause`: `frontend/index.html had the kmh region/nearby changes, but http://127.0.0.1:8080/index.html is served from backend/src/main/resources/static/index.html, which was still old.`
+  - `implementation`: `Copied the selected imported frontend index dependencies into Spring static mirrors: index.html, style.css, kakaoMap.css, kakaoMap.js, script.js, and constants/regions.js where needed.`
+  - `verification`: `node --check passed for backend static script.js, kakaoMap.js, and regions.js; static index contains region-select-wrapper, nearby-section, DABOYEO_REGIONS, clusterer, and module kakaoMap.js markers.`
+  - `runtime`: `gradle bootJar passed; Spring jar restarted on 127.0.0.1:8080 as PID 2368; GET /api/health returned 200; GET /index.html?static=kmh returned HasRegionSelect=true, HasNearbySection=true, HasRegionsModule=true.`
+  - `diff_check`: `git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification user observed runtime page mismatch, revealing frontend-source import was not enough for Spring-served static pages; reviewer_findings route served by 8080 now matches selected kmh index frontend; verification_outcome clean; next_gate_adjustment when importing frontend for a Spring-served page, mirror frontend files into backend static before runtime signoff.`
+
+- pr2_kmh_nearby_refresh_region_map_selective_integration_20260430:
+  - `timestamp`: `2026-04-30 16:18:00 +09:00`
+  - `classification`: `score_total 9; full evaluation; single-session; no spawn because the user did not request delegation and safe import depended on one dirty working tree plus tightly coupled config/sync/frontend route decisions.`
+  - `github_pr`: `PR #2 [작업 수정 내용] from kmh to lsh; no issue comments, no review threads, head b7a8147, base bdd0c61, mergeable=false, 228 changed files.`
+  - `merge_risk`: `origin/kmh was not merged wholesale because it contains broad frontend/backend/docs/db churn, route moves, recommendation file overlap, and conflicts with current uncommitted work.`
+  - `backend`: `Imported nearby background showtime refresh, provider-target resolver, bridge/showtime/seat package reorganization, startup showtime sync gate, 3-day showtime/seat cleanup, Lotte theater-targeted discovery, Megabox area-targeted discovery, LiveMovieRepository overnight time query, and LiveMovieSearchCriteria cross-midnight support.`
+  - `config`: `application.yml was manually merged so PR sync/demo/CORS settings were added while current GPT recommendation settings and frontend-origins config were preserved.`
+  - `frontend`: `Imported current-route-safe region select data, main-page 3-step region selector, embedded nearby map section, map module, liveMovies region-coordinate resolution, overnight time filtering, and supporting CSS while keeping src/pages routes and excluding src/basic route rewrites/API client deletions.`
+  - `collectors_scripts`: `Added Lotte ticketing page caching and showtime location-link repair for Lotte/Megabox ingest; skipped unrelated seat-status normalization change and branch-wide docs/db churn.`
+  - `preservation`: `Existing recommendation/GPT/poster files, current daboyeoAi pages, PR #1 allMovies import, CGV seat-layout controller, and current R2/static assets were preserved.`
+  - `verification`: `node --check passed for frontend/src/js/pages/script.js, frontend/src/js/api/kakaoMap.js, frontend/src/js/liveMovies.js, and frontend/src/js/constants/regions.js; python -m py_compile passed for collectors/lotte/collector.py and scripts/ingest/collect_all_to_tidb.py; focused Gradle tests passed outside the sandbox for LiveMovieServiceNearbyRefreshTests, NearbyShowtimeRefreshServiceTests, ShowtimeSyncSchedulerTests, ShowtimeCleanupServiceTests, ShowtimeSyncServiceTests, and CgvSeatMapControllerTests; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification user added frontend map scope mid-run and Gradle exposed the missing cross-midnight criteria method; reviewer_findings PR is useful but unsafe as a full merge, and current-route selective import avoided API/client and route regressions; verification_outcome clean; next_gate_adjustment include frontend map/liveMovies in future region-search imports before testing.`
+
+- pr1_ksg_frontend_selective_integration_20260430:
+  - `timestamp`: `2026-04-30 15:31:24 +09:00`
+  - `classification`: `score_total 8; full evaluation; single-session; no spawn because user did not request delegation and the import decision depended on current lsh routes, assets, and dirty recommendation work.`
+  - `github_pr`: `Open PR #1 [슬기] 프론트 from ksg to lsh; no issue comments, no review threads, head e08c53c, base bdd0c61, mergeable=false.`
+  - `merge_risk`: `HEAD..origin/ksg would delete current R2 poster assets, cgvSeatMap/movie/map pages, liveMovies, map data, and other current lsh frontend files while also conflicting with STATE/ERROR_LOG/backend recommendation files. Whole-branch merge was rejected.`
+  - `implementation`: `Selected only frontend/src/pages/allMovies.html and frontend/src/css/allMovies.css from origin/ksg, then repaired favicon paths for the current src/pages route.`
+  - `preservation`: `Current frontend/src/pages route structure, index/script seat routes, frontend/src/assets/R2/posters, existing daboyeoAi changes, backend recommendation changes, and untracked poster tag catalog were preserved.`
+  - `excluded`: `goods_events/** was not imported because it adds a crawler/package with external public-request behavior and is not wired into the current app request; ksg branch-wide basic/ page moves were also excluded to avoid route deletion.`
+  - `verification`: `node --check passed for frontend/src/js/pages/script.js, frontend/src/js/pages/daboyeoAi.js, and backend/src/main/resources/static/src/js/pages/daboyeoAi.js; git diff --check passed with CRLF warnings only; WORKSPACE_CONTEXT required sections were found.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification initial PowerShell pipe git apply failed on UTF-8 patch handling and was resolved via git diff --output; reviewer_findings PR is not safe to merge wholesale but allMovies visual cleanup is safe after path correction; verification_outcome clean; next_gate_adjustment require explicit user approval before importing goods_events crawler or rewriting ksg branch.`
+
+- gpt_fast_precise_analysis_enhancement_20260430:
+  - `timestamp`: `2026-04-30 14:59:50 +09:00`
+  - `classification`: `score_total 7; full evaluation; single-session; no spawn because user did not request delegation and GPT prompt contract, candidate payload, configuration, and tests were tightly coupled.`
+  - `implementation`: `GPT default candidate windows were widened from fast=6/precise=8 to fast=8/precise=12, GPT max tokens were increased to fast=720/precise=1300, and GPT response text limits were widened to fast=180/precise=320 while local model limits stayed compact.`
+  - `prompt_contract`: `GPT fast now uses GPT_FAST single-pass evidence-based comparison; GPT precise now uses GPT_PRECISE full-candidate comparison with poster taste, avoid-risk handling, practical showtime value, and tradeoff versus nearby candidates.`
+  - `candidate_payload`: `GPT candidate JSON now includes tasteMatch, scheduleFit, practicalValue, watchRisks, and precise-only tradeoffHints in addition to fitHints, without exposing raw scores, matchedTags, or penalties.`
+  - `response_quality`: `RecommendationService now preserves longer GPT precise reason/value/analysis text before falling back to grounded code-generated text, while local mode still normalizes compact tag-style responses.`
+  - `tests`: `Focused Gradle tests passed for LocalModelRecommendationClientTests, RecommendationServiceCandidateFilterTests, and RecommendationServiceQualityTests after fixing a fast/precise prompt-boundary test failure.`
+  - `runtime`: `gradle bootJar passed outside the sandbox; Spring boot jar restarted on 127.0.0.1:8080 as PID 7200; GET /api/health returned 200.`
+  - `verification`: `node --check passed for frontend/src/js/pages/daboyeoAi.js and backend/src/main/resources/static/src/js/pages/daboyeoAi.js; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification fast prompt still mentioned precise-only tradeoffHints until tests caught it; reviewer_findings GPT is richer but remains grounded to supplied candidates; verification_outcome clean with known sandbox Gradle native-platform.dll issue logged as resolved; next_gate_adjustment if GPT live latency is acceptable, consider showing a slightly richer GPT precise result label in UI copy.`
+
+- poster_tag_catalog_and_back_button_20260430:
+  - `timestamp`: `2026-04-30 14:37:42 +09:00`
+  - `classification`: `score_total 7; full evaluation; single-session; no spawn because user did not request delegation and the metadata catalog, service loader, tests, static mirror, and browser-comment fix were tightly coupled.`
+  - `source_lookup`: `Fetched each of the 50 movie detail pages by movieCd from https://cinematheque.kr/cine/view/{movieCd}; source genres were used as the primary basis, with conservative obvious recommendation tags added for mood, pace, audience, and avoid signals.`
+  - `implementation`: `Added korea-boxoffice-top50-poster-tags.json keyed by movieCd and updated PosterSeedService to load those per-movie tags while keeping the random 12 poster seed flow unchanged.`
+  - `preference_profile`: `PreferenceProfileBuilderTests now verifies that liked poster seeds add movie-specific genre/mood/audience weights such as action/history/comedy/fantasy instead of only genre:popular.`
+  - `ui_fix`: `daboyeoAi.js no longer moves aiBackButton into the split layout; renderSplitLayout calls resetBackButtonToTopbar, and browser DOM on the poster step shows the button under banner before DABOYEO instead of main > section > div > button.`
+  - `runtime`: `gradle bootJar passed earlier in this task; Spring boot jar restarted on 127.0.0.1:8080 as PID 13740; GET /api/health returned 200.`
+  - `tag_coverage`: `Node JSON check returned manifestCount=50, tagCount=50, missing=[], emptyGenres=[].`
+  - `poster_seed_api`: `GET /api/recommendation/poster-seed?limit=12 returned 12 items with movie-specific tags; sampled results included 설국열차 sf/action, 범죄도시2 crime/action/thriller, 캡틴 아메리카: 시빌 워 action/sf/thriller, 명량 history/action, 겨울왕국 2 animation/musical/family.`
+  - `browser_check`: `In-app browser loaded /src/pages/daboyeoAi.html?v=20260430-poster-tags, advanced through audience, mood, avoid, and poster steps, and captured a poster-step screenshot; DOM hierarchy confirmed aiBackButton stayed in the topbar banner.`
+  - `verification`: `node --check passed for frontend/src/js/pages/daboyeoAi.js and backend/src/main/resources/static/src/js/pages/daboyeoAi.js; focused Gradle tests passed after re-running outside the sandbox; git diff --check passed with CRLF warnings only; WORKSPACE_CONTEXT.toml required section checks passed.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification user clarified per-poster metadata was required, so broad seed defaults were replaced with a searched per-movie catalog; reviewer_findings random poster flow and static mirror stayed intact; verification_outcome clean with known sandbox Gradle/PowerShell JSON parser issues logged as resolved; next_gate_adjustment if metadata quality needs more precision, store explicit source genre text beside normalized tags.`
+
+- ai_recommendation_fallback_differentiation_20260430:
+  - `timestamp`: `2026-04-30 13:55:28 +09:00`
+  - `classification`: `score_total 7; full evaluation; single-session; no spawn because user did not request delegation and scoring, derived tags, poster seed defaults, and runtime response quality were tightly coupled.`
+  - `implementation`: `ShowtimeCandidate.allTags now derives conservative recommendation tags from current provider titles, age ratings, formats, and screen hints for obvious animation/child/family, date/friends/light, horror/thriller/tense, music/live, calm/immersive, and premium visual cases. Raw provider persistence was not changed.`
+  - `poster_seed`: `PosterSeedService no longer assigns generic visual/immersive moods, broad alone/friends/family audiences, or rank-derived pace to every KOBIS/R2 poster seed. genre:popular remains a lightweight seed weight but PreferenceProfileBuilder no longer exposes it as a liked genre for analysis text.`
+  - `response_text`: `RecommendationService decodes HTML entities in display fields, maps known English genre tags to Korean labels, and suppresses generic provider genre labels such as genre:일반콘텐트, genre:popular, and MEGA-only style labels from reason/analysis tags.`
+  - `tests`: `gradle test --tests RecommendationScorerTests --tests PreferenceProfileBuilderTests --tests RecommendationServiceQualityTests passed after fixing an Optional import compile failure.`
+  - `runtime`: `gradle bootJar passed; Spring boot jar restarted on 127.0.0.1:8080 as PID 20208; GET /api/health returned 200; provider health reports local and GPT offline, so recommendation status is honest fallback.`
+  - `api_comparison`: `Four POST /api/recommendations checks returned 3 fallback cards each: child/light ranked Super Mario and animation titles; friends/tense ranked 살목지 first with #스릴러/#긴장감/#공포; alone/calm ranked 류이치 사카모토: 코다 first; date/exciting ranked 악마는 프라다를 입는다 2 first.`
+  - `poster_seed_check`: `GET /api/recommendation/poster-seed?limit=12 returned 12 seeds with genres=popular and empty moods/audiences/pace for the sampled first item.`
+  - `verification`: `git diff --check passed with CRLF warnings only; git status shows expected modified task files only; WORKSPACE_CONTEXT.toml required section checks passed.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification runtime comparison revealed poster seed flattening and generic provider label noise after the first derived-tag pass; reviewer_findings fallback now differentiates obvious personas without claiming live model success or mutating raw DB data; verification_outcome clean; next_gate_adjustment if future poster seed metadata becomes richer, replace genre:popular placeholder with real seed genres instead of adding broad defaults.`
+
+- ai_recommendation_display_entity_decode_20260430:
+  - `timestamp`: `2026-04-30 13:31:23 +09:00`
+  - `classification`: `score_total 6; light evaluation; single-session; no spawn because the concrete defect was one backend response-mapping path plus a focused test.`
+  - `quality_probe`: `Four representative recommendation requests returned fallback recommendations after showtime recovery; the date/exciting case exposed a literal HTML entity title &#40;더빙&#41; 슈퍼 마리오 갤럭시.`
+  - `implementation`: `RecommendationService now decodes basic named and numeric HTML entities in user-facing RecommendationItem title, theaterName, regionName, screenName, and sanitized AI/fallback text. Raw provider persistence was not changed.`
+  - `test_update`: `RecommendationServiceQualityTests adds recommendationDisplayTextDecodesHtmlEntities covering numeric entities, amp, apostrophe, and greater-than in display fields.`
+  - `runtime`: `Stopped stale Spring PID 19872, rebuilt boot jar with gradle bootJar, and restarted Spring as PID 14040 on 127.0.0.1:8080.`
+  - `verification`: `node --check passed for frontend/src/js/pages/daboyeoAi.js; sandbox Gradle failed on native-platform.dll, then elevated RecommendationServiceQualityTests passed; gradle bootJar passed; GET /api/health returned 200; recommendation POST returned fallback with 3 items and title (더빙) 슈퍼 마리오 갤럭시 with has_entity=false; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit light fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification read-only quality probe became a narrow implementation after literal provider HTML entities appeared in user-facing titles; reviewer_findings display text is cleaned at API boundary while raw provider data remains preserved; verification_outcome runtime and tests are clean; next_gate_adjustment after data freshness, test multiple persona payloads before judging final demo polish.`
+
+- ai_recommendation_demo_runtime_recovery_20260430:
+  - `timestamp`: `2026-04-30 13:21:57 +09:00`
+  - `classification`: `score_total 7; full evaluation; single-session; no spawn because server health, DB freshness, provider ingest, and recommendation response were sequentially dependent.`
+  - `server`: `Spring boot jar is running as PID 19872 on 127.0.0.1:8080; GET /api/health returned 200.`
+  - `static_assets`: `GET /src/pages/daboyeoAi.html returned 200 and loaded daboyeoAi.js with cache-bust markers; GET /src/assets/R2/posters/25-20183782-20183782.webp returned 200 with 795766 bytes.`
+  - `poster_seed`: `GET /api/recommendation/poster-seed?limit=12 returned 12 local seed movies with /src/assets/R2/posters/*.webp URLs.`
+  - `provider_health`: `GET /api/recommendation/providers/health returned local and GPT providers as offline, so demo recommendations should present fallback honestly rather than live model analysis.`
+  - `before_recovery`: `POST /api/recommendations returned status no_usable_showtimes; TiDB read-only coverage showed total_showtimes=634, max_starts_at=2026-04-29 22:25:00, future_now=0, future_plus_30m=0.`
+  - `dry_run`: `collect_all_to_tidb.py --provider all --all-provider-dates --max-provider-dates 1 --limit-schedules 20 --dry-run found Lotte 2026-04-30 and Megabox 20260430 provider dates.`
+  - `ingest`: `Megabox bounded write for 20260430 upserted movies=28, theaters=11, screens=200, showtimes=200, movie_tags=71, seat snapshots=0.`
+  - `after_recovery`: `TiDB coverage showed total_showtimes=834, max_starts_at=2026-04-30 22:55:00, future_now=200, future_plus_30m=200, all currently from MEGABOX.`
+  - `recommendation_api`: `POST /api/recommendations with aiProvider=gpt returned status fallback, model gpt-5.5, recommendationCount=3, firstTitle=슈퍼 마리오 갤럭시.`
+  - `environment_notes`: `Default sandbox background Spring process did not persist; server was started outside sandbox. Default sandbox Python could not import PyMySQL, while the user Python environment already had PyMySQL 1.1.2.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification read-only runtime verification became bounded DB freshness recovery after no_usable_showtimes and future_now=0; reviewer_findings demo is presentable as fallback, not live GPT/local analysis, and poster images use local R2 assets; verification_outcome runtime recovered; next_gate_adjustment refresh future showtime coverage before judging recommendation UI or model quality.`
+
+- cgv_key_scope_no_direct_call:
+  - `timestamp`: `2026-04-29 17:31:21 +09:00`
+  - `env_scope`: `Root .env has CGV_API_SECRET set and TiDB connection values set; no CGV_ID or CGV_PASSWORD value was present in the redacted key-state scan.`
+  - `code_inferred_scope`: `collectors/cgv/api.py signs requests with X-TIMESTAMP and X-SIGNATURE using CGV_API_SECRET and defines public booking/display collection paths for movie list, movie attributes, regions/sites, dates by movie, schedules by movie, and seat data.`
+  - `browser_observed_scope`: `Public CGV UI showed movie chart, booking flow, theater/date/showtime selection, and remaining/total seat counts; clicking a showtime produced a login-required modal before seat selection.`
+  - `loaded_resource_trace`: `The already-loaded homepage trace showed public CGV display/common/OIDC/ad/analytics resources; no admin, manager, or backoffice path was observed or tested.`
+  - `explicit_non_actions`: `No direct CGV API request was made by curl, Python, Postman, fetch, HEAD, OPTIONS, or admin-token flow; no endpoint guessing or scanning was performed.`
+
+- cgv_signature_scope_static_only:
+  - `timestamp`: `2026-04-29 17:42:51 +09:00`
+  - `method`: `Static repo inspection only; no CGV network request, browser navigation, status probe, or endpoint guessing.`
+  - `secret_state`: `.env contains CGV_API_SECRET set; no CGV login username/password key is set.`
+  - `implemented_signed_paths`: `searchAtktTopPostrList, searchAtktTopPostrAttrList, searchAllRegionAndSite, searchSiteScnscYmdListByMov, searchSchByMov, and searchIfSeatData.`
+  - `inferred_access_ceiling`: `Movie catalog/attributes, region and theater master data, available screening dates, showtime schedules with booking keys and remaining/total seat counts, and seat layout/status data for a chosen public screening if required booking keys are known.`
+  - `not_supported_by_current_evidence`: `No account profile, payment, reservation-confirmation, member-only mypage, or admin/manager/backoffice access path was found in the CGV signing client or probe script.`
+
+- cgv_official_loaded_file_security_inspection:
+  - `timestamp`: `2026-04-30 09:51:15 +09:00`
+  - `method`: `Normal browser loads of https://cgv.co.kr/, /cnm/movieBook, and /cnm/movieBook/movie plus CDP response-body inspection of loaded CGV JS/resources; no custom signed API call, no endpoint probing, no login token, and no admin-like direct access.`
+  - `coverage`: `111 unique CGV resources, 63 unique CGV JS files, about 3.6 MB of CGV JS, 15 naturally loaded api.cgv.co.kr paths, and 129 endpoint strings found in loaded public JS.`
+  - `public_signing_key`: `The public CGV chunk 1453-58ae862b23257487.js contains an interceptor that creates X-TIMESTAMP and X-SIGNATURE using HmacSHA256 over timestamp|pathname|body; the embedded 43-character signing string equals the local .env CGV_API_SECRET without printing the value.`
+  - `signing_scope`: `The frontend applies the signature to request URLs starting with https://api.cgv.co.kr and https://event.cgv.co.kr, sets credentials=include, and adds Bearer accessToken when an accessToken cookie is present.`
+  - `naturally_loaded_api_paths`: `/act/resv/actResv/searchHeaderActSiteList; /cnm/atkt/searchAtktTopPostrAttrList; /cnm/atkt/searchAtktTopPostrList; /cnm/atkt/searchOnlyCgvMovList; /cnm/atkt/searchSscnsCdList; /cnm/site/searchAllRegionAndSite; /com/bznsCom/mngrNtce/selectMngrNtceProcedure; /com/bznsCom/screnMng/checkScrenUrlValid; /com/bznsCom/user/searchComcdValList; /met/dsp/scrDsp/search* display paths; /met/emrg/searchMainEmrg.`
+  - `static_endpoint_surface`: `Loaded public JS references many cinema/booking read endpoints including searchIfSeatData, searchSchByMov, searchSiteScnscYmdListByMov, seat price/info paths, site/theater paths, and activity reservation search paths; it also references payment/member/write-like paths, but static references do not prove access without server-side auth/session.`
+  - `security_interpretation`: `The CGV_API_SECRET is effectively public because it is shipped in CGV frontend JS; X-SIGNATURE alone should not be treated as authorization. Real protection must come from cookies/accessToken/server-side authorization and business checks.`
+  - `risk_boundary`: `No /admin, /manager, or /backoffice path was observed in the inspected public route JS; payment/member/reservation endpoints exist in public bundles but were not called or tested for authorization.`
+
+- cgv_api_fetch_attempt_20260429:
+  - `timestamp`: `2026-04-29 15:45:53 +09:00`
+  - `request_update`: `User explicitly asked to use the API instead of page scraping.`
+  - `live_attempt`: `python scripts\cgv_collector_demo.py --mode movies stopped before network I/O because CgvApiClient found no usable CGV_API_SECRET value.`
+  - `implementation_status`: `The collector uses CGV signed API endpoints including /cnm/atkt/searchSchByMov and /cnm/atkt/searchIfSeatData; Spring exposes GET /api/cgv/seat-layout and keeps signing server-side.`
+  - `verification`: `python py_compile passed for collectors/cgv/api.py, collectors/cgv/collector.py, and scripts/cgv_collector_demo.py; node --check passed for frontend/static cgvSeatMap.js and client.js; sample JSON parsed with 123 seats and 2 zone boxes; frontend/static secret scan found no matches; focused CgvSeatMapControllerTests passed outside sandbox after Gradle native-platform.dll failed inside sandbox; git diff --check passed with CRLF warnings only.`
+  - `blocker`: `Set a real CGV_API_SECRET in the root .env or process environment, then rerun scripts\cgv_collector_demo.py --mode seat-layout with current CGV booking keys or call /api/cgv/seat-layout from the Spring backend.`
+
+- cgv_realtime_coordinate_seat_map:
+  - `timestamp`: `2026-04-29 17:37:00 +09:00`
+  - `classification`: `score_total 9; full evaluation; single-session; no spawn because the Spring endpoint, Python bridge, collector layout output, API client, and coordinate renderer share one tight live-data contract.`
+  - `implementation`: `Added GET /api/cgv/seat-layout with validated CGV booking-key params; PythonCollectorBridge now calls CgvCollector.build_seat_layout server-side; cgvSeatMap.html/css/js renders live or uploaded/sample CGV x/y/w/h coordinates with status filters, zoom, selected-seat detail, JSON upload, sample fallback, and 15-second auto-refresh.`
+  - `collector`: `CgvCollector build_seat_records, summarize_seat_map, and build_seat_layout now accept optional seat_area_no; scripts/cgv_collector_demo.py exposes --mode seat-layout and --seat-area-no.`
+  - `static_runtime`: `The new cgvSeatMap page, CSS, JS, API client, and cgv-seat-layout.sample.json were mirrored from frontend/src into backend/src/main/resources/static/src.`
+  - `security`: `CGV signing and CGV_API_SECRET remain server/Python collector concerns; frontend/static scan found no CGV_API_SECRET, X-TIMESTAMP, X-SIGNATURE, api_secret, or secret strings.`
+  - `verification`: `python -m py_compile passed for collectors/cgv/collector.py and scripts/cgv_collector_demo.py; node --check passed for frontend and backend-static cgvSeatMap.js and client.js; sample JSON parsed with 123 seats, 2 zone boxes, and status counts special=26 available=65 sold=32; focused Gradle test CgvSeatMapControllerTests passed after elevated Gradle native-platform.dll access; git diff --check passed with CRLF warnings only; frontend/backend static mirrors matched for JS/CSS/client.`
+  - `live_limit`: `No live CGV upstream smoke was run because the current env has no usable CGV_API_SECRET and network approval/live keys were not provided.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification static renderer expanded to realtime endpoint after the user clarified the requirement; reviewer_findings explicit RequestParam names avoid compile-flag fragility and browser code never receives signing material; verification_outcome local contract is verified, while true realtime freshness needs a valid current CGV booking key plus CGV_API_SECRET; next_gate_adjustment if this becomes production-facing, add request throttling/caching around the live CGV endpoint.`
+
+- cgv_signed_seat_map_collection:
+  - `timestamp`: `2026-04-29 16:38:00 +09:00`
+  - `classification`: `score_total 8; full evaluation; single-session; no spawn because user did not request delegation and CGV collector output plus backend snapshot normalization had one tight contract.`
+  - `implementation`: `CgvCollector now converts CGV searchIfSeatData seats into stable seat_key, x/y/width/height, normalized_status, and a UI-ready build_seat_layout payload; scripts/cgv_collector_demo.py adds --mode seat-layout.`
+  - `backend`: `SeatSnapshotStatusNormalizer now maps CGV code 00 to available, code 01 or sale N to sold, sale Y to available, and blocked names before sale availability; SeatSnapshotPersistenceService accepts seat_key and CGV coordinate aliases.`
+  - `security`: `CGV_API_SECRET remains loaded only from process env or repo-root .env; static scan found only the .env.example placeholder plus existing signing header usage.`
+  - `verification`: `python -m py_compile passed for collectors/cgv/api.py, collectors/cgv/collector.py, scripts/cgv_collector_demo.py, and scripts/cgv_api_probe.py; synthetic CGV seat payload check returned records=2, remaining=1, zoneBoxes=1; sandbox Gradle failed on native-platform.dll, then elevated focused tests passed for SeatSnapshotStatusNormalizerTests and SeatSnapshotSyncServiceTests; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification no schema change was needed because existing snapshot tables can store CGV coordinates; reviewer_findings signed API boundary is intact and CGV status mapping no longer drops 00/01-only rows; verification_outcome collector and backend contract are locally verified, while live CGV API smoke remains intentionally skipped unless explicitly requested; next_gate_adjustment if layout persistence becomes required, add a focused seat_layouts upsert path instead of overloading seat_snapshots.`
+
+- r2_local_poster_seed_routing:
+  - `timestamp`: `2026-04-29 14:59:00 +09:00`
+  - `classification`: `score_total 4; light evaluation; single-session; no spawn because PosterSeedService, test expectations, build resources, and boot-jar patch formed one narrow seed-source switch.`
+  - `implementation`: `PosterSeedService now reads recommendation/korea-boxoffice-top50-posters.json and maps each movie to the existing PosterSeedMovie response shape with id=movieCd and posterUrl=/src/assets/R2/posters/*.webp; DB image storage was not added.`
+  - `metadata_note`: `The R2/KOBIS manifest currently has poster path and ranking fields, not rich genre/mood metadata, so the service attaches minimal generic poster preference tags popular, visual, immersive, and audience defaults until a richer local metadata file exists.`
+  - `test_update`: `PreferenceProfileBuilderTests now use KOBIS movieCd seed ids and assert the generic local seed preference weights.`
+  - `static_runtime`: `korea-boxoffice-top50-posters.json was copied into backend/build/resources/main/recommendation and patched into the boot jar with PosterSeedService.class; Spring was restarted from the patched jar as PID 18200 on 127.0.0.1:8080.`
+  - `verification`: `javac compiled PosterSeedService and PreferenceProfileBuilderTests with a minimal classpath; /api/health returned ok; /api/recommendation/poster-seed?limit=12 returned 12 items and all posterUrl values matched /src/assets/R2/posters/*.webp; a representative R2 poster URL returned HTTP 200; POST /api/recommendations accepted three returned KOBIS ids and returned fallback with 3 recommendations; boot jar contains PosterSeedService.class and korea-boxoffice-top50-posters.json; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit light fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification no DB path was needed; reviewer_findings poster selection is now local-static and presentation-safe, but richer seed metadata should be added later if poster choices need stronger taste differentiation; verification_outcome current 8080 server serves R2 poster seed successfully; next_gate_adjustment keep image binaries in static/R2 and recommendation metadata in classpath JSON rather than movie DB columns.`
+
+- fallback_result_presentation_clarity:
+  - `timestamp`: `2026-04-29 14:32:00 +09:00`
+  - `classification`: `score_total 5; full evaluation; single-session; no spawn because fallback result rendering, static mirroring, one controller binding fix, and jar patch were tightly coupled to the same demo flow.`
+  - `implementation`: `Fallback responses now render neutral fallback result cards, use Fallback 근거 instead of GPT 분석, and the summary separates 요청 엔진 from 실제 처리 so GPT/local offline fallback no longer looks like live model analysis.`
+  - `controller_fix`: `RecommendationController now declares @RequestParam(name = "limit", defaultValue = "10") for poster-seed so the endpoint does not depend on Java parameter-name metadata in manually patched jars.`
+  - `static_runtime`: `frontend AI JS/CSS/HTML were mirrored into backend static resources, backend build resources, and the current boot jar; RecommendationController.class was recompiled and patched into the boot jar; Spring was restarted from the patched jar as PID 13168 on 127.0.0.1:8080.`
+  - `verification`: `node --check passed for frontend/src/js/pages/daboyeoAi.js; javac cleanly recompiled RecommendationController.class with a minimal Spring classpath outside the sandbox after sandbox Gradle-cache access noise; /api/health returned ok; /api/recommendation/poster-seed?limit=12 returned 12 items; 8080 static HTML/JS/CSS contain 20260429-fallback-result, is-fallback-result, Fallback 근거, 요청 엔진, 실제 처리, and fallback CSS markers; POST /api/recommendations with aiProvider=gpt returned status fallback, model gpt-5.5, and 3 recommendations; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification verification exposed one backend binding durability bug inside the same AI flow; reviewer_findings fallback UI is now honest about actual processing and poster-seed is no longer compile-flag fragile; verification_outcome demo server is running and the GPT-offline path is presentable; next_gate_adjustment explicitly name RequestParam values on controller methods whenever manual javac/jar patching is part of the workflow.`
+
+- ai_provider_health_visibility_for_demo:
+  - `timestamp`: `2026-04-29 14:18:00 +09:00`
+  - `classification`: `score_total 5; full evaluation; single-session; no spawn because backend health response, frontend badge UI, and jar mirror were one small coupled contract.`
+  - `implementation`: `Added GET /api/recommendation/providers/health returning local/GPT provider, label, expected models, availability, status, and safe message; frontend mode step now fetches it and shows checking/connected/offline badges on provider route buttons.`
+  - `runtime`: `Spring was restarted from the patched jar as PID 5500 on 127.0.0.1:8080.`
+  - `verification`: `node --check passed for frontend/src/js/api/client.js and frontend/src/js/pages/daboyeoAi.js; javac compiled RecommendationModels, LocalModelRecommendationClient, RecommendationService, and RecommendationController; /api/health returned ok; /api/recommendation/providers/health returned local and GPT as offline because 1234/10531 are not running; 8080 static HTML/JS/CSS contain provider-health markers; POST /api/recommendations still returns fallback with 3 recommendations; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification no major reclassification, but jar patch had to be corrected for the new nested record class; reviewer_findings offline model routes are now visible instead of silently becoming fallback; verification_outcome demo can show why GPT/local live analysis is not connected; next_gate_adjustment wildcard nested Java classes must be explicitly included in manual jar patches.`
+
+- recommendation_future_showtime_coverage_recovery:
+  - `timestamp`: `2026-04-29 14:08:00 +09:00`
+  - `classification`: `score_total 7; full evaluation; single-session; no spawn because DB coverage, collector dry-run, bounded ingest, and API verification were sequentially dependent.`
+  - `db_before`: `Read-only JDBC coverage found 474 showtimes, max starts_at 2026-04-28 23:10:00, and 0 usable future candidates for the 2026-04-29 afternoon cutoff.`
+  - `collector_dry_run`: `collect_all_to_tidb.py --provider all --all-provider-dates --max-provider-dates 1 confirmed provider date 2026-04-29 was available from Lotte and Megabox.`
+  - `ingest`: `Lotte write was blocked by a JSONDecodeError from the provider response before useful upsert; Megabox bounded write inserted/upserted 160 today showtimes, 31 movies, 16 theaters, 160 screens, and 75 movie tags.`
+  - `db_after`: `Coverage rose to 634 total showtimes, max starts_at 2026-04-29 22:25:00, and 155 usable future showtimes, all currently from MEGABOX.`
+  - `implementation`: `RecommendationService now retries an expired date+timeRange filter without the expired timeRange, preserving date/region/person filters, and the result page displays response.message so the user sees the fallback reason.`
+  - `static_runtime`: `frontend AI JS/HTML were mirrored into backend static resources, backend build resources, and the current boot jar; Spring was restarted from the patched jar as PID 6192 on 127.0.0.1:8080.`
+  - `verification`: `node --check passed for daboyeoAi.js; javac compiled RecommendationService and RecommendationServiceCandidateFilterTests after elevated Gradle-cache access; 8080 health returned ok; 8080 HTML contains 20260429-filter-relax and JS contains resultNote; POST /api/recommendations with gpt fast and today morning now returns status fallback with 3 recommendations and the expired-timeRange message; git diff --check passed with CRLF warnings only.`
+  - `retrospective`: `evaluation_fit full fit; orchestration_fit single-session fit; predicted_topology single-session; actual_topology single-session; spawn_count 0; rework_or_reclassification discovery became a bounded data refresh plus backend guard; reviewer_findings data freshness was the real blocker and today morning needed a durability guard; verification_outcome API moved from no_usable_showtimes/no_filtered_candidates to candidate-backed fallback; next_gate_adjustment check same-day expired filters whenever recommendations depend on current time.`
+
+- gpt_recommendation_prompt_depth_differentiation:
+  - `timestamp`: `2026-04-29 13:40:00 +09:00`
+  - `classification`: `score_total 6; full evaluation; single-session; no spawn because provider-mode prompt contract, response shaping, result UI, and jar mirror are tightly coupled.`
+  - `implementation`: `GPT fast/precise now use provider-specific prompts, wider GPT JSON fields (why/a/v/c), GPT candidate/token budgets, caution parsing, narrative preservation, and GPT analysis/caution result-card styling while local Gemma keeps compact tag-oriented behavior.`
+  - `config`: `Added GPT-specific candidate and max-token environment knobs: GPT fast 6 candidates/520 tokens, GPT precise 8 candidates/900 tokens by default.`
+  - `static_runtime`: `frontend AI JS/CSS/HTML and application.yml/classes were mirrored into backend static resources, backend build resources/classes, and the current boot jar; Spring is running as PID 12836 on 127.0.0.1:8080.`
+  - `verification`: `node --check passed for daboyeoAi.js; Gradle test could not start because native-platform.dll failed; javac compiled RecommendationModels, RecommendationProperties, LocalModelRecommendationClient, and RecommendationService; 8080 health returned ok; 8080 static JS/CSS/HTML contain gpt-depth result UI markers; GPT recommendation POST accepted aiProvider=gpt and model=gpt-5.5 but returned no_usable_showtimes because the current DB has no usable future showtime candidates; git diff --check passed with CRLF warnings only.`
+
+- ai_poster_image_failure_fallback:
+  - `timestamp`: `2026-04-29 12:39:00 +09:00`
+  - `classification`: `score_total 2; light evaluation; single-session; no spawn because this was a narrow frontend image-error fallback plus Spring static mirror.`
+  - `root_cause`: `poster seed currently returns external posterUrl values and posterPath null, and the old img error handler only removed src, leaving a blank framed card.`
+  - `implementation`: `renderPosterCard now always renders a styled ai-poster-image-fallback title panel and switches to it when posterUrl is absent or the img error event fires.`
+  - `static_runtime`: `frontend AI JS/CSS/HTML were mirrored into backend static resources, backend build resources, and the current boot jar; Spring was restarted as PID 9768 on 127.0.0.1:8080.`
+  - `verification`: `node --check passed for daboyeoAi.js; 8080 health returned ok; 8080 HTML/JS/CSS contain 20260429-poster-fallback, ai-poster-image-fallback, and is-image-missing rules; git diff --check passed with CRLF warnings only.`
+
+- ai_poster_card_frame_polish:
+  - `timestamp`: `2026-04-29 12:31:00 +09:00`
+  - `classification`: `score_total 2; light evaluation; single-session; no spawn because this was a narrow CSS poster-frame polish plus Spring static mirror.`
+  - `implementation`: `Poster cards now use a dark padded cinematic frame, inner inset highlight, subtler hover lift, and cyan selected state instead of the flat pale border/background.`
+  - `static_runtime`: `frontend AI CSS/HTML were mirrored into backend static resources, backend build resources, and the current boot jar; Spring was restarted as PID 20664 on 127.0.0.1:8080.`
+  - `verification`: `8080 health returned ok; 8080 HTML/CSS contains 20260429-poster-frame and the poster-card frame rules; app browser reached the poster step and showed the updated framed poster cards; git diff --check passed with CRLF warnings only.`
+
+- ai_first_step_back_button:
+  - `timestamp`: `2026-04-29 12:22:00 +09:00`
+  - `classification`: `score_total 2; light evaluation; single-session; no spawn because this was a narrow JS navigation hotfix plus Spring static mirror.`
+  - `implementation`: `First-step 이전 now calls browser history back with a main-page fallback, while later AI guide steps keep the existing internal previous-step behavior.`
+  - `static_runtime`: `frontend AI JS/HTML were mirrored into backend static resources, backend build resources, and the current boot jar; Spring was restarted as PID 13016 on 127.0.0.1:8080.`
+  - `verification`: `node --check passed for daboyeoAi.js; /api/health returned ok; 8080 HTML/JS contains 20260429-first-back and goToPreviousPage; app browser confirmed first-step 이전 returns to index history and second-step 이전 returns to the audience step; git diff --check passed with CRLF warnings only.`
+
+- ai_provider_route_selector:
+  - `timestamp`: `2026-04-29 11:40:00 +09:00`
+  - `classification`: `score_total 5; full evaluation; single-session; no spawn because the provider selector UI, aiProvider request contract, backend routing, and Spring static mirror form one tight slice.`
+  - `implementation`: `The mode step now renders a local/GPT route selector, stores the selected provider as daboyeoAiProvider, updates fast/precise card model labels between Gemma local and GPT-5.5 reasoning labels, and sends aiProvider with recommendation requests.`
+  - `backend`: `RecommendationRequest accepts aiProvider, AiProvider defaults to local, RecommendationProperties exposes local/GPT base URL, model, and reasoning settings, and LocalModelRecommendationClient routes OpenAI-compatible calls by provider without exposing OAuth tokens to the browser.`
+  - `startup_fix`: `The added RecommendationProperties compatibility constructor required @ConstructorBinding on the canonical record constructor; without it, the patched jar exited because Spring looked for a default constructor.`
+  - `static_runtime`: `frontend AI files were mirrored into backend/src/main/resources/static, backend/build/resources/main/static, and the current boot jar; Spring is running from the patched jar as PID 13160 on 127.0.0.1:8080.`
+  - `verification`: `node --check passed for frontend/src/js/pages/daboyeoAi.js; javac 21 compiled the changed recommendation classes; Gradle test remains blocked by native-platform.dll; /api/health returned status ok; POST /api/recommendations accepted aiProvider=local and aiProvider=gpt with models gemma-4-e2b-it and gpt-5.5; app browser confirmed GPT switch changes the card labels to GPT-5.5 reasoning low/high; git diff --check passed with CRLF warnings only.`
+
+- durable_spring_tidb_dotenv_mapping:
+  - `timestamp`: `2026-04-29 11:10:00 +09:00`
+  - `classification`: `score_total 6; full evaluation; single-session; no spawn because dotenv parsing, Spring property-source precedence, jar startup, and API recovery were one tight config slice.`
+  - `root_cause`: `The root .env first key was read as a BOM-prefixed key instead of TIDB_HOST, and the current boot jar also lacked BOOT-INF/classes/META-INF/spring.factories, so the EnvironmentPostProcessor was not registered in that jar.`
+  - `implementation`: `RootDotenvLoader now strips a UTF-8 BOM, RootDotenvEnvironmentPostProcessor derives DABOYEO_DB_* plus spring.datasource.* from TIDB_* with TiDB Cloud TLS and timeout defaults, and docs/env example explain the durable mapping.`
+  - `verification`: `Gradle test could not start because native-platform.dll failed to load; javac 21 compiled the changed config classes; manual Java config harness returned MANUAL_CONFIG_CHECK_OK; the patched boot jar includes RootDotenv classes and BOOT-INF/classes/META-INF/spring.factories; /api/health returned 200; POST /api/recommendation/sessions returned 200 in 2142 ms.`
+  - `runtime`: `Spring backend is running from the normal jar as PID 2112 on 127.0.0.1:8080.`
+
+- korea_boxoffice_top50_poster_webp_seed:
+  - `timestamp`: `2026-04-28 16:23:00 +09:00`
+  - `classification`: `score_total 8; full evaluation; single-session; no spawn because ranking, poster lookup, conversion, and manifest verification were one coupled generated-data pipeline.`
+  - `source`: `KOBIS official former/all-time box-office HTML saved locally at .local/boxoffice-posters/kobis-former-boxoffice.html; filtered to releaseDate 2010-01-01 through 2026-12-31 and re-ranked 1-50 by admissions.`
+  - `output_metadata`: `backend/src/main/resources/recommendation/korea-boxoffice-top50-posters.json contains 50 movies with rank, KOBIS all-time rank, movieCd, Korean title, release date, admissions, gross, screens, poster source URL, local poster path, dimensions, and sha256.`
+  - `output_assets`: `frontend/src/assets/R2/posters contains 50 generated .webp poster files referenced by the metadata.`
+  - `poster_source`: `each poster was resolved from the KOBIS movie detail popup endpoint /kobis/business/mast/mvie/searchMovieDtl.do using the movieCd from the official ranking row, then converted locally to WEBP with Pillow quality=86.`
+  - `verification`: `python -m json.tool passed for korea-boxoffice-top50-posters.json; manifest check found 50 movies, 50 unique ranks, and 0 missing .webp files; poster directory has 50 .webp files; git diff --check passed with existing CRLF warnings only.`
+  - `data_note`: `KOBIS cumulative admissions can change due to rereleases and ongoing 2026 releases, so the ranking is a 2026-04-28 local snapshot.`
+
+- canonical_ai_recommendation_smoke:
+  - `frontend_route`: `frontend/src/js/pages/script.js now routes the main AI 추천받기 CTA to ./src/pages/daboyeoAi.html; other AI links already point to daboyeoAi.html.`
+  - `duplicate_page`: `frontend/src/pages/ai.html still exists pending explicit action-time confirmation before local file deletion.`
+  - `model_config`: `application.yml keeps fast-model=gemma-4-e2b-it and precise-model=gemma-4-e4b-it; frontend mode labels still show E2B Q4 and E4B Q4.`
+  - `local_model_endpoint`: `http://127.0.0.1:1234/v1/models was initially unreachable; LM Studio was started with lms server start and now returns the configured model list.`
+  - `local_model_loaded`: `LM Studio server is now running on 127.0.0.1:1234; gemma-4-e2b-it and gemma-4-e4b-it are both listed by /v1/models, loaded by lms ps, and returned HTTP 200 from /v1/chat/completions with a ping response.`
+  - `spring_backend`: `Gradle cannot start because native-platform.dll loading fails, but the existing build/libs jar starts with Java 21 when launched in a sandbox-external hidden PowerShell process.`
+  - `health`: `/api/health returned status=ok from localhost:8080 after the jar launch.`
+  - `recommendation_api`: `/api/recommendation/poster-seed?limit=3 returned 200, but POST /api/recommendation/sessions timed out after 8 seconds; the frontend therefore still falls back to local preview mode.`
+  - `browser`: `App browser opened http://localhost:5500/src/pages/daboyeoAi.html?v=backend-live; the visible page is the canonical AI recommendation flow at 1 / 5 상황.`
+  - `verification`: `node --check passed for script.js and daboyeoAi.js; git diff --check passed with CRLF warnings only.`
+
+- ai_browser_comment_polish:
+  - `timestamp`: `2026-04-28 15:15:52 +09:00`
+  - `classification`: `score_total 3; single-session; no spawn; browser comments are a narrow frontend rendering/layout polish on the canonical AI page.`
+  - `scope`: `Remove option description text from glass buttons and move the poster batch button close to the poster grid with stronger visibility.`
+  - `write_sets`: `frontend/src/pages/daboyeoAi.html, frontend/src/js/pages/daboyeoAi.js, frontend/src/css/daboyeoAi.css`
+  - `verification_target`: `node --check daboyeoAi.js, git diff --check, and browser DOM/style sanity for the commented elements.`
+  - `implementation`: `Option buttons now render only their title span; poster batch navigation is inside .ai-poster-stage as .ai-poster-next-button, styled as a visible circular button over the poster grid; daboyeoAi.html cache-bust query was updated so the app browser loads the patched JS/CSS.`
+  - `verification`: `node --check passed for daboyeoAi.js; git diff --check passed with CRLF warnings only; app browser confirmed .ai-glass-btn-desc count 0, old selected description text count 0, .ai-poster-right-top count 0, .ai-poster-next-button count 1 and visible.`
+
+- ai_single_click_option_flow:
+  - `timestamp`: `2026-04-28 15:32:01 +09:00`
+  - `classification`: `score_total 3; single-session; no spawn; one narrow interaction fix on the AI option buttons.`
+  - `scope`: `Remove the mobile first-click expansion gate so option buttons advance on one click, while keeping the expanded visual affordance as hover/focus styling.`
+  - `write_sets`: `frontend/src/pages/daboyeoAi.html, frontend/src/js/pages/daboyeoAi.js, frontend/src/css/daboyeoAi.css`
+  - `verification_target`: `node --check daboyeoAi.js, git diff --check, and browser one-click progression from audience to mood.`
+  - `implementation`: `Removed the mobile innerWidth/is-expanded click gate from renderOptionList, deleted obsolete is-expanded CSS/mobile description rules, added focus-visible styling matching hover affordance, and bumped the AI page CSS/JS cache-bust query.`
+  - `verification`: `node --check passed for daboyeoAi.js; git diff --check passed with CRLF warnings only; static search found no is-expanded or mobile innerWidth gate; app browser confirmed one click changes from audience to mood, with desc count 0 and expanded count 0.`
+
+- ai_poster_bidirectional_buttons:
+  - `timestamp`: `2026-04-28 15:41:31 +09:00`
+  - `classification`: `score_total 3; single-session; no spawn; narrow poster-step control placement change.`
+  - `scope`: `Move the next poster batch button to the comment-ping position at the right side of the poster grid and add a matching previous button on the opposite side.`
+  - `write_sets`: `frontend/src/pages/daboyeoAi.html, frontend/src/js/pages/daboyeoAi.js, frontend/src/css/daboyeoAi.css`
+  - `verification_target`: `node --check daboyeoAi.js, git diff --check, and browser DOM sanity for left/right poster batch controls.`
+  - `implementation`: `Poster stage now renders previous and next batch buttons; next sits to the right of the grid, previous sits to the opposite left, with responsive fallback inside the grid area on narrow viewports.`
+  - `verification`: `node --check passed for daboyeoAi.js; git diff --check passed with CRLF warnings only; app browser confirmed .ai-poster-nav-button count 2, prev count 1, next count 1, old top control count 0, and both controls visible.`
+
+- ai_poster_exact_five_manual_continue:
+  - `timestamp`: `2026-04-28 15:49:51 +09:00`
+  - `classification`: `score_total 3; single-session; no spawn; narrow poster-step interaction logic change.`
+  - `scope`: `Disable poster completion until exactly five posters are selected and prevent automatic transition when the fifth poster is selected.`
+  - `write_sets`: `frontend/src/pages/daboyeoAi.html, frontend/src/js/pages/daboyeoAi.js, frontend/src/css/daboyeoAi.css`
+  - `verification_target`: `node --check daboyeoAi.js, git diff --check, and browser poster-step sanity for disabled-before-five and enabled-at-five behavior.`
+  - `implementation`: `Removed poster auto-advance scheduling, changed completion readiness from minimum 3 to exactly 5 selected posters, set the poster completion button disabled/aria-disabled until ready, added disabled CTA styling, and bumped daboyeoAi.html cache-bust query.`
+  - `verification`: `node --check passed for daboyeoAi.js; git diff --check passed with CRLF warnings only; static search found no MIN_LIKE_COUNT, POSTER_AUTO_ADVANCE_MS, schedulePosterProgress, or isPosterDiagnosisComplete; app browser confirmed button disabled at 0/3/4 selected, enabled at 5 selected, and the page remains on the poster step after the fifth selection.`
+
+- local_r2_poster_folder_placeholder:
+  - `timestamp`: `2026-04-28 15:57:16 +09:00`
+  - `classification`: `score_total 2; single-session; no spawn; placeholder folder only after user corrected scope.`
+  - `scope`: `Create only a local R2-like poster folder placeholder; do not keep downloaded or generated poster assets yet.`
+  - `write_sets`: `frontend/src/assets/R2/posters/.gitkeep, backend/src/main/resources/recommendation/poster-seed.json`
+  - `implementation`: `Removed 53 generated/downloaded poster image files from frontend/src/assets/R2/posters, restored poster-seed.json to the previous external posterUrl state from the existing backend bin resource copy, and left frontend/src/assets/R2/posters/.gitkeep so the folder exists in git.`
+  - `verification_target`: `poster folder exists with only .gitkeep; poster-seed.json parses and no longer points at /src/assets/R2/posters.`
+
+- ai_remove_local_preview_fallbacks:
+  - `timestamp`: `2026-04-28 16:24:56 +09:00`
+  - `classification`: `score_total 4; single-session; no spawn; frontend recommendation flow cleanup after real poster assets were added.`
+  - `scope`: `Remove local preview poster and recommendation fallbacks so the AI flow depends on real poster seed/API responses instead of generated picsum preview data.`
+  - `write_sets`: `frontend/src/js/pages/daboyeoAi.js, frontend/src/pages/daboyeoAi.html`
+  - `verification_target`: `node --check daboyeoAi.js, static search confirms no preview/picsum fallback path, and poster API failure paths show errors instead of synthetic preview data.`
+  - `implementation`: `Removed local preview session ids, generated picsum poster seeds, local preview recommendation response generation, preview feedback bypass, and preview fallback branches; poster API failures now render the poster error state and recommendation failures render the recommendation error state.`
+  - `verification`: `node --check passed for daboyeoAi.js; git diff --check passed with CRLF warnings only; static search found no preview fallback code in daboyeoAi.js, with only the no-preview cache-bust token remaining in daboyeoAi.html.`
+
+- backend_static_frontend_mirror:
+  - `timestamp`: `2026-04-28 16:37:00 +09:00`
+  - `classification`: `score_total 5; single-session; no spawn; frontend static mirror into Spring resources and immediate local backend viewing.`
+  - `scope`: `Mirror the current frontend static tree into Spring static resources so the AI page can be opened from localhost:8080 instead of the frontend-only 5500 server.`
+  - `write_sets`: `backend/src/main/resources/static/**, backend/build/resources/main/static/**, backend/build/libs/daboyeo-backend-0.1.0-SNAPSHOT.jar`
+  - `verification_target`: `localhost:8080/ and localhost:8080/src/pages/daboyeoAi.html serve the mirrored frontend after backend restart; API health still returns ok.`
+  - `verification`: `Spring startup from the existing boot jar takes about 13 seconds; launching it outside the sandbox keeps the process alive. 127.0.0.1:8080/api/health returned status=ok, / returned 200, /src/pages/daboyeoAi.html returned 200, and the app browser opened http://127.0.0.1:8080/src/pages/daboyeoAi.html?v=backend-static-live3 with title DABOYEO AI 영화 취향 가이드.`
+
+- ai_backend_same_origin_and_map_fallback:
+  - `timestamp`: `2026-04-28 17:20:00 +09:00`
+  - `classification`: `score_total 5; single-session; no spawn; runtime bugfix across same-origin API calls, Spring static mirror, and movie theater map fallback.`
+  - `scope`: `Fix AI recommendation Failed to fetch from the 127.0.0.1:8080 app browser page and keep movieTheaterMap usable when Kakao/geolocation fails.`
+  - `write_sets`: `frontend/src/js/api/client.js, frontend/src/pages/daboyeoAi.html, frontend/src/pages/movieTheaterMap.html, frontend/src/js/pages/movieTheaterMap.js, frontend/src/css/movieTheaterMap.css, backend/src/main/resources/static/**, backend/build/resources/main/static/**, backend/build/libs/daboyeo-backend-0.1.0-SNAPSHOT.jar`
+  - `implementation`: `API client now uses window.location.origin when served from port 8080, avoiding localhost vs 127.0.0.1 CORS mismatch; movieTheaterMap legacy inline logic was removed and replaced with a standalone fallback-safe script and styled result cards; static resources and the boot jar were refreshed.`
+  - `runtime`: `Spring is running as PID 6892 with TiDB mapped from local .env to DABOYEO_DB_* plus connectTimeout/socketTimeout=8000; secrets were not printed.`
+  - `verification`: `JDBC probe reached TiDB and counted recommendation_profiles; POST /api/recommendation/sessions now returns 200 in about 1.3s instead of 30s 503; /src/pages/daboyeoAi.html and /src/pages/movieTheaterMap.html return 200 with updated assets; node --check passed for client.js and movieTheaterMap.js; git diff --check passed with CRLF warnings only; app browser confirmed AI page loaded and no Failed to fetch log was produced on the refreshed AI page.`
+
+- provider_future_date_showtime_ingest:
+  - `timestamp`: `2026-04-28 17:38:00 +09:00`
+  - `classification`: `score_total 7; single-session; no spawn; external provider date discovery and TiDB write verification were one coupled ingest loop.`
+  - `scope`: `Add all-provider future-date ingest support and run a bounded 3-date ingest to restore AI recommendation candidates.`
+  - `write_sets`: `scripts/ingest/collect_all_to_tidb.py, STATE.md`
+  - `implementation`: `collect_all_to_tidb.py now supports --all-provider-dates, --max-provider-dates, and --megabox-date-days; Lotte uses provider-exposed future play dates, while Megabox uses a bounded future playDe range because the API path is date-param based.`
+  - `dry_run`: `python scripts/ingest/collect_all_to_tidb.py --provider all --all-provider-dates --max-provider-dates 3 --dry-run selected Lotte dates 2026-04-28..2026-04-30 from 28 provider dates and Megabox dates 20260428..20260430.`
+  - `runtime`: `PyMySQL was installed after user approval; sandbox Python could not see Roaming site-packages, so the ingest ran with sandbox-external Python. Secrets were not printed.`
+  - `ingest_result`: `Bounded run --provider all --all-provider-dates --max-provider-dates 3 --limit-movies 8 --limit-theaters 8 --limit-schedules 80 inserted/upserted 80 Lotte showtimes and 80 Megabox showtimes.`
+  - `verification`: `DB showtimes increased to 474 total, current/future starts_at rows increased to 160, max starts_at is 2026-04-28 23:10:00, and POST /api/recommendations returned 3 recommendation items instead of the empty candidate response; python py_compile passed and git diff --check passed with CRLF warnings only.`
+
+- fresh_three_provider_crawl:
+  - `output_dir`: `.local/api-responses/fresh-all-20260427-174156`
+  - `CGV`: `movies=59, attributes=13, regions=9, sites=177, dates=7, schedules=13, seats=144; sample=CGV 강남 / 악마는 프라다를 입는다 2 / 20260429 / 1관 (Laser) / 2400-2609`
+  - `LOTTE_CINEMA`: `movies=43, cinemas=239, play_dates=28, schedules=2, seats=142; sample=가산디지털 / 왕과 사는 남자 / 2026-04-27 / 2관 / 22:10-24:17`
+  - `MEGABOX`: `movies=68, area_branches=116, schedules=240, seats=116; sample=강남 / 살목지 / 20260427 / 르 리클라이너 1관 / 18:20-20:05`
+  - `classification`: `classification_summary.json separates common movies/theaters/screens/showtimes/seat snapshot fields from provider-specific raw/meta fields and candidate separate tables: collection_runs, canonical_movies/movie_provider_links, seat_layouts, provider_status_codes, raw payload archive index, showtime_price_options.`
+  - `notable_data_shape`: `CGV and Lotte can return post-midnight raw times such as 2400-2609 or 24:17, so ingest must normalize starts_at/ends_at across date boundaries while preserving start_time_raw/end_time_raw.`
+  - `security`: `CGV_API_SECRET was used from local environment/.env path and was not printed.`
+  - `errors`: `none`
+
+- team_db_setup_doc:
+  - `docs/TEAM_DB_SETUP.md`: `added a team guide for per-person DB names with shared db/migrations schema alignment, canonical internal table names, placeholder-only .env examples, setup commands, schema-change rules, data-vs-schema distinction, security notes, and a short team-share summary.`
+  - `table_names`: `documented the 20 canonical tables expected by the backend, collectors, and verification scripts: schema_migrations, providers, collection_runs, movies, canonical_movies, movie_provider_links, theaters, screens, showtimes, showtime_prices, seat_layouts, seat_layout_items, seat_snapshots, seat_snapshot_items, provider_status_codes, provider_raw_payloads, movie_tags, recommendation_profiles, recommendation_runs, recommendation_feedback.`
+  - `table_grouping`: `clarified that provider-specific data is not stored in cgv_*, lotte_*, or megabox_* tables; shared tables use provider_code/external_* keys and raw_json/provider_meta_json for provider-specific payloads.`
+  - `security`: `checked the new doc for password/secret/token/host patterns; only placeholders such as your-db-host, your-db-user, and your-db-password are present.`
+  - `verification`: `static table-name and grouping search found all canonical table names plus the common/provider-specific clarification in the guide; scripts/verify/verify_tidb_ingest.py now checks the same 20-table contract and required migrations 001-005.`
+
+- team_db_contract_finalization:
+  - `db/migrations/005_collection_contract_extensions.sql`: `adds collection_runs, canonical_movies, movie_provider_links, seat_layouts, seat_layout_items, provider_status_codes, and provider_raw_payloads, then records schema_migrations version 005.`
+  - `provider_status_seed`: `seeds observed seat mappings from the fresh crawl: CGV 00=available, CGV 01=sold, Lotte 0=sold, Lotte 50=available, Megabox GERN_SELL=available, Megabox SCT04=unavailable.`
+  - `collectors/common/normalize.py`: `updated Lotte seat status normalization to match the fresh sample where 50 matched the 2 remaining seats and 0 matched the 140 non-remaining seats.`
+  - `db/SCHEMA_CONTRACT.md`: `documents migration 005 roles, stable keys, midnight time rules, provider status seed evidence, seat layout separation, and raw payload constraints.`
+  - `scripts/verify/verify_tidb_ingest.py`: `now fails fast when required schema tables or migrations 001-005 are missing before printing ingest table counts.`
+  - `java_ingest_time_rule`: `CollectorBundleIngestCommand now preserves start_time_raw/end_time_raw while normalizing 2400, 2609, and 24:17 into cross-date starts_at/ends_at values for CGV/Lotte/Megabox bundles.`
+  - `verification`: `py_compile passed for normalize.py and verify_tidb_ingest.py; normalize assertions passed for CGV/Lotte/Megabox observed status codes; migration dry-run listed 001-005; migration 005 split into 10 SQL statements; static contract search found all 20 table names in docs and verifier; security placeholder scan found no concrete secrets; git diff --check passed with CRLF warnings only.`
+  - `gradle_gap`: `gradle test --tests kr.daboyeo.backend.ingest.CollectorBundleIngestCommandTests could not start because local Gradle failed to load native-platform.dll; logged in ERROR_LOG.md as an environment/runtime issue.`
+
+- frontend_page_tree_normalization:
+  - `moved`: `frontend/movies.html and all frontend/src/basic/*.html pages now live under frontend/src/pages/.`
+  - `routes`: `index.html CTAs, components/header.html nav links, and script.js route constants now point at src/pages paths.`
+  - `paths`: `moved movies/map/AI/seat/price pages now use ../css, ../js, ../assets, and ../../favicon paths from src/pages.`
+  - `cleanup`: `removed the now-empty frontend/src/basic directory and ignored/generated http-server-e2e log files from the working tree.`
+  - `deferred`: `direct-comparison location/person-count semantics and 17:00~02:00 handling remain intentionally unresolved per user instruction.`
+  - `verification`: `node --check passed for script.js, daboyeoAi.js, seatRecommendMbti.js, and liveMovies.js; py_compile passed for map helper scripts; static HTML local-link checker found 0 missing local href/src targets across 16 HTML files; stale src/basic route search returned no active source hits; git diff --check passed with CRLF warnings only.`
+
+- mbti_map_overlay_cleanup:
+  - `frontend/src/css/seatRecommendMbti.css`: `removed .theater-map::before, which was drawing the oval guide curve and two translucent vertical overlay columns inside the seat map.`
+  - `frontend/src/basic/seatRecommendMbti.html`: `cache-busted the MBTI seat page stylesheet query to 20260427-map-cleanup.`
+  - `verification`: `static search found no remaining theater-map overlay selector or old column-gradient markers; git diff --check passed with CRLF warnings only.`
+
+- kmh_kakao_map_restore:
+  - `source`: `imported frontend/src/css/kakaoMap.css, frontend/src/map/theaters.json, map/location_service.py, and map/populate_theaters.py from origin/kmh with git archive to preserve file bytes.`
+  - `frontend/movies.html`: `restored the ./src/css/kakaoMap.css stylesheet link before movies.css.`
+  - `security`: `replaced the hardcoded Kakao REST API key in map/populate_theaters.py with KAKAO_REST_API_KEY environment-variable loading.`
+  - `verification`: `python -m py_compile passed for the restored map helper scripts; imported byte hashes matched origin/kmh before the secret-removal patch; git diff --check passed with CRLF warnings only.`
+
+- direct_compare_cta_routing:
+  - `frontend/index.html`: `changed 직접 비교하기 from a button to an anchor with ./movies.html fallback href.`
+  - `frontend/src/js/pages/script.js`: `nearbyBtn now saves the current search context and navigates to movies.html with region, date, timeStart, timeEnd, and personCount query parameters.`
+  - `frontend/src/css/style.css`: `kept the anchor styled like the existing 직접 비교하기 button with no underline and pointer affordance.`
+  - `verification`: `node --check passed for script.js; git diff --check passed with CRLF warnings only.`
+
+- location_cta_routing:
+  - `frontend/index.html`: `changed 내 위치 from an unlinked button to an anchor pointing at ./src/basic/movieTheaterMap.html.`
+  - `frontend/src/css/style.css`: `updated .btn-map so the anchor keeps the previous button-like alignment, color, and pointer behavior.`
+  - `verification`: `node --check passed for script.js; git diff --check passed with CRLF warnings only.`
+
+- location_cta_and_map_logo_polish:
+  - `frontend/src/css/style.css`: `set .btn-map to a fixed 52px button-height flex anchor with stable padding, line-height, no underline, and nowrap text.`
+  - `frontend/src/basic/movieTheaterMap.html`: `changed header and footer logo image paths from /assets/logo.svg to /src/assets/logo.svg?v=20260427-logo and linked logos back to ../../index.html.`
+  - `frontend/index.html`: `cache-busted the 내 위치 map-page link to ./src/basic/movieTheaterMap.html?v=20260427-logo so the app browser reloads the updated map page.`
+  - `verification`: `confirmed http://localhost:5500/src/assets/logo.svg?v=20260427-logo returns 200; node --check passed for script.js; git diff --check passed with CRLF warnings only.`
+
+- ai_result_actions_cleanup:
+  - `frontend/src/js/pages/daboyeoAi.js`: `result-card actions now render 예매하기 and 좌석표보기 only; 끌려요/별로예요 feedback buttons were removed from the card renderer.`
+  - `frontend/src/css/daboyeoAi.css`: `replaced obsolete feedback-button result styling with ai-seatmap-button secondary CTA styling.`
+  - `frontend/src/basic/daboyeoAi.html`: `cache-busted the AI page CSS/JS query strings to 20260424-result-actions.`
+  - `verification`: `node --check passed for daboyeoAi.js; git diff --check passed with CRLF warnings only; static search found no 예매보기/끌려요/별로예요/ai-feedback-button references in the AI JS/CSS targets.`
+
+- kmh_selective_integration:
+  - `source`: `fetched origin/kmh at 88cc169 after it advanced from 1434eee.`
+  - `included`: `backend live movie API/controller/service/repository/domain/sync/ingest files, backend tests, db/sql schema docs, ingest PowerShell scripts, frontend liveMovies.js, frontend movies.html, and movies.css.`
+  - `manual_merge`: `kept existing AI recommendation backend config/files while adding validation dependency, ingest Gradle tasks, root .env loader, scheduling, live sync config, and unified error response handling.`
+  - `preserved`: `existing uncommitted AI result-card cleanup remained intact; origin/kmh stale branch-wide frontend/doc/tooling deletions were not accepted.`
+  - `fix`: `restored CGV seat status normalization test strings from mojibake-like ???? to 판매완료/사용불가 and expanded normalizer Korean keywords.`
+  - `verification`: `node --check passed for liveMovies.js and daboyeoAi.js; gradle test passed; git diff --check passed with CRLF warnings only.`
+
+- kmh_utf8_restore:
+  - `cause`: `the GitHub branch content was UTF-8-clean; the earlier local import likely corrupted Korean by streaming git diff through a PowerShell text pipeline.`
+  - `restore_method`: `used git archive --output for origin/kmh and extracted the archive before copying files back, avoiding text-pipeline re-encoding.`
+  - `scope`: `restored imported kmh frontend movies.html/liveMovies.js/movies.css plus newly added backend/db/script files from the archive; kept existing lsh AI cleanup and manual backend config merge.`
+  - `verification`: `literal ?? search returned no matches across imported frontend/backend surfaces; node --check passed for liveMovies.js and daboyeoAi.js; gradle test passed; git diff --check passed with CRLF warnings only.`
+
+- current_task:
+  - `classification`: `reclassified from MBTI image exploration into concrete frontend implementation`
+  - `workspace_status`: `existing dirty worktree is limited to prior STATE.md and MULTI_AGENT_LOG.md edits before implementation starts`
+  - `main_page_sources`: `frontend/index.html, frontend/src/css/style.css, frontend/src/css/common.css, frontend/src/css/daboyeoAi.css`
+  - `main_page_style_findings`: `dark cinema background image, black base canvas, purple and lilac accents, Pretendard-heavy sans-serif typography, glassy cards with thin borders, gradient CTAs, icon-led feature cards`
+  - `seat_section_baseline`: `the current home page already exposes a four-card seat-recommendation teaser with MBTI, couple, group, and random seating hooks`
+  - `implementation_target`: `frontend/src/basic/seatRecommendMbti.html, frontend/src/css/seatRecommendMbti.css, frontend/src/js/pages/seatRecommendMbti.js, frontend/index.html, frontend/src/css/style.css, and frontend/src/js/pages/script.js`
+  - `visual_contract`: `headerless page, compact back/context line, cinematic theater background, floating MBTI 4x4 selector, INTJ-style result panel, glowing seat-map recommendations, one CTA`
+- implementation:
+  - `frontend/src/basic/seatRecommendMbti.html`: `new headerless MBTI별 좌석 추천 page added`
+  - `frontend/src/css/seatRecommendMbti.css`: `added a dark cinematic seat-recommendation visual system with responsive MBTI grid, result cards, and theater seat map`
+  - `frontend/src/js/pages/seatRecommendMbti.js`: `added static MBTI profile selection logic with 16 profiles, trait/reason rendering, random selection, and highlighted seat zones`
+  - `frontend/index.html`: `main seat section copy and MBTI/CTA entry points now route into the implemented page`
+  - `frontend/src/js/pages/script.js`: `data-seat-flow click and keyboard routing added for the main seat section`
+  - `frontend/src/css/style.css`: `clickable seat-flow cards get pointer affordance`
+  - `frontend/src/basic/daboyeoAi.html, frontend/src/css/daboyeoAi.css, frontend/src/js/pages/daboyeoAi.js`: `restored to HEAD-equivalent content after route separation so the existing AI 추천 page remains preserved`
+- verification:
+  - `node --check frontend\src\js\pages\seatRecommendMbti.js`: `passed`
+  - `node --check frontend\src\js\pages\script.js`: `passed`
+  - `node --check frontend\src\js\pages\daboyeoAi.js`: `passed after route preservation`
+  - `git diff --check`: `passed; CRLF normalization warnings only`
+  - `git status --short`: `expected modified main/style/script/state files plus new seatRecommendMbti page assets`
+- refinement:
+  - `data_fidelity`: `No credible public dataset for exact MBTI별 영화관 좌석 선호 퍼센트를 found; the UI now labels seat percentages as computed 성향 적합도 instead of real measured preference data.`
+  - `subagents`: `Sartre returned read-only mock-fidelity gaps; Helmholtz created frontend/src/assets/seat-mbti-sprite.svg.`
+  - `frontend/src/basic/seatRecommendMbti.html`: `restructured into mock-like left selector/map and right recommendation rail with profile art, keyword box, lower metrics, disclaimer, and bottom CTA.`
+  - `frontend/src/css/seatRecommendMbti.css`: `rebuilt visual system for denser MBTI cards, stronger purple glow, right rail spacing, curved/perspective theater map, zone labels, and per-seat score states.`
+  - `frontend/src/js/pages/seatRecommendMbti.js`: `added sprite icons, fit metrics, 10x16 per-seat computed percentages, zone labels, and honest score rendering.`
+  - `browser_verification`: `in-app browser loaded http://localhost:5500/src/basic/seatRecommendMbti.html?flow=mbti; rendered 160 seat cells, 160 percentage labels, 16 card icons, 3 lower metrics, and 1 score disclaimer.`
+  - `final_checks`: `node --check passed for seatRecommendMbti.js and script.js; git diff --check passed with CRLF warnings only.`
+- refinement_followup:
+  - `frontend/src/basic/seatRecommendMbti.html`: `moved the page into a top hero, equal-height MBTI/result row, and full-width theater-map section; removed the separate lower note box so the map owns the lower space.`
+  - `frontend/src/assets/seat-mbti-sprite.svg`: `added 16 dedicated mbti-* SVG symbols with transparent backgrounds for the card/profile icons.`
+  - `frontend/src/js/pages/seatRecommendMbti.js`: `mapped every MBTI to a dedicated sprite, removed mbti-card-zone rendering, synced the profile icon, and added explicit aisle grid columns for wider seat spacing.`
+  - `frontend/src/css/seatRecommendMbti.css`: `removed old card-zone styling, enlarged card icons, compacted the result panel to match the selector row, and expanded the theater map to an 18-column full-width grid.`
+  - `verification`: `node --check passed for seatRecommendMbti.js and script.js; SVG parsed as XML with 31 symbols; 16 MBTI mappings all resolve to sprite IDs; git diff --check passed with CRLF warnings only.`
+  - `browser_note`: `localhost served the updated HTML/JS with seat-main-row and without mbti-card-zone rendering; the existing in-app tab snapshot stayed on the previous DOM despite reload attempts, so the user may need a hard refresh to see the latest assets in that tab.`
+- remove_old_svg:
+  - `frontend/src/js/pages/seatRecommendMbti.js`: `removed the remaining seat-mbti-sprite.svg dependency and replaced metric-chip SVG uses with lightweight text markers.`
+  - `frontend/src/css/seatRecommendMbti.css`: `replaced metric SVG sizing with .fit-metric-icon styling so the lower chips no longer depend on the old sprite.`
+  - `frontend/src/assets/seat-mbti-sprite.svg`: `deleted after the user explicitly requested removing the old SVG.`
+  - `verification`: `node --check passed for seatRecommendMbti.js; Select-String found no remaining seat-mbti-sprite.svg or old icon-id references under frontend/src; git diff --check passed with CRLF warnings only.`
+- browser_comment_polish:
+  - `frontend/src/basic/seatRecommendMbti.html`: `forced the hero title into two intentional lines and added left/right side-focus map labels.`
+  - `frontend/src/css/seatRecommendMbti.css`: `changed title highlighting to em tags, added map label positions for front/rear/aisle/group/side, and softened generated PNG sprite rendering.`
+  - `frontend/src/js/pages/seatRecommendMbti.js`: `dynamic map labels now follow the selected zone position; B/C rows are marked as front in aria/title while lower rows are marked as rear.`
+  - `frontend/src/assets/seat-mbti-sprite-gpt.png`: `resampled from 1254x1254 to 1280x1280 so each sprite cell is an exact 320px square instead of a fractional 313.5px source cell.`
+  - `verification`: `node --check passed for seatRecommendMbti.js; git diff --check passed with CRLF warnings only; static source checks found the forced title line, side labels, front label class, and no old SVG reference.`
+- front_label_and_defringe:
+  - `frontend/src/basic/seatRecommendMbti.html`: `added a default 전방 생동석 map label near the screen and cache-busted the page asset query.`
+  - `frontend/src/css/seatRecommendMbti.css`: `styled the static front label with a warmer front-zone accent.`
+  - `frontend/src/js/pages/seatRecommendMbti.js`: `added frontZoneStaticLabel and hide logic so the default front label does not duplicate dynamic front recommendations.`
+  - `frontend/src/assets/seat-mbti-sprite-gpt.png`: `decontaminated transparent-edge RGB and reduced partial-alpha edge pixels from 61,858 to 45,373 while keeping the 1280x1280 exact 4x4 grid.`
+  - `verification`: `node --check passed for seatRecommendMbti.js; git diff --check passed with CRLF warnings only; static source checks found frontZoneStaticLabel and no old SVG reference.`
+- icon_micro_blur:
+  - `frontend/src/css/seatRecommendMbti.css`: `added blur(0.28px) to MBTI card icons and blur(0.2px) to the larger selected-profile icon to soften remaining cutout-edge jaggies.`
+  - `frontend/src/basic/seatRecommendMbti.html`: `cache-busted CSS/JS query strings to 20260424-icon-micro-blur.`
+  - `verification`: `git diff --check passed with CRLF warnings only; static source checks found the micro-blur filters and no old SVG reference.`
+- icon_blur_035:
+  - `frontend/src/css/seatRecommendMbti.css`: `raised both generated PNG card/profile icon filters to blur(0.35px).`
+  - `frontend/src/basic/seatRecommendMbti.html`: `cache-busted the CSS query string to 20260424-icon-blur035.`
+  - `verification`: `git diff --check passed with CRLF warnings only; static source checks found two blur(0.35px) filters and no old SVG reference.`
+- icon_blur_06:
+  - `frontend/src/css/seatRecommendMbti.css`: `raised both generated PNG card/profile icon filters to blur(0.6px).`
+  - `frontend/src/basic/seatRecommendMbti.html`: `cache-busted the CSS query string to 20260424-icon-blur06.`
+  - `verification`: `git diff --check passed with CRLF warnings only; static source checks found two blur(0.6px) filters.`
+- dynamic_zone_labels:
+  - `frontend/src/basic/seatRecommendMbti.html`: `removed the always-visible frontZoneStaticLabel and cache-busted CSS/JS query strings to 20260424-dynamic-zone-labels.`
+  - `frontend/src/css/seatRecommendMbti.css`: `removed the one-off warm .map-zone-label-static-front styling so front labels use the same recommendation-label visual system.`
+  - `frontend/src/js/pages/seatRecommendMbti.js`: `removed frontZoneStaticLabel and hasDynamicFrontLabel duplicate-guard code because front labels now only appear through selected profile primary/secondary data.`
+  - `verification`: `node --check passed for seatRecommendMbti.js; git diff --check passed with CRLF warnings only; static source checks found no frontZoneStaticLabel, static-front style, or hasDynamicFrontLabel references.`
+- ksg_import:
+  - `source`: `fetched origin/ksg at 78873c7 Top3 모두보기 만드는중.`
+  - `included`: `frontend/src/assets/AIbackgroundImg.jpg, frontend/src/css/allMovies.css, frontend/src/css/dd.css, frontend/src/css/daboyeoAi.css, frontend/src/js/pages/daboyeoAi.js, frontend/src/pages/ai.html, frontend/src/pages/allMovies.html, frontend/src/pages/dd.html.`
+  - `excluded`: `patch.js because it is a one-off helper script that rewrites daboyeoAi.js, not a runtime frontend asset.`
+  - `integration`: `main AI CTA now routes to ./src/pages/ai.html through AI_PAGE_URL, the popular-movie 모두 보기 link routes to ./src/pages/dd.html, and the MBTI seat flow remains routed through ./src/basic/seatRecommendMbti.html.`
+  - `cleanup`: `removed trailing whitespace from imported daboyeoAi.js after git diff --check flagged it.`
+  - `verification`: `node --check passed for frontend/src/js/pages/daboyeoAi.js and frontend/src/js/pages/script.js; git diff --check passed with CRLF warnings only.`
+- review_fix:
+  - `frontend/src/js/pages/daboyeoAi.js`: `restored daboyeoSearchContext reading, searchFilters payload wiring, search-condition summaries, and context-aware preview showtimes.`
+  - `frontend/src/js/pages/daboyeoAi.js`: `changed the precise recommendation mode tags from fast-mode E2B wording to E4B/precision wording.`
+  - `verification`: `node --check passed for frontend/src/js/pages/daboyeoAi.js and frontend/src/js/pages/script.js; git diff --check passed with CRLF warnings only; static checks found payload.searchFilters and E4B precise tags.`
+- ksg_incremental_refresh:
+  - `source`: `fetched origin/ksg at a944a88 with two new commits after 78873c7.`
+  - `included`: `latest frontend/src/pages/allMovies.html, frontend/src/css/allMovies.css, frontend/src/css/common.css, main popular-movie route to allMovies, and safe AI layout tweaks.`
+  - `excluded`: `patch.js plus unrelated xx/temp file deletions; did not overwrite daboyeoAi.js wholesale because origin/ksg would remove local searchFilters/E4B review fixes.`
+  - `path_fix`: `allMovies favicon and common script URLs were adjusted from ksg root-relative assumptions to the current src/pages location.`
+  - `verification`: `node --check passed for daboyeoAi.js and script.js; git diff --check passed with CRLF warnings only; static checks confirmed payload.searchFilters and E4B precise tags remain.`
+
+## Writer Slot
+
+- writer_slot: `main`
+- write_set: `STATE.md, ERROR_LOG.md if needed, frontend/src/pages/daboyeoAi.html, frontend/src/js/pages/daboyeoAi.js, frontend/src/css/daboyeoAi.css, backend static mirror files, backend recommendation provider routing files, backend/src/main/resources/application.yml, .env.example, backend/README.md`
+- write_sets:
+  - `main`: `STATE.md, ERROR_LOG.md if needed, frontend/src/pages/daboyeoAi.html, frontend/src/js/pages/daboyeoAi.js, frontend/src/css/daboyeoAi.css, backend static mirror files, backend recommendation provider routing files, backend/src/main/resources/application.yml, .env.example, backend/README.md`
+- shared_assets_owner: `main`
+- note: `One shared task board is active; no concurrent registry mode.`
+- concurrent_note: `No subagents are used; provider selector UI and backend request routing are one integrated contract.`
+
+## Contract Freeze
+
+- contract_freeze: `Add GPT/local provider selection to the 5/5 AI recommendation mode screen, make fast/precise card model labels follow the selected provider, send aiProvider to the backend, and route local vs GPT-compatible AI calls by configurable backend settings.`
+- note: `Keep local provider as the default demo path; do not implement OAuth login or expose tokens in frontend code.`
+- contract_source: `user request`
+- contract_revision: `2026-04-29-ai-provider-route-selector`
+- verification_target: `frontend syntax check, backend compile or Gradle result, local/GPT aiProvider API smoke, 8080 static/browser visibility, git diff --check`
+
+## Reviewer
+
+- reviewer: `main self-review`
+- reviewer_target: `provider selector visibility, request payload contract, configurable GPT/local backend routing, no secret leakage, and 8080 static mirror freshness`
+- reviewer_focus: `make GPT/local selection real without exposing OAuth internals or breaking the local default demo path`
+
+## Last Update
+
+- timestamp: `2026-04-29 13:40:00 +09:00`
+- note: `GPT recommendation prompt depth differentiation verified: GPT fast/precise now use richer prompt/schema/result UI, jar is refreshed, and Spring is running as PID 12836; live recommendation currently stops at no_usable_showtimes due DB showtime freshness.`
+
+- timestamp: `2026-04-29 12:39:00 +09:00`
+- note: `Poster image fallback verified: external image failure now shows a title fallback instead of a blank card, Spring static jar was refreshed, and server is running as PID 9768.`
+
+- timestamp: `2026-04-29 12:31:00 +09:00`
+- note: `Poster card frame polish verified: dark padded poster frame, inset highlight, hover/selected states, Spring static jar refreshed, and server is running as PID 20664.`
+
+- timestamp: `2026-04-29 12:22:00 +09:00`
+- note: `First-step AI guide 이전 button hotfix verified: browser history back works from the audience step, internal step-back still works from mood, Spring static jar was refreshed, and server is running as PID 13016.`
+
+- timestamp: `2026-04-29 11:40:00 +09:00`
+- note: `AI provider route selector verified: browser shows local/GPT selector and GPT-5.5 reasoning labels, frontend sends aiProvider, backend accepts local/gpt routing, patched jar is running on PID 13160, and local/gpt recommendation payloads both avoid 4xx contract failures.`
+
+- timestamp: `2026-04-29 11:10:00 +09:00`
+- note: `Durable dotenv fix verified: BOM-safe .env loading, DABOYEO_DB_* and spring.datasource.* derivation, current jar spring.factories registration, health 200, and recommendation session 200 from normal jar runtime.`
+
+- timestamp: `2026-04-29 11:20:00 +09:00`
+- note: `Reclassified browser comment into AI provider route selector implementation: add GPT/local UI on the mode screen, update card model labels, send aiProvider, and route backend AI settings by provider.`
+
+- timestamp: `2026-04-29 10:47:00 +09:00`
+- note: `Reclassified the session failure follow-up into a durable Spring TiDB dotenv mapping implementation with config/test/doc write set.`
+
+- timestamp: `2026-04-29 10:42:00 +09:00`
+- note: `Runtime session failure triage: /api/health was ok but /api/recommendation/sessions timed out because Spring was first started with the default localhost DB URL, then with a malformed TiDB URL, then with useSSL=false; restarted the sandbox-external Spring process with .env TiDB values, corrected URL interpolation, and useSSL=true.`
+
+- timestamp: `2026-04-29 00:10:00 +09:00`
+- note: `Created docs/AI_CODEX_OAUTH_DEPLOYMENT_PLAN.md with the agreed Oracle Cloud + Codex OAuth gateway implementation plan; git diff --check passed with existing CRLF warnings only.`
+
+- timestamp: `2026-04-29 00:00:00 +09:00`
+- note: `Reclassified the active task to a documentation-only Codex OAuth deployment plan with write set limited to STATE.md and docs/AI_CODEX_OAUTH_DEPLOYMENT_PLAN.md.`
+
+- timestamp: `2026-04-28 00:20:00 +09:00`
+- note: `Completed the team-shareable DB contract package with migration 005, docs, verifier updates, observed provider status mappings, and midnight showtime normalization checks; Gradle remains blocked by local native-platform.dll loading.`
+
+- timestamp: `2026-04-28 00:35:00 +09:00`
+- note: `User requested DB README application instructions plus commit and push; staying on branch lsh and publishing the completed DB contract package.`
+
+- timestamp: `2026-04-28 00:00:00 +09:00`
+- note: `Reframed writer slot and contract freeze around the team DB schema-sharing package before final verifier/docs close-out.`
+
+- timestamp: `2026-04-24 17:32:00 +09:00`
+- note: `Fixed live movies frontend review findings while deferring unfinished backend collector/API robustness by user request.`
+
+- timestamp: `2026-04-24 17:12:00 +09:00`
+- note: `Restored kmh files from a git archive to preserve UTF-8 Korean bytes and verified no literal question-mark mojibake remains in the imported surfaces.`
+
+- timestamp: `2026-04-24 17:04:00 +09:00`
+- note: `Reclassified the task into literal mojibake repair after confirming imported kmh files contain saved question marks rather than recoverable encoding bytes.`
+
+- timestamp: `2026-04-24 16:58:00 +09:00`
+- note: `Integrated origin/kmh selectively, preserved current lsh/AI work, fixed the imported seat status test failure, and verified JS plus backend tests.`
+
+- timestamp: `2026-04-24 16:44:00 +09:00`
+- note: `Reclassified the request into selective origin/kmh integration after confirming origin/kmh diverges from early main and would be unsafe as a blanket merge.`
+
+- timestamp: `2026-04-24 16:34:00 +09:00`
+- note: `Reclassified the new browser-comment request into a tiny AI result-card action cleanup and patched the renderer/CSS/cache-bust targets.`
+
+- timestamp: `2026-04-24 16:18:00 +09:00`
+- note: `Imported the latest ksg allMovies refresh selectively and preserved local AI recommendation review fixes.`
+
+- timestamp: `2026-04-24 16:10:00 +09:00`
+- note: `Reclassified the new request into an incremental selective import from origin/ksg after fetching two new ksg commits.`
+
+- timestamp: `2026-04-24 15:36:00 +09:00`
+- note: `Fixed the accepted review findings by restoring saved search filters in the AI recommendation payload and correcting precise-mode labels.`
+
+- timestamp: `2026-04-24 15:30:00 +09:00`
+- note: `Re-scoped the current import task into review-fix and final commit/push after two code-review findings were accepted.`
+
+- timestamp: `2026-04-24 15:12:26 +09:00`
+- note: `Imported selected ksg frontend files, excluded patch.js, wired the main AI and popular-movie entry points, and verified JS/diff checks.`
+
+- timestamp: `2026-04-24 15:08:30 +09:00`
+- note: `Reclassified the task into a selective ksg frontend import after confirming origin/ksg contains AI page work, Top3/discovery pages, and scratch patch.js.`
+
+- timestamp: `2026-04-24 14:52:04 +09:00`
+- note: `Removed the static front-zone tag and made front labels recommendation-driven only.`
+
+- timestamp: `2026-04-24 14:49:50 +09:00`
+- note: `Reclassified the browser comment into removing the static front tag and making front labels recommendation-driven.`
+
+- timestamp: `2026-04-24 14:20:07 +09:00`
+- note: `Raised generated PNG icon blur to 0.6px and verified the diff check.`
+
+- timestamp: `2026-04-24 14:13:13 +09:00`
+- note: `Raised generated PNG icon blur to 0.35px and verified the diff check.`
+
+- timestamp: `2026-04-24 14:13:13 +09:00`
+- note: `Re-scoped the tiny icon polish follow-up to raise generated PNG icon blur to 0.35px.`
+
+- timestamp: `2026-04-24 14:08:45 +09:00`
+- note: `Applied sub-pixel blur to generated MBTI PNG icons and cache-busted the page assets.`
+
+- timestamp: `2026-04-24 14:07:24 +09:00`
+- note: `Reclassified the follow-up into a tiny CSS micro-blur polish for the generated MBTI PNG icons.`
+
+- timestamp: `2026-04-24 13:55:54 +09:00`
+- note: `Added the default front-zone label and defringed the generated PNG sprite cutout edges.`
+
+- timestamp: `2026-04-24 13:52:40 +09:00`
+- note: `Reclassified the second browser-comment polish into adding a default front label and defringing the generated PNG sprite.`
+
+- timestamp: `2026-04-24 13:14:00 +09:00`
+- note: `Applied the latest browser comments: title line break, PNG sprite smoothing, side left/right labels, and screen-relative front/rear map semantics.`
+
+- timestamp: `2026-04-24 13:07:32 +09:00`
+- note: `Reclassified the new browser comments into a single-session polish pass for title wrapping, PNG icon rendering, and theater-map zone semantics.`
+
+- timestamp: `2026-04-24 12:31:51 +09:00`
+- note: `Deleted the old SVG sprite after replacing the last metric-chip SVG references and verifying that frontend/src no longer references it.`
+
+- timestamp: `2026-04-24 12:27:25 +09:00`
+- note: `Reclassified the follow-up into removing the old SVG dependency; remaining metric icon references must be replaced before confirming local deletion.`
+
+- timestamp: `2026-04-24 12:19:17 +09:00`
+- note: `Reclassified the accepted-layout follow-up into alias-based generated MBTI sprite integration using the imagegen workflow.`
+
+- timestamp: `2026-04-24 12:07:13 +09:00`
+- note: `Applied the latest browser-comment follow-up: removed MBTI card zone text, added 16 larger MBTI-specific SVG symbols, matched the top result panel to the selector row, and expanded the lower theater map with aisle spacing.`
+
+- timestamp: `2026-04-24 11:24:34 +09:00`
+- note: `Refined the MBTI seat page toward the accepted mock with sprite icons, right-panel lower metrics, bottom CTA spacing, and computed per-seat fit percentages with a data-fidelity disclaimer.`
+
+- timestamp: `2026-04-24 11:03:40 +09:00`
+- note: `The annotated main CTA was hardened with a direct onclick route to seatRecommendMbti.html?flow=mbti and verified in the in-app browser from localhost:5500.`
+
+- timestamp: `2026-04-24 10:47:38 +09:00`
+- note: `Implemented the separate headerless MBTI seat-recommendation frontend, wired the current main seat section into it, preserved the existing AI guide route, and completed lightweight JS/diff verification.`
+
+- timestamp: `2026-04-24 09:44:10 +09:00`
+- note: `The user selected MBTI별 성향 좌석 추천 as the preferred topic, so the design task was narrowed again from multiple seat flows to five MBTI-focused frontend concepts.`
+- timestamp: `2026-04-24 09:44:10 +09:00`
+- note: `Five parallel subagents returned MBTI-only concept briefs covering a 16-type grid, four-quadrant map, result dashboard, unknown-MBTI quiz, and theater-seat atlas.`
+- timestamp: `2026-04-23 16:00:39 +09:00`
+- note: `The user rejected the standalone-page context, so the contract was narrowed again: every new concept must depict a subpage opened from the current main-page seat section.`
+- timestamp: `2026-04-23 16:00:39 +09:00`
+- note: `Five new parallel subagents returned click-through briefs for MBTI, couple, group, random, and the 명당 좌석 찾기 gateway page.`
+- timestamp: `2026-04-23 14:52:28 +09:00`
+- note: `The task was reclassified from the completed Stitch PPT work into a new read-only seat-guidance design exploration based on the actual daboyeo main-page style system.`
+- timestamp: `2026-04-23 14:52:28 +09:00`
+- note: `Five parallel subagents returned distinct variant briefs covering hero-led, quiz-led, seat-map-led, couple-group-led, and MBTI-card-led seat recommendation concepts.`
+- timestamp: `2026-04-22 12:58:32 +09:00`
+- note: `The task was narrowed again: the real target is a 1440x1026 in-progress Figma presentation matching the attached Desktop-1/Desktop-2 style, not just a generic Figma Slides deck.`
+- timestamp: `2026-04-22 12:58:32 +09:00`
+- note: `The user approved creating a fresh session, so execution moved from planning around tool limits into direct project generation.`
+- timestamp: `2026-04-22 13:10:11 +09:00`
+- note: `Fresh Stitch project 13482283388031437931 now contains the body-slide generations from 문제 제기 through 마무리, with exact 1440x1026 enforcement still limited by Stitch canvas defaults.`
+- timestamp: `2026-04-22 13:16:07 +09:00`
+- note: `A full PPT reformat pass was applied across the generated slides to remove the earlier webpage/landing-page feel and force presentation-style composition.`
+- timestamp: `2026-04-22 13:59:02 +09:00`
+- note: `The user redirected the work into repo-direction verification, so the active phase was reset from implementation to read-only investigation.`
+- timestamp: `2026-04-22 13:59:02 +09:00`
+- note: `Repo-direction investigation completed from root context files and per-folder README documents; the dominant product direction is collectors-first movie showtime comparison rather than a ticketing-automation PPT narrative.`
+- timestamp: `2026-04-22 14:11:40 +09:00`
+- note: `Implementation truth was cross-checked in backend/build.gradle and backend/src/main/resources/application.yml, confirming Java 21, Spring Boot 3.5.13, Spring JDBC, Flyway, MySQL Connector/J, and LM Studio-backed recommendation settings as secondary extension scope.`
+- timestamp: `2026-04-22 14:11:40 +09:00`
+- note: `The active phase is back to implementation so the PPT can be regenerated from the frozen repo-grounded storyline instead of patching the older automation-centered deck.`
+- timestamp: `2026-04-22 14:29:30 +09:00`
+- note: `A new Stitch project 10979052864160268633 now contains the repo-grounded replacement deck from 문제 제기 through 마무리, including the corrected detailed implementation slides around collectors and minimal common schema.`
+- timestamp: `2026-04-22 14:29:30 +09:00`
+- note: `A final deck-wide consistency edit succeeded and unified the slides into a single presentation tone with white body slides, navy accents, a dark closing slide, and reduced web/app-like chrome.`
+- timestamp: `2026-04-22 14:38:20 +09:00`
+- note: `The user accepted the corrected deck direction but flagged the remaining exact-size mismatch, so the active task has been reclassified from content verification to tool-capability investigation for exact 1440x1026 resizing.`
+- timestamp: `2026-04-22 14:38:20 +09:00`
+- note: `Current tool discovery found no direct Figma write/resize action in this session, only Stitch generation/edit plus Figma read/generate connectors.`
+- timestamp: `2026-04-22 14:42:50 +09:00`
+- note: `The user asked for an accessible Figma workspace, so execution moved from pure capability investigation into creating a fresh Figma file within the available connector surface.`
+- timestamp: `2026-04-22 14:45:40 +09:00`
+- note: `That fallback was stopped before creation because the user made it explicit that a workspace is meaningless without real edit capability, so the task is now blocked on missing Figma write tooling.`
+- timestamp: `2026-04-22 14:53:41 +09:00`
+- note: `The user redirected the work again: the active task is now a read-only review of the repo-grounded Stitch deck in project 10979052864160268633 to find content gaps or weak points.`
+- timestamp: `2026-04-22 14:59:05 +09:00`
+- note: `The user asked to fix the reviewed deck, so the task moved back into implementation with a repo-truth refresh across README, collectors, frontend, backend, and schema contract files before editing Stitch screens.`
+- timestamp: `2026-04-22 15:21:59 +09:00`
+- note: `Refined Stitch outputs were generated for sections 2-10, but the tool created new screen IDs rather than replacing the original final-row canvas instances in place.`
+
+## Retrospective
+
+- task: `Make fallback ranking require selected genre metadata`
+- score_total: `7`
+- evaluation_fit: `full fit; the user-facing failure was a recommendation correctness contract, so tests, build, and live localhost smoke were all needed`
+- orchestration_fit: `single-session fit; candidate ranking, Codex handoff, fallback output, and focused tests all shared one eligibility rule`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the previous reserve-fill behavior was intentionally tightened after the user rejected non-animation results for an animation-selected flow`
+- reviewer_findings: `selected genres now act as explicit candidate eligibility; title-only anime-looking names and non-matching reserve movies are blocked from Codex/fallback when a genre is selected`
+- verification_outcome: `focused recommendation tests passed outside sandbox; bootJar passed; localhost:5500 restarted on PID 20516; animation-selected smoke returned no_selected_genre_candidates with zero recommendations`
+- next_gate_adjustment: `when a user selects a genre, prefer honest no-candidate output over filling cards from weaker non-genre signals`
+
+- task: `GPT recommendation prompt depth differentiation`
+- score_total: `6`
+- evaluation_fit: `full fit; the change affected prompt contract, provider config, service sanitization, result-card rendering, and running jar state`
+- orchestration_fit: `single-session fit; one request/response contract controlled all edits and delegation would raise mismatch risk`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the prior poster fallback task was complete, then the user clarified that Gemma/GPT are engine choices and each keeps fast/precise modes with GPT always more analytical`
+- reviewer_findings: `local Gemma still uses compact tag output, while GPT can now return narrative reason, analysis, practical value, and caution fields; the frontend visibly marks GPT analysis/caution cards`
+- verification_outcome: `node --check passed; Gradle remained blocked by native-platform.dll, so javac compiled the changed backend classes; 8080 health/static checks passed; GPT POST accepted the route but returned no_usable_showtimes because data freshness is currently the blocking runtime condition`
+- next_gate_adjustment: `before judging GPT result quality in-browser, refresh future showtime coverage so recommendation requests reach the model path instead of stopping at candidate availability`
+
+- task: `AI poster image failure fallback`
+- score_total: `2`
+- evaluation_fit: `light fit; acceptance was a focused resilience fix for missing external poster images`
+- orchestration_fit: `single-session fit; one JS/CSS surface plus Spring static mirror needed no delegation`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the poster frame polish revealed a separate runtime image-loading failure path, so a fallback panel was added without changing backend API behavior`
+- reviewer_findings: `poster cards now avoid the blank-frame failure mode by showing a title fallback and 준비 중 copy when posterUrl is missing or the img error event fires`
+- verification_outcome: `node --check passed for daboyeoAi.js; 8080 health and static JS/CSS/HTML checks passed; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when external media URLs are used in demo UI, add visible broken-media fallbacks at the component boundary instead of only relying on source data completeness`
+
+- task: `AI poster card frame visual polish`
+- score_total: `2`
+- evaluation_fit: `light fit; acceptance was a focused visual correction on one card family`
+- orchestration_fit: `single-session fit; one CSS surface and static mirror needed no delegation`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the old pale border and flat gray backing made poster images feel detached from the card`
+- reviewer_findings: `the new darker frame, inset highlight, and more integrated selected state make posters feel contained without changing the poster data or layout`
+- verification_outcome: `8080 static CSS checks, app-browser poster-step visual check, Spring health, and git diff --check passed`
+- next_gate_adjustment: `for poster-heavy UI, prefer a matte/inset frame over bright outline borders when the background is already dark and atmospheric`
+
+- task: `AI guide first-step back button browser navigation`
+- score_total: `2`
+- evaluation_fit: `light fit; acceptance was one visible button behavior plus static freshness`
+- orchestration_fit: `single-session fit; one JS handler and cache-busted static mirror were cheaper than delegation`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the existing button was visible on the first step but only handled internal stepBackMap entries, so it became a no-op there`
+- reviewer_findings: `first-step 이전 now has a real browser-back meaning, and later steps keep the current survey-step back behavior`
+- verification_outcome: `node --check, 8080 health/static checks, app-browser first-step and second-step back checks, and git diff --check passed`
+- next_gate_adjustment: `when a shared navigation button is visible on a step without internal history, give it a page-level fallback instead of leaving an empty branch`
+
+- task: `AI provider route selector on recommendation mode step`
+- score_total: `5`
+- evaluation_fit: `full fit; the task combined a user-visible route selector, request-contract change, provider-specific backend routing, and running 8080 jar/static verification`
+- orchestration_fit: `single-session fit; the UI state, payload shape, Spring properties, and jar patching were tightly coupled around the same aiProvider contract`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the first patched jar failed because adding a secondary constructor to a configuration-properties record made Spring require an explicit @ConstructorBinding on the canonical constructor`
+- reviewer_findings: `the final route keeps local as default, uses GPT-5.5 with low/high reasoning labels, keeps GPT gateway configuration on the backend, and avoids exposing OAuth or API secrets to the browser`
+- verification_outcome: `node --check, javac, 8080 health, local/gpt recommendation API smoke, app-browser GPT label switch, and git diff --check passed; Gradle remains blocked by native-platform.dll`
+- next_gate_adjustment: `when adding overloads to Spring @ConfigurationProperties records, bind the canonical constructor explicitly before runtime jar verification`
+
+- task: `Durable Spring TiDB dotenv mapping`
+- score_total: `6`
+- evaluation_fit: `full fit; the user explicitly rejected a temporary workaround and the failure crossed dotenv parsing, Spring datasource binding, jar packaging, and runtime API recovery`
+- orchestration_fit: `single-session fit; one config/runtime lane was cheaper and safer than delegation because each discovery result directly changed the same fix surface`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the initial env mapping fix was not enough because the root .env had a UTF-8 BOM on TIDB_HOST and the stale boot jar was missing spring.factories registration`
+- reviewer_findings: `the durable contract now handles BOM-safe .env parsing, derives both DABOYEO_DB_* and spring.datasource.* keys, preserves explicit env overrides, defaults TiDB Cloud to TLS, and avoids logging secrets`
+- verification_outcome: `Gradle remained blocked by native-platform.dll; javac/manual harness passed; the patched normal jar returned health 200 and recommendation session 200`
+- next_gate_adjustment: `when a Spring environment postprocessor fix seems ignored, check both property source contents and packaged registration resources before blaming DB connectivity`
+
+- task: `Repo-direction verification from WORKSPACE_CONTEXT and README set`
+- score_total: `4`
+- evaluation_fit: `light fit; the task needed grounded reading and a concise fact-vs-inference summary`
+- orchestration_fit: `single-session fit; one lane kept the repo narrative consistent across documents`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the active PPT/design task was paused because the user asked to reset the narrative against repository truth sources first`
+- reviewer_findings: `the main mismatch was narrative drift: earlier slide work leaned toward ticketing automation/RPA as the product core, while the repo docs center on 3-site showtime collection, comparison, and filtering`
+- verification_outcome: `WORKSPACE_CONTEXT plus root/per-folder README files were read; db schema contract was also checked because db/README explicitly points to it as canonical naming guidance`
+- next_gate_adjustment: `before continuing any presentation work, anchor the storyline to collectors-first comparison/search architecture and treat recommendation or alerting as secondary/extension scope unless the repo docs are revised`
+
+- task: `Repo-truth PPT rebuild from section 2 onward`
+- score_total: `7`
+- evaluation_fit: `full fit; the work needed source-of-truth document reads, implementation truth checks, concrete Stitch artifacts, and an explicit note about tool limits`
+- orchestration_fit: `single-session fit; reading repo truth, reshaping the narrative, and regenerating the deck were tightly coupled and cheaper to keep in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the earlier automation-heavy PPT story was discarded after the user required README-grounded direction verification; one UI/UX slide generation timed out and was replaced through a shorter fallback generation before a deck-wide consistency pass`
+- reviewer_findings: `the regenerated deck now centers on 3-provider showtime collection, minimal common schema, backend DB/API boundaries, vanilla frontend comparison/search, and extension-scope recommendation rather than inventing ticketing automation as the product core`
+- verification_outcome: `local repo docs and stack-truth files were read, new Stitch project 10979052864160268633 was generated for sections 2-10, and a final edit_screens pass unified all 10 slides into one presentation system`
+- next_gate_adjustment: `for future presentation work in this repo, treat backend/build.gradle and application.yml as stack truth, use README plus schema contract as product-direction truth, and start with a strong anti-web-slide constraint in the first generation prompt`
+
+- task: `Exact 1440x1026 frame enforcement follow-up`
+- score_total: `5`
+- evaluation_fit: `light fit; the issue is now tool capability and delivery accuracy rather than content correctness`
+- orchestration_fit: `single-session fit; one lane can verify tool availability faster than splitting the work`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the task was reclassified after the user approved the rebuilt content but rejected the still-incorrect frame size`
+- reviewer_findings: `the remaining gap is not deck narrative but exact frame enforcement; Stitch generation and edit paths still surface larger desktop canvases, and current connector discovery did not expose a direct Figma resize/write tool`
+- verification_outcome: `tool search confirmed only Stitch generation/edit and Figma read/generate endpoints in this session; no direct frame resize action is currently available`
+- next_gate_adjustment: `when exact pixel sizing matters for presentation work, verify write-capable Figma tooling before investing heavily in Stitch-generated slides`
+
+- task: `Accessible Figma workspace fallback creation`
+- score_total: `5`
+- evaluation_fit: `light fit; the goal is now to hand off an editable Figma file while keeping the unresolved exact-size limitation explicit`
+- orchestration_fit: `single-session fit; deck outline and file creation stay cheaper in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `after the exact-size blocker was confirmed, the task shifted again because the user preferred a shared Figma workspace over continuing inside Stitch only`
+- reviewer_findings: `the key distinction is that a Figma workspace can be created now, but exact 1440x1026 frame enforcement still depends on unavailable write tooling`
+- verification_outcome: `not pursued; the user rejected the fallback because it would still not allow actual modification`
+- next_gate_adjustment: `do not create a nominal shared workspace when the missing capability is the core value of the request`
+
+- task: `Repo-grounded Stitch deck content review`
+- score_total: `4`
+- evaluation_fit: `light fit; the work needed slide-content inspection and repo-truth comparison rather than code-level verification`
+- orchestration_fit: `single-session fit; one lane kept the final-row identification and content judgment consistent`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the blocked exact-size follow-up was paused because the user asked for a read-only content review of the corrected deck instead`
+- reviewer_findings: `the final row still contains major drift in the technology, UI/UX, value/limitations, and detailed implementation slides; several claims remain generic or invented, and the row order itself is out of sequence for a live presentation`
+- verification_outcome: `project metadata and final-row screens from Stitch project 10979052864160268633 were inspected directly, and the review targeted the later unified row rather than the older duplicated screens in the same project`
+- next_gate_adjustment: `if this deck is revised, fix slide order first and then rewrite 4, 7, 9, 6-1, and 6-2 before polishing the lighter sections`
+
+- task: `Repo-grounded Stitch deck content revision`
+- score_total: `6`
+- evaluation_fit: `light fit; the work needed repo-truth confirmation, targeted slide rewrites, and output ID tracking rather than local code verification`
+- orchestration_fit: `single-session fit; one lane kept the repo truth, review findings, and Stitch revisions aligned`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the task moved from critique into implementation after the user asked to fix the deck directly`
+- reviewer_findings: `the refined outputs replaced the incorrect stack slide, collectors architecture slide, collection/schema details, UI/UX story, team collaboration story, effect/limitations slide, and final closing summary with repo-grounded presentation copy`
+- verification_outcome: `Stitch edit passes produced refined screens for sections 2-10 and their IDs were recorded; the remaining tool limitation is that the refined screens were emitted as new screens instead of replacing the original canvas instances`
+- next_gate_adjustment: `for future Stitch deck repair work, expect edit_screens to create new refined outputs and plan for explicit output-ID tracking or manual canvas replacement`
+
+- task: `Fresh Stitch session PPT body generation from section 2 onward`
+- score_total: `6`
+- evaluation_fit: `light fit; the task needed concrete generated slide evidence and a clear note about sizing limits`
+- orchestration_fit: `single-session fit; outline extraction, prompt shaping, and screen generation were faster in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the task first tried Figma Slides, then was reclassified again after the user clarified the real target was an in-progress 1440x1026 presentation file and explicitly approved a fresh session; after first-generation review, a second deck-wide pass was needed because the screens still felt too web-like`
+- reviewer_findings: `section coverage and visual tone were achieved, and the second pass removed much of the webpage feel, but exact 1440x1026 enforcement was still not guaranteed by Stitch screen generation`
+- verification_outcome: `fresh Stitch project 13482283388031437931 generated 10 body-slide screens from 문제 제기 through 마무리 and then successfully applied a deck-wide PPT reformat pass; create_design_system failed and list_screens returned empty, so per-call screen metadata was used as evidence`
+- next_gate_adjustment: `for future PPT work, add a strong anti-web-slide constraint in the very first generation prompt instead of waiting for a review pass`
+
+- task: `Figma Slides deck generation from image-defined section plan`
+- score_total: `6`
+- evaluation_fit: `light fit; the task needed output confirmation and section-coverage review rather than deep repo testing`
+- orchestration_fit: `single-session fit; image interpretation, prompt shaping, and tool verification stayed cheaper in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the first full generate_deck call hit an unexpected response-type failure, so a smaller validation deck was used to confirm tool behavior before regenerating the full deck`
+- reviewer_findings: `the main delivery risk was tool behavior and the Figma Slides image-reference limitation, not repository code quality`
+- verification_outcome: `test deck and full deck generation both succeeded; local state tracking and workspace verification commands were completed`
+- next_gate_adjustment: `when generate_deck fails ambiguously, first rerun with a 3-slide minimum sanity case to separate schema issues from connector behavior`
+
+- task: `STATE board recovery during AI page renewal`
+- score_total: `2`
+- evaluation_fit: `light fit; a readable task board was required before continuing implementation`
+- orchestration_fit: `single-session fit; the fix was an internal state recovery only`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `STATE.md became encoding-corrupted during inline edits and was rebuilt as a clean UTF-8 task board`
+- reviewer_findings: `no product-code change yet; this was internal orchestration recovery`
+- verification_outcome: `STATE.md is readable again and current-task contract is explicit`
+- next_gate_adjustment: `when patching large state sections, prefer smaller apply_patch steps or rewrite the board cleanly once instead of mixed-encoding incremental edits`
+
+- task: `Fresh Stitch session concept generation from main index only`
+- score_total: `8`
+- evaluation_fit: `full fit; the outcome required concrete design artifacts rather than local code edits`
+- orchestration_fit: `single-session fit; prompt design and Stitch generation stayed tightly coupled`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the task was reclassified away from concept comparison into a fresh-session generation flow seeded only by the main index page`
+- reviewer_findings: `the new concept is structurally distinct from the previous AI page and prior Stitch outputs, but no local implementation decision has been made yet`
+- verification_outcome: `fresh Stitch project 18001920443669087555 and screen b4c22a52b73745cda879558cde5c5da2 were generated successfully`
+- next_gate_adjustment: `when the user asks for a truly fresh concept, start a new Stitch project immediately instead of iterating inside the earlier comparison project`
+
+- task: `Second fresh Stitch session with Audience Gallery layout`
+- score_total: `8`
+- evaluation_fit: `full fit; the design outcome needed concrete Stitch artifacts and comparison evidence`
+- orchestration_fit: `single-session fit; main-brand extraction, prompt writing, and generation stayed cheaper in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the fresh-session task was refined again to exclude the central pass layout and force a new macro-structure`
+- reviewer_findings: `the new concept is meaningfully different from the Screening Pass idea because it shifts to a full-width audience-card rail instead of a dominant center panel`
+- verification_outcome: `fresh Stitch project 7742688576431333902 and screen b41e5db6e26e40a49f27c4aeb2330a9d were generated successfully`
+- next_gate_adjustment: `when generating another comparison concept, explicitly ban the latest layout pattern in the prompt so Stitch cannot drift back toward it`
+
+- task: `Audience Gallery full-flow Stitch expansion`
+- score_total: `8`
+- evaluation_fit: `full fit; the accepted concept had to be extended screen-by-screen against the real frontend step order`
+- orchestration_fit: `single-session fit; one lane kept the concept continuity and prompt calibration cheaper than delegation`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the task shifted from concept exploration to accepted-concept serial generation in the same Stitch project`
+- reviewer_findings: `each step now has its own micro-layout while remaining inside the same Nocturne Premiere family; the result screen reads like a recommendation service rather than a survey summary`
+- verification_outcome: `step screens for mood, avoid, posters, mode, and results were all generated successfully in project 7742688576431333902`
+- next_gate_adjustment: `when the user accepts a concept, pin the real frontend step order first and then generate the remaining screens in that order to avoid dead-end variants`
+
+- task: `Step 2 and Step 3 visual enrichment`
+- score_total: `6`
+- evaluation_fit: `light fit; this was a focused refinement pass on two accepted screens`
+- orchestration_fit: `single-session fit; direct Stitch edits were cheaper than reopening broader concept exploration`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the accepted flow remained intact, but Step 2 and Step 3 were revised because they felt too text-heavy`
+- reviewer_findings: `Step 2 now has cinematic image cues per mood tile and Step 3 now has elegant iconography, which improves scanability without breaking the premium tone`
+- verification_outcome: `Stitch edit_screens succeeded for both targeted screens in project 7742688576431333902`
+- next_gate_adjustment: `when a step feels text-heavy, prefer imagery or restrained iconography over emoji so the premium tone stays intact`
+
+- task: `Step 2 and Step 3 image-led refinement`
+- score_total: `6`
+- evaluation_fit: `light fit; this was a focused second-pass refinement on two accepted screens`
+- orchestration_fit: `single-session fit; direct Stitch edits stayed the cheapest path`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the first visual refresh was not strong enough because Step 3 still leaned on icons, so both screens were pushed further toward image-led choices`
+- reviewer_findings: `Step 2 now reads much closer to Step 1 with distinct per-option imagery, and Step 3 no longer feels like a text/icon utility board`
+- verification_outcome: `Stitch edit_screens succeeded again for both targeted screens in project 7742688576431333902`
+- next_gate_adjustment: `when the user asks for Step 1-like richness, treat that as a request for per-option owned imagery rather than abstract texture or iconography`
+
+- task: `Step 2 and Step 3 layout redo`
+- score_total: `6`
+- evaluation_fit: `light fit; this was a constrained design correction pass`
+- orchestration_fit: `single-session fit; direct Stitch edits remained the fastest path`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the image-led pass still missed the mark, so Step 2 and Step 3 were restructured again at the layout level`
+- reviewer_findings: `Step 2 now stays within the dark Nocturne palette and Step 3 feels structurally complete with a sixth neutral choice card`
+- verification_outcome: `Stitch edit_screens succeeded for both redesigned screens in project 7742688576431333902`
+- next_gate_adjustment: `when imagery clashes with the theme, change the layout container and image role together instead of only swapping pictures`
+
+- task: `Step 2 button polish and Step 3 image replacement`
+- score_total: `5`
+- evaluation_fit: `light fit; this was a narrow polish pass on two already accepted redesigns`
+- orchestration_fit: `single-session fit; direct edits were fastest`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `Step 2 needed one more interaction polish pass and Step 3 needed only image replacement, not another full concept reset`
+- reviewer_findings: `Step 2 no longer has awkward detached button placement and Step 3 keeps the stronger 6-slot layout while using more fitting imagery`
+- verification_outcome: `Stitch edit_screens succeeded for the targeted polish pass in project 7742688576431333902`
+- next_gate_adjustment: `when a user flags button placement after a layout redo, keep the layout and polish affordance integration instead of reopening the whole composition`
+
+- task: `Local Step 3 internet-image implementation`
+- score_total: `8`
+- evaluation_fit: `full fit; the task shifted from design evidence to real local UI implementation and needed code-level verification`
+- orchestration_fit: `single-session fit; one tight JS/CSS slice was cheaper than delegation`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the task was reclassified from Stitch-only design iteration into a local Step 3 implementation using external image sources`
+- reviewer_findings: `the avoid step now reads like the accepted concept much better because six cards have distinct imagery while multi-select behavior remains intact`
+- verification_outcome: `node --check passed for daboyeoAi.js and script.js; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when a user says generated visuals feel dull, switch quickly to sourced imagery and implement the accepted slice locally instead of over-iterating prompts`
+
+- task: `Seat-guidance concept variants from main-page visual language`
+- score_total: `7`
+- evaluation_fit: `full fit; the task needed real file-based style extraction, explicit variant separation, and artifact-level output rather than a loose brainstorm`
+- orchestration_fit: `delegated-parallel fit; one local style freeze plus five disjoint read-only variant briefs justified the user-requested parallel agent layout`
+- predicted_topology: `delegated-parallel`
+- actual_topology: `delegated-parallel`
+- spawn_count: `5`
+- rework_or_reclassification: `the completed Stitch PPT task was closed and a new design-only task was opened after the user shifted focus to lightweight personality-based seat guidance`
+- reviewer_findings: `the strongest common direction was to keep the black-and-purple cinematic brand family while replacing explicit AI framing with lighter personality, MBTI, zone, or scenario-based guidance`
+- verification_outcome: `frontend/index.html, style.css, common.css, and daboyeoAi.css were read; five subagent briefs were collected and frozen into a single final render direction`
+- next_gate_adjustment: `when the user asks for multiple mock variants, freeze the brand contract locally first and then split only the creative emphasis across parallel agents`
+
+- task: `Click-through seat subpages from the main recommendation section`
+- score_total: `7`
+- evaluation_fit: `full fit; the task needed a contract correction from standalone pages to post-click internal pages plus explicit navigation-context review`
+- orchestration_fit: `delegated-parallel fit; once the click-through rule was frozen, MBTI, couple, group, random, and gateway subpages had disjoint design ownership`
+- predicted_topology: `delegated-parallel`
+- actual_topology: `delegated-parallel`
+- spawn_count: `5`
+- rework_or_reclassification: `the earlier output was invalidated because the user clarified the page context; the task was reclassified around the existing main-page seat section and its click targets`
+- reviewer_findings: `the decisive correction was to show breadcrumb or back navigation and make every screen read like an internal page reached from the current section rather than a new landing page`
+- verification_outcome: `the main-page section screenshot and frontend style files remained the grounding reference; five fresh subagent briefs were collected for MBTI, couple, group, random, and the CTA gateway`
+- next_gate_adjustment: `when generating UI concept images from a section screenshot, freeze the pre-click and post-click relationship explicitly before asking subagents for variants`
+
+- task: `MBTI-only seat-recommendation frontend concept variants`
+- score_total: `7`
+- evaluation_fit: `full fit; the task needed single-topic narrowing, five distinct MBTI UI approaches, and artifact-level image output`
+- orchestration_fit: `delegated-parallel fit; all variants share the MBTI entry contract but have disjoint design emphasis`
+- predicted_topology: `delegated-parallel`
+- actual_topology: `delegated-parallel`
+- spawn_count: `5`
+- rework_or_reclassification: `the task was narrowed from multi-flow seat pages after the user chose MBTI별 성향 좌석 추천 as the strongest direction`
+- reviewer_findings: `the strongest MBTI directions are the 16-type selector, quadrant map, result dashboard, unknown-MBTI quiz, and seat-map atlas because each keeps one topic while changing the interaction model`
+- verification_outcome: `five MBTI-only subagent briefs were collected and frozen for separate image rendering`
+- next_gate_adjustment: `when the user likes one concept from a variant set, narrow the next generation around that concept rather than adding more unrelated feature branches`
+- timestamp: `2026-04-24 10:37:54 +09:00`
+- note: `The user moved from image generation to implementation, so the task was reclassified into a single-session frontend edit with a frozen headerless MBTI seat-page contract.`
+
+- task: `Headerless MBTI seat-recommendation frontend implementation`
+- score_total: `7`
+- evaluation_fit: `full fit; the work needed visual-contract fidelity, static interaction correctness, and main-page routing verification`
+- orchestration_fit: `single-session fit; HTML, CSS, JS data rendering, and main entry wiring were tightly coupled and cheaper to keep in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the image exploration task became a concrete frontend implementation after the user asked to build from the accepted mock`
+- reviewer_findings: `the implementation keeps the page headerless, removes heavy AI framing from the seat section, uses MBTI as the lightweight input, keeps one primary CTA, and preserves the original AI guide route separately`
+- verification_outcome: `node --check passed for seatRecommendMbti.js, script.js, and preserved daboyeoAi.js; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `for future seat-flow work, keep post-click pages visually tied to the main section and avoid reintroducing global nav unless the main page itself gets one`
+
+- task: `Mock-fidelity refinement for MBTI seat recommendation page`
+- score_total: `8`
+- evaluation_fit: `full fit; the work needed visual comparison, data-fidelity handling, subagent asset participation, browser verification, and code checks`
+- orchestration_fit: `delegated-parallel then main integration fit; visual critique and sprite creation were separable, while main kept HTML/CSS/JS integration ownership`
+- predicted_topology: `delegated-parallel then main integration`
+- actual_topology: `delegated-parallel then main integration`
+- spawn_count: `2`
+- rework_or_reclassification: `the task expanded from annotated tweaks into a mock-fidelity refinement with computed seat percentages and honest data labeling`
+- reviewer_findings: `the prior page had empty lower recommendation-panel space, weak CTA anchoring, flat seat map, missing card icons, and weak profile art compared with the mock`
+- verification_outcome: `browser verification found 160 rendered seat percentages, 16 card icons, 3 metric chips, and one disclaimer; node --check and git diff --check passed`
+- next_gate_adjustment: `when MBTI or personality UI implies external behavioral data, explicitly separate measured data from computed demo fit scores before rendering percentages`
+
+- task: `Annotated MBTI card icon and theater-map layout follow-up`
+- score_total: `6`
+- evaluation_fit: `full fit; the follow-up touched visual proportions, generated SVG assets, interaction rendering, and layout spacing`
+- orchestration_fit: `single-session fit; the requested edits were tightly coupled across the same HTML/CSS/JS/SVG surfaces`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the right panel and theater map were restructured after the user pointed out the selector/result/map proportions`
+- reviewer_findings: `MBTI cards no longer show zone labels, all 16 profile mappings resolve to dedicated sprite symbols, and the map now has explicit aisle columns instead of margin-based seat pushing`
+- verification_outcome: `node --check passed for changed JS, SVG parsed as XML, static contract checks passed, localhost served the updated files, and git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `for future in-app browser checks, cache-bust the page URL earlier because stale tab snapshots can otherwise look like implementation failure`
+
+- task: `Remove old MBTI SVG sprite dependency`
+- score_total: `7`
+- evaluation_fit: `light fit; the acceptance was concrete: no old SVG asset or references should remain`
+- orchestration_fit: `single-session fit; the JS fallback, CSS marker styling, and asset deletion were one tight cleanup slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the generated PNG sprite became the accepted direction, so the previous SVG sprite was removed instead of polished further`
+- reviewer_findings: `the old SVG dependency is gone, metric chips still have non-SVG visual markers, and the MBTI cards/profile remain on the generated PNG sprite`
+- verification_outcome: `node --check passed for seatRecommendMbti.js; Select-String found no old SVG or icon-id references under frontend/src; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `when a generated asset is rejected outright, remove both the asset and all dependent rendering code rather than leaving a hidden fallback path`
+
+- task: `Browser-comment polish for title, icon rastering, and map semantics`
+- score_total: `6`
+- evaluation_fit: `light fit; the comments were concrete visual/semantic corrections on the current page`
+- orchestration_fit: `single-session fit; the HTML title, CSS sprite/map labels, JS label placement, and PNG resampling were one tightly coupled page slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the previous task was complete, then the user supplied a new browser-comment polish pass`
+- reviewer_findings: `title wrapping is now intentional, the sprite sheet no longer has fractional 4-way cell boundaries, side focus labels distinguish left and right, and front/rear labels now follow the visible screen orientation`
+- verification_outcome: `node --check passed for seatRecommendMbti.js; git diff --check passed with CRLF warnings only; sprite image is now 1280x1280 with dimensions divisible by 4`
+- next_gate_adjustment: `for generated sprite sheets, normalize final dimensions to an exact grid before wiring them into CSS background-position`
+
+- task: `Default front label and PNG cutout-edge defringe`
+- score_total: `5`
+- evaluation_fit: `light fit; the comments were narrow and directly verifiable`
+- orchestration_fit: `single-session fit; the label, duplicate guard, and PNG cleanup were one page-asset slice`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the previous map polish still left front as only a dynamic zone, so a static front label was added`
+- reviewer_findings: `the map now shows 전방 생동석 by default, dynamic front choices hide the static front label to avoid duplication, and the PNG edge matte was cleaned by RGB bleeding plus low-alpha cleanup`
+- verification_outcome: `node --check passed for seatRecommendMbti.js; git diff --check passed with CRLF warnings only; sprite remains 1280x1280 and partial-alpha edge pixels dropped from 61858 to 45373`
+- next_gate_adjustment: `for chroma-keyed UI sprites, run matte decontamination before judging final icon sharpness in browser`
+
+- task: `Micro-blur polish for generated MBTI icons`
+- score_total: `3`
+- evaluation_fit: `light fit; this was a tiny CSS-only visual tweak`
+- orchestration_fit: `single-session fit; no delegation value for a two-line filter adjustment`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the user preferred trying blur after matte cleanup still left outline jaggies`
+- reviewer_findings: `card icons now get blur(0.28px) and the larger profile icon gets blur(0.2px), keeping the effect below obvious out-of-focus territory`
+- verification_outcome: `git diff --check passed with CRLF warnings only; static source checks found the blur filters and updated cache-bust query`
+- next_gate_adjustment: `if micro-blur still looks poor, replace the raster sprite with cleaner regenerated icons instead of stacking stronger blur`
+
+- task: `Raise MBTI icon blur to 0.6px`
+- score_total: `3`
+- evaluation_fit: `light fit; this was a direct CSS value adjustment requested by the user`
+- orchestration_fit: `single-session fit; no delegation value for a tiny filter adjustment`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `0.35px was applied but visually too subtle, so the blur was raised to 0.6px`
+- reviewer_findings: `card and profile icons now both use blur(0.6px), with the CSS query bumped to avoid stale stylesheet loads`
+- verification_outcome: `git diff --check passed with CRLF warnings only; static source checks found the blur(0.6px) filters and updated cache-bust query`
+- next_gate_adjustment: `if 0.6px looks too soft, tune down slightly or regenerate cleaner non-chroma icon assets`
+
+- task: `Recommendation-driven theater-map zone labels`
+- score_total: `4`
+- evaluation_fit: `light fit; the user flagged one static label and the fix is directly verifiable`
+- orchestration_fit: `single-session fit; no delegation value for a small HTML/CSS/JS cleanup`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the always-on front tag looked like a recommendation label, so it was removed instead of restyled`
+- reviewer_findings: `front labels now use the same dynamic primary/secondary recommendation-label path as other zones; the one-off warm front styling and duplicate guard are gone`
+- verification_outcome: `node --check passed for seatRecommendMbti.js; git diff --check passed with CRLF warnings only; static source checks found no frontZoneStaticLabel, static-front style, or hasDynamicFrontLabel references`
+- next_gate_adjustment: `zone tags that look like recommendations should be generated from selected recommendation data, not shown as permanent map annotations`
+
+- task: `Selective ksg frontend import`
+- score_total: `7`
+- evaluation_fit: `full fit; cross-branch import needed route compatibility, scratch-file exclusion, and static JS verification`
+- orchestration_fit: `single-session fit; one tight frontend integration surface was cheaper than delegation`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the request changed from completed seat-page polish to importing teammate frontend work from origin/ksg`
+- reviewer_findings: `AI page refresh and Top3/discovery pages were imported while patch.js was excluded; main AI and popular-movie entry points now route to imported pages; MBTI seat routing remains intact`
+- verification_outcome: `node --check passed for daboyeoAi.js and script.js; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `future ksg imports should continue inspecting scratch/helper files before accepting all branch changes`
+
+- task: `Team-shareable DB schema contract finalization`
+- score_total: `8`
+- evaluation_fit: `full fit; the output is a shared DB contract spanning migrations, ingest semantics, verifier behavior, and team-facing docs`
+- orchestration_fit: `single-session fit; SQL, Java time normalization, Python status mapping, and docs all describe the same contract and were safer in one lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `fresh provider seat-status evidence expanded the scope from table creation into seeded status-code mapping and Lotte normalizer correction`
+- reviewer_findings: `the shareable contract now covers migrations 001-005, 20 canonical table names, post-midnight showtime normalization, observed seat-status mapping, layout-vs-snapshot separation, and raw-payload safety`
+- verification_outcome: `migration dry-run, py_compile, status-normalizer assertions, migration split check, static contract search, secret placeholder scan, and git diff --check passed; Gradle test could not start due local native-platform.dll loading`
+- next_gate_adjustment: `when fresh crawl classification exposes status-code counts, compare them against existing normalizers before freezing the DB contract`
+
+- task: `Codex-scored reserve recommendation pool`
+- score_total: `8`
+- evaluation_fit: `full fit; the work changed AI schema, score validation, result filling policy, and runtime provider behavior`
+- orchestration_fit: `single-session fit; Selfdex was used read-only, but implementation stayed coupled across one recommendation contract`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the prior strict taste gate was intentionally relaxed into taste-first reserve filling after the user asked to avoid 1-2 item outputs`
+- reviewer_findings: `direct taste candidates remain first, reserve candidates can fill empty slots, Codex/GPT now return model score s, and server validation caps no-direct taste reserves at 74`
+- verification_outcome: `focused recommendation service/client/scorer tests passed outside sandbox; bootJar passed; runtime local fallback and Codex smokes returned 3 action/SF recommendations with reserve scores below the direct match`
+- next_gate_adjustment: `for sparse live DB pools, prefer tiered reserve fill plus visible lower scores over strict exclusion that makes the UI look empty`
+
+- task: `Remove local model provider and rebuild Codex-only fallback`
+- score_total: `8`
+- evaluation_fit: `full fit; provider contract removal, fallback quality, frontend/static mirrors, bridge script, tests, build, and localhost served checks all needed evidence`
+- orchestration_fit: `single-session fit; backend provider enum/config/client/service, bridge script, frontend payload, and tests shared one Codex-only contract`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the user moved from genre/poster flow polish to removing the local model architecture and recalibrating awkward code-score fallback output`
+- reviewer_findings: `active source no longer exposes LM Studio/Gemma/local provider selection, legacy provider inputs resolve to Codex, fallback hides internal tags and caps no-direct reserves at 68`
+- verification_outcome: `leftover search found no active local-model/provider-switch terms; node --check passed for both AI page JS mirrors; py_compile passed for ai_bridge_agent.py; focused Gradle tests and bootJar passed outside sandbox; localhost:5500 serves codex-only HTML/JS and provider health returns only codex`
+- next_gate_adjustment: `when the provider set changes, verify request mapping, bridge worker polling, browser payload, static mirror cache keys, and fallback copy together instead of treating them as separate cleanups`
+
+- task: `Fix anime fallback genre evidence and score badge layout`
+- score_total: `6`
+- evaluation_fit: `light fit; acceptance was concrete and covered by focused scorer/service tests, static CSS checks, and one live fallback smoke`
+- orchestration_fit: `single-session fit; the domain tag derivation and CSS heading repair were a tight small patch with no delegation value`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `the previous Codex-only fallback work still left title keyword genre inference in ShowtimeCandidate.allTags, which the browser result exposed`
+- reviewer_findings: `movie titles no longer create genre:animation or other genre tags; explicit movie_tags still work; long result titles now wrap in a reserved title column without colliding with the score badge`
+- verification_outcome: `focused RecommendationScorer/Service tests passed outside sandbox; bootJar passed; served CSS/HTML has 20260506-score-layout and grid/wrap rules; live animation fallback produced 68-point reserve items with direct-match caution; git diff --check passed with CRLF warnings only`
+- next_gate_adjustment: `for recommendation genre bugs, check both scoring code and candidate tag derivation because display-title heuristics can masquerade as valid metadata`
+
+- task: `Add post-crawl movie tag enrichment pipeline`
+- score_total: `8`
+- evaluation_fit: `full fit; this touched live DB metadata, collector integration, recommendation eligibility, and localhost Codex behavior`
+- orchestration_fit: `single-session fit; Selfdex was used read-only, but the actual implementation was one coupled enrichment-plus-recommendation contract with no safe disjoint write lane`
+- predicted_topology: `single-session`
+- actual_topology: `single-session`
+- spawn_count: `0`
+- rework_or_reclassification: `Selfdex initially suggested collect_all_to_tidb.py responsibility cleanup, but Socratic review redirected the /goal to exact-id tag enrichment; live smoke then exposed candidate fetch crowding, so the frozen write set expanded to RecommendationService and its focused tests`
+- reviewer_findings: `provider genres can be too coarse for recommendation eligibility, so curated exact-id movie_tags must be post-crawl metadata and title-only ambiguous cases must remain untagged`
+- verification_outcome: `override validate-only, script compile, dry-run/write enrichment, collect_all default enrichment, DB tag assertions, focused RecommendationServiceCandidateFilterTests, bootJar, provider health, animation Codex smoke, and git diff --check passed; sandbox Gradle native DLL failure was logged as resolved`
+- next_gate_adjustment: `when selected-genre recommendations look empty or sparse, check both metadata existence and the pre-filter candidate fetch window before tuning scoring copy or fallback ranking`

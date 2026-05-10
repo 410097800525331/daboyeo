@@ -30,6 +30,9 @@ daboyeo:
     public-collection-enabled: ${DABOYEO_PUBLIC_COLLECTION_ENABLED:false}
     public-nearby-refresh-enabled: ${DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED:false}
     public-seat-layout-enabled: ${DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED:false}
+    recommendation-rate-limit-per-minute: ${DABOYEO_RECOMMENDATION_RATE_LIMIT_PER_MINUTE:12}
+    session-rate-limit-per-minute: ${DABOYEO_SESSION_RATE_LIMIT_PER_MINUTE:30}
+    feedback-rate-limit-per-minute: ${DABOYEO_FEEDBACK_RATE_LIMIT_PER_MINUTE:60}
   demo:
     live-fallback-enabled: ${DABOYEO_DEMO_LIVE_FALLBACK_ENABLED:true}
   recommendation:
@@ -38,13 +41,13 @@ daboyeo:
     poster-public-base-url: ${DABOYEO_POSTER_PUBLIC_BASE_URL:${R2_PUBLIC_BASE_URL:}}
     codex-model: ${DABOYEO_RECOMMEND_CODEX_MODEL:}
     codex-fast-model: ${DABOYEO_RECOMMEND_CODEX_FAST_MODEL:gpt-5.4-mini}
-    codex-precise-model: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MODEL:gpt-5.4}
+    codex-precise-model: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MODEL:gpt-5.5}
     codex-fast-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_FAST_REASONING_EFFORT:}
-    codex-precise-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_PRECISE_REASONING_EFFORT:medium}
+    codex-precise-reasoning-effort: ${DABOYEO_RECOMMEND_CODEX_PRECISE_REASONING_EFFORT:xhigh}
     codex-fast-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_FAST_AI_CANDIDATE_LIMIT:12}
     codex-precise-ai-candidate-limit: ${DABOYEO_RECOMMEND_CODEX_PRECISE_AI_CANDIDATE_LIMIT:20}
     codex-fast-max-tokens: ${DABOYEO_RECOMMEND_CODEX_FAST_MAX_TOKENS:420}
-    codex-precise-max-tokens: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MAX_TOKENS:900}
+    codex-precise-max-tokens: ${DABOYEO_RECOMMEND_CODEX_PRECISE_MAX_TOKENS:1700}
     bridge-token: ${DABOYEO_AI_BRIDGE_TOKEN:}
     bridge-result-timeout-seconds: ${DABOYEO_AI_BRIDGE_RESULT_TIMEOUT_SECONDS:75}
     bridge-heartbeat-ttl-seconds: ${DABOYEO_AI_BRIDGE_HEARTBEAT_TTL_SECONDS:45}
