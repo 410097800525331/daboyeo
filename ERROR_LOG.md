@@ -996,3 +996,11 @@ Do not rewrite existing entries; append only.
 - summary: `Direct push to main was rejected by GitHub repository rules.`
 - details: `git push origin main was rejected with GH013 because changes must be made through a pull request. The local main merge commit remains intact; the handoff path is to push the same HEAD to a codex/* branch and open a PR into main.`
 - status: `resolved-with-pr-path`
+
+# 2026-05-11 02:56 +09:00
+
+- time: `2026-05-11 02:56 +09:00`
+- location: `GitHub PR creation`
+- summary: `GitHub CLI was not installed on the machine PATH.`
+- details: `gh pr create failed with command-not-found after the PR branch was pushed successfully. PR creation continued through the connected GitHub MCP tool instead.`
+- status: `resolved-with-github-mcp`
