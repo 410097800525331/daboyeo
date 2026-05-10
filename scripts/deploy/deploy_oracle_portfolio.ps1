@@ -5,9 +5,11 @@ param(
   [string]$RemoteDir = "/opt/daboyeo",
   [string]$ServiceName = "daboyeo",
   [string]$GradleCommand = "gradle",
+  [string]$ShowtimeSyncCron = "0 0 * * * *",
   [switch]$Build,
   [switch]$DryRun,
-  [switch]$SkipHealthCheck
+  [switch]$SkipHealthCheck,
+  [switch]$SkipCollectorRuntimeUpload
 )
 
 Set-StrictMode -Version Latest
@@ -83,22 +85,70 @@ function Convert-ToShellSingleQuotedLiteral {
 function New-SanitizedDeployEnv {
   param(
     [string]$SourcePath,
-    [string]$OutputPath
+    [string]$OutputPath,
+    [string]$HourlyCron
   )
 
   $excluded = @("ORACLE_HOST", "ORACLE_USER", "ORACLE_SSH_KEY_PATH")
+  $forced = [ordered]@{
+    "DABOYEO_SYNC_ENABLED" = "true"
+    "DABOYEO_SYNC_PYTHON" = "python3"
+    "DABOYEO_SHOWTIME_SYNC_ENABLED" = "true"
+    "DABOYEO_SHOWTIME_SYNC_CRON" = '"' + $HourlyCron + '"'
+    "DABOYEO_SHOWTIME_STARTUP_ENABLED" = "false"
+    "DABOYEO_PUBLIC_COLLECTION_ENABLED" = "false"
+    "DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED" = "false"
+    "DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED" = "false"
+  }
+  $writtenForced = @{}
   $lines = New-Object System.Collections.Generic.List[string]
 
   Get-Content -LiteralPath $SourcePath | ForEach-Object {
     if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=') {
-      if ($excluded -contains $matches[1]) {
+      $key = $matches[1]
+      if ($excluded -contains $key) {
+        return
+      }
+      if ($forced.Contains($key)) {
+        $lines.Add("$key=$($forced[$key])")
+        $writtenForced[$key] = $true
         return
       }
     }
     $lines.Add($_)
   }
 
+  foreach ($key in $forced.Keys) {
+    if (-not $writtenForced.ContainsKey($key)) {
+      $lines.Add("$key=$($forced[$key])")
+    }
+  }
+
   [System.IO.File]::WriteAllLines((Resolve-Path -LiteralPath (Split-Path -Parent $OutputPath)).Path + "\" + (Split-Path -Leaf $OutputPath), $lines, [System.Text.UTF8Encoding]::new($false))
+}
+
+function Assert-CollectorRuntimePaths {
+  $requiredPaths = @("collectors", "scripts\ingest")
+  foreach ($path in $requiredPaths) {
+    if (-not (Test-Path -LiteralPath $path)) {
+      throw "collector runtime path not found: $path"
+    }
+  }
+}
+
+function New-CollectorRuntimeArchive {
+  param([string]$OutputPath)
+
+  Assert-CollectorRuntimePaths
+  $paths = @("collectors", "scripts/ingest")
+  if (Test-Path -LiteralPath "requirements.txt") {
+    $paths += "requirements.txt"
+  }
+
+  & tar -czf $OutputPath @paths
+  if ($LASTEXITCODE -ne 0) {
+    throw "package collector runtime failed with exit code $LASTEXITCODE"
+  }
 }
 
 function Invoke-Checked {
@@ -111,6 +161,33 @@ function Invoke-Checked {
   & $Command
   if ($LASTEXITCODE -ne 0) {
     throw "$Label failed with exit code $LASTEXITCODE"
+  }
+}
+
+function Invoke-PublicHealthChecks {
+  param(
+    [string]$HostName,
+    [int]$Attempts = 6,
+    [int]$DelaySeconds = 5
+  )
+
+  for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+    try {
+      Write-Step "check public health attempt $attempt/$Attempts"
+      $health = Invoke-RestMethod -Uri "http://$HostName/api/health" -TimeoutSec 20
+      Write-Step "public health status=$($health.status)"
+
+      $providers = Invoke-WebRequest -Uri "http://$HostName/api/recommendation/providers/health" -UseBasicParsing -TimeoutSec 20
+      $codexStatus = if ($providers.Content -match '"provider":"codex".*?"status":"([^"]+)"') { $matches[1] } else { "unknown" }
+      Write-Step "provider codex status=$codexStatus"
+      return
+    } catch {
+      if ($attempt -ge $Attempts) {
+        throw
+      }
+      Write-Step "public health not ready yet; retrying in ${DelaySeconds}s"
+      Start-Sleep -Seconds $DelaySeconds
+    }
   }
 }
 
@@ -158,13 +235,18 @@ $scpArgs = @("-o", "StrictHostKeyChecking=accept-new", "-i", $sshKeyPath)
 
 New-Item -ItemType Directory -Force -Path ".local" | Out-Null
 $deployEnvPath = Join-Path ".local" "daboyeo.deploy.env"
+$collectorArchivePath = Join-Path ".local" "daboyeo.collector-runtime.tar.gz"
 
 try {
-  New-SanitizedDeployEnv -SourcePath $EnvPath -OutputPath $deployEnvPath
-  Write-Step "sanitized env prepared: ORACLE_* keys excluded"
+  New-SanitizedDeployEnv -SourcePath $EnvPath -OutputPath $deployEnvPath -HourlyCron $ShowtimeSyncCron
+  Write-Step "sanitized env prepared: ORACLE_* keys excluded; hourly showtime sync enforced"
+  if (-not $SkipCollectorRuntimeUpload) {
+    Assert-CollectorRuntimePaths
+    Write-Step "collector runtime paths verified"
+  }
 
   if ($DryRun) {
-    Write-Step "dry-run: would upload env, jar, and bridge script to configured Oracle target"
+    Write-Step "dry-run: would upload env, jar, bridge script, and collector runtime to configured Oracle target"
     Write-Step "dry-run: would detect remote service user and restart $ServiceName"
     if (-not $SkipHealthCheck) {
       Write-Step "dry-run: would check public health and provider health"
@@ -172,9 +254,17 @@ try {
     return
   }
 
+  if (-not $SkipCollectorRuntimeUpload) {
+    New-CollectorRuntimeArchive -OutputPath $collectorArchivePath
+    Write-Step "collector runtime archive prepared"
+  }
+
   Invoke-Checked -Label "upload sanitized env" -Command { & scp @scpArgs $deployEnvPath "${target}:/tmp/daboyeo.env" }
   Invoke-Checked -Label "upload app jar" -Command { & scp @scpArgs $JarPath "${target}:/tmp/daboyeo-app.jar" }
   Invoke-Checked -Label "upload bridge worker" -Command { & scp @scpArgs $BridgeScriptPath "${target}:/tmp/ai_bridge_agent.py" }
+  if (-not $SkipCollectorRuntimeUpload) {
+    Invoke-Checked -Label "upload collector runtime" -Command { & scp @scpArgs $collectorArchivePath "${target}:/tmp/daboyeo-collector-runtime.tar.gz" }
+  }
 
   $remoteDirLiteral = Convert-ToShellSingleQuotedLiteral -Value $RemoteDir
   $serviceLiteral = Convert-ToShellSingleQuotedLiteral -Value $ServiceName
@@ -191,6 +281,16 @@ sudo install -m 600 -o "`$owner" -g "`$group" /tmp/daboyeo.env "`$remote_dir/.en
 sudo install -m 640 -o "`$owner" -g "`$group" /tmp/daboyeo-app.jar "`$remote_dir/app.jar"
 sudo install -d -o "`$owner" -g "`$group" "`$remote_dir/scripts"
 sudo install -m 750 -o "`$owner" -g "`$group" /tmp/ai_bridge_agent.py "`$remote_dir/scripts/ai_bridge_agent.py"
+if [ -f /tmp/daboyeo-collector-runtime.tar.gz ]; then
+  sudo tar -xzf /tmp/daboyeo-collector-runtime.tar.gz -C "`$remote_dir"
+  sudo chown -R "`$owner:`$group" "`$remote_dir/collectors" "`$remote_dir/scripts/ingest"
+  if [ -f "`$remote_dir/requirements.txt" ]; then
+    sudo chown "`$owner:`$group" "`$remote_dir/requirements.txt"
+    sudo chmod 640 "`$remote_dir/requirements.txt"
+  fi
+  sudo find "`$remote_dir/collectors" "`$remote_dir/scripts/ingest" -type d -exec chmod 750 {} +
+  sudo find "`$remote_dir/collectors" "`$remote_dir/scripts/ingest" -type f -exec chmod 640 {} +
+fi
 sudo systemctl restart "`$service_name"
 status=`$(sudo systemctl is-active "`$service_name")
 printf 'remote_owner=%s\n' "`$owner"
@@ -200,17 +300,15 @@ printf 'service_status=%s\n' "`$status"
   Invoke-Checked -Label "install and restart remote service" -Command { & ssh @sshArgs $remoteInstall }
 
   if (-not $SkipHealthCheck) {
-    Write-Step "check public health"
-    $health = Invoke-RestMethod -Uri "http://$oracleHost/api/health" -TimeoutSec 20
-    Write-Step "public health status=$($health.status)"
-
-    $providers = Invoke-WebRequest -Uri "http://$oracleHost/api/recommendation/providers/health" -UseBasicParsing -TimeoutSec 20
-    $codexStatus = if ($providers.Content -match '"provider":"codex".*?"status":"([^"]+)"') { $matches[1] } else { "unknown" }
-    Write-Step "provider codex status=$codexStatus"
+    Invoke-PublicHealthChecks -HostName $oracleHost
   }
 } finally {
   if (Test-Path -LiteralPath $deployEnvPath) {
     Remove-Item -LiteralPath $deployEnvPath -Force
     Write-Step "local sanitized env removed"
+  }
+  if (Test-Path -LiteralPath $collectorArchivePath) {
+    Remove-Item -LiteralPath $collectorArchivePath -Force
+    Write-Step "local collector runtime archive removed"
   }
 }

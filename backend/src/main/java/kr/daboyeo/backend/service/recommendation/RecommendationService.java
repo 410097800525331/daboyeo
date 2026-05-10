@@ -55,6 +55,7 @@ public class RecommendationService {
     private static final int SELECTED_GENRE_CANDIDATE_LIMIT = 1200;
     private static final int RESULT_LIMIT = 3;
     private static final String RELAXED_FILTER_MESSAGE = "선택 조건과 정확히 맞는 상영이 없어 조건을 넓혀 추천했어.";
+    private static final String UNDERFILLED_RESULT_MESSAGE = "추천 후보가 3개 미만이라 조건을 넓혀 함께 비교했어.";
     private static final String SELECTED_GENRE_RELAXED_MESSAGE =
         "\uC120\uD0DD\uD55C \uC7A5\uB974\uC640 \uC9C1\uC811 \uC77C\uCE58\uD558\uB294 \uC0C1\uC601\uC774 \uC5C6\uC5B4 \uC870\uAC74\uC744 \uB113\uD600 \uC608\uBE44 \uCD94\uCC9C\uD588\uC5B4.";
     private static final Pattern INTERNAL_TEXT_PATTERN = Pattern.compile(
@@ -249,6 +250,7 @@ public class RecommendationService {
             .map(result -> itemsFromAi(aiCandidates, result.picks(), analysisProfile, scoreCapProfile, mode, aiProvider))
             .filter(list -> !list.isEmpty())
             .orElseGet(() -> fallbackItems(tasteAwareScored, analysisProfile, scoreCapProfile, mode, aiProvider));
+        items = ensureResultLimit(items, tasteAwareScored, analysisProfile, scoreCapProfile, mode, aiProvider);
 
         RecommendationResponse response = new RecommendationResponse(
             runId,
@@ -324,7 +326,17 @@ public class RecommendationService {
             requiredGenreValues
         );
         if (!exactCandidates.isEmpty()) {
-            return new CandidateSearchResult(exactCandidates, filters, "", false);
+            if (hasEnoughDistinctMovies(exactCandidates)
+                || ((filters == null || !filters.active()) && !hasRequiredGenres)) {
+                return new CandidateSearchResult(exactCandidates, filters, "", false);
+            }
+            return underfilledCandidatesWithFallback(
+                exactCandidates,
+                filters,
+                minStartsAt,
+                candidateLimit,
+                requiredGenreValues
+            );
         }
         if ((filters == null || !filters.active()) && !hasRequiredGenres) {
             return new CandidateSearchResult(List.of(), filters, "", false);
@@ -388,6 +400,115 @@ public class RecommendationService {
             }
         }
         return new CandidateSearchResult(List.of(), filters, "", false);
+    }
+
+    private CandidateSearchResult underfilledCandidatesWithFallback(
+        List<ShowtimeCandidate> exactCandidates,
+        SearchFilters filters,
+        LocalDateTime minStartsAt,
+        int candidateLimit,
+        Set<String> requiredGenreValues
+    ) {
+        List<ShowtimeCandidate> expanded = new ArrayList<>(exactCandidates);
+        boolean hasRequiredGenres = requiredGenreValues != null && !requiredGenreValues.isEmpty();
+
+        if (filters != null && filters.active()) {
+            for (SearchFilters relaxedFilters : relaxedSearchFilters(filters)) {
+                appendUniqueShowtimeCandidates(expanded, findUpcomingCandidates(
+                    relaxedFilters,
+                    minStartsAt,
+                    candidateLimit,
+                    requiredGenreValues
+                ));
+                if (hasEnoughDistinctMovies(expanded)) {
+                    return new CandidateSearchResult(expanded, filters, UNDERFILLED_RESULT_MESSAGE, false);
+                }
+            }
+        }
+
+        if (filters != null && filters.active()) {
+            appendUniqueShowtimeCandidates(expanded, findUpcomingCandidates(
+                null,
+                minStartsAt,
+                candidateLimit,
+                requiredGenreValues
+            ));
+            if (hasEnoughDistinctMovies(expanded)) {
+                return new CandidateSearchResult(expanded, filters, UNDERFILLED_RESULT_MESSAGE, false);
+            }
+        }
+
+        if (hasRequiredGenres) {
+            appendUniqueShowtimeCandidates(expanded, findUpcomingCandidates(
+                filters,
+                minStartsAt,
+                candidateLimit,
+                Set.of()
+            ));
+            if (hasEnoughDistinctMovies(expanded)) {
+                return new CandidateSearchResult(expanded, filters, UNDERFILLED_RESULT_MESSAGE, false);
+            }
+            if (filters != null && filters.active()) {
+                for (SearchFilters relaxedFilters : relaxedSearchFilters(filters)) {
+                    appendUniqueShowtimeCandidates(expanded, findUpcomingCandidates(
+                        relaxedFilters,
+                        minStartsAt,
+                        candidateLimit,
+                        Set.of()
+                    ));
+                    if (hasEnoughDistinctMovies(expanded)) {
+                        return new CandidateSearchResult(expanded, filters, UNDERFILLED_RESULT_MESSAGE, false);
+                    }
+                }
+            }
+            appendUniqueShowtimeCandidates(expanded, findUpcomingCandidates(
+                null,
+                minStartsAt,
+                candidateLimit,
+                Set.of()
+            ));
+        }
+
+        return new CandidateSearchResult(expanded, filters, UNDERFILLED_RESULT_MESSAGE, false);
+    }
+
+    private boolean hasEnoughDistinctMovies(List<ShowtimeCandidate> candidates) {
+        if (candidates == null || candidates.isEmpty()) {
+            return false;
+        }
+        return candidates.stream()
+            .map(this::movieKey)
+            .collect(Collectors.toCollection(LinkedHashSet::new))
+            .size() >= RESULT_LIMIT;
+    }
+
+    private void appendUniqueShowtimeCandidates(
+        List<ShowtimeCandidate> target,
+        List<ShowtimeCandidate> candidates
+    ) {
+        if (target == null || candidates == null || candidates.isEmpty()) {
+            return;
+        }
+        Set<String> seenShowtimes = target.stream()
+            .map(this::showtimeKey)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+        for (ShowtimeCandidate candidate : candidates) {
+            if (seenShowtimes.add(showtimeKey(candidate))) {
+                target.add(candidate);
+            }
+        }
+    }
+
+    private String showtimeKey(ShowtimeCandidate candidate) {
+        if (candidate == null) {
+            return "showtime:null";
+        }
+        Long showtimeId = candidate.showtimeId();
+        if (showtimeId != null) {
+            return "showtime:" + showtimeId;
+        }
+        String startsAt = candidate.startsAt() == null ? "" : candidate.startsAt().toString();
+        return movieKey(candidate) + ":starts:" + startsAt;
     }
 
     private List<SearchFilters> relaxedSearchFilters(SearchFilters filters) {
@@ -679,6 +800,33 @@ public class RecommendationService {
             .toList();
     }
 
+    private List<RecommendationItem> ensureResultLimit(
+        List<RecommendationItem> items,
+        List<ScoredCandidate> rankedCandidates,
+        TagProfile analysisProfile,
+        TagProfile scoreCapProfile,
+        RecommendationMode mode,
+        AiProvider provider
+    ) {
+        List<RecommendationItem> filled = new ArrayList<>(items == null ? List.of() : items);
+        if (filled.size() >= RESULT_LIMIT) {
+            return filled.stream().limit(RESULT_LIMIT).toList();
+        }
+
+        Set<String> seenMovies = filled.stream()
+            .map(this::movieKey)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+        for (ScoredCandidate scored : rankedCandidates == null ? List.<ScoredCandidate>of() : rankedCandidates) {
+            if (filled.size() >= RESULT_LIMIT) {
+                break;
+            }
+            if (seenMovies.add(movieKey(scored))) {
+                filled.add(fallbackItem(scored, analysisProfile, scoreCapProfile, mode, provider));
+            }
+        }
+        return filled;
+    }
+
     private String resolvedCaution(
         String modelCaution,
         ScoredCandidate scored,
@@ -785,7 +933,7 @@ public class RecommendationService {
         String sanitized = sanitizeUserFacingText(reason);
         if (isNarrativeProvider(provider)) {
             if (!isWeakNarrativeReason(sanitized, scored.candidate())) {
-                return limitText(sanitized, mode == RecommendationMode.PRECISE ? 220 : 170);
+                return limitText(sanitized, mode == RecommendationMode.PRECISE ? 320 : 170);
             }
             return groundedReason(scored);
         }
@@ -1407,7 +1555,7 @@ public class RecommendationService {
         if (isNarrativeProvider(provider)) {
             String sanitized = sanitizeUserFacingText(analysisPoint);
             if (!sanitized.isBlank() && !INTERNAL_TEXT_PATTERN.matcher(sanitized).find()) {
-                return limitText(sanitized, mode == RecommendationMode.PRECISE ? 320 : 180);
+                return limitText(sanitized, mode == RecommendationMode.PRECISE ? 420 : 180);
             }
             return analysisPoint(scored, profile);
         }
@@ -1555,8 +1703,11 @@ public class RecommendationService {
     }
 
     private String movieKey(ScoredCandidate scored) {
-        ShowtimeCandidate candidate = scored.candidate();
-        String title = candidate.title();
+        return movieKey(scored.candidate());
+    }
+
+    private String movieKey(ShowtimeCandidate candidate) {
+        String title = displayText(candidate.title());
         if (title != null && !title.isBlank()) {
             return "title:" + title.trim().toLowerCase(Locale.ROOT);
         }
@@ -1566,6 +1717,15 @@ public class RecommendationService {
         }
         Long movieId = candidate.movieId();
         return movieId == null ? "showtime:" + candidate.showtimeId() : "movie:" + movieId;
+    }
+
+    private String movieKey(RecommendationItem item) {
+        String title = item.title();
+        if (title != null && !title.isBlank()) {
+            return "title:" + title.trim().toLowerCase(Locale.ROOT);
+        }
+        Long movieId = item.movieId();
+        return movieId == null ? "showtime:" + item.showtimeId() : "movie:" + movieId;
     }
 
     private long elapsedMs(Instant startedAt) {

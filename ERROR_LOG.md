@@ -948,3 +948,43 @@ Do not rewrite existing entries; append only.
 - summary: `The ranked-upcoming redeploy script reported 502 on its immediate public health check while Spring was still restarting.`
 - details: `The jar and static resources uploaded successfully, the remote service reported active, and the local sanitized env was removed. The script's immediate /api/health probe returned Nginx 502 during Spring startup. A retry after startup returned /api/health ok. Public smoke confirmed default /api/live/movies?limit=3 includes 마이클 as release_state=upcoming at rank 1, releaseState=now_playing remains strict with only now_playing rows, deployed JS no longer filters home TOP3 by releaseState=now_playing, and UTF-8 decoded deployed JS contains the 상영예정 label.`
 - status: `resolved`
+
+# 2026-05-11 01:39 +09:00
+
+- time: `2026-05-11 01:39 +09:00`
+- location: `Oracle AI result-screen renewal deployment`
+- summary: `The result-screen redeploy script reported 502 on its immediate public health check while Spring was still restarting.`
+- details: `Dry-run passed, bootJar succeeded after sandbox Gradle loopback failure required approved external execution, and the deploy uploaded sanitized env, app.jar, and the bridge worker. The remote service reported active and the local sanitized env was removed, but the script's immediate /api/health probe returned Nginx 502 during startup. A retry returned /api/health ok, /src/pages/daboyeoAi.html returned 200 with the 20260511-result-renewal cache key, and provider health returned fallback ready, codex ready, and openai-api disabled.`
+- status: `resolved`
+
+# 2026-05-11 02:16 +09:00
+
+- time: `2026-05-11 02:16 +09:00`
+- location: `Oracle hourly showtime refresh deployment`
+- summary: `The deployed server did not provide a python command for PythonCollectorBridge's default executable.`
+- details: `After adding hourly sync deployment settings and collector runtime upload, a server-side collector import check showed python was not found while python3 existed at /usr/bin/python3. The deploy script was updated to force DABOYEO_SYNC_PYTHON=python3 in the sanitized Oracle env, redeployed, and collector imports then passed with python3. Public /api/health returned ok and the 02:00 KST scheduled sync started and stored Lotte and Megabox showtime bundles.`
+- status: `resolved`
+
+# 2026-05-11 03:05 +09:00
+
+- time: `2026-05-11 03:05 +09:00`
+- location: `Local focused recommendation test verification`
+- summary: `Sandboxed Gradle test execution could not establish a loopback connection for the Gradle daemon.`
+- details: `The first focused backend test attempt failed before compilation with "Unable to establish loopback connection". The same focused test command was rerun with approved external execution, using the local Gradle 8.14.4 binary and GRADLE_USER_HOME=backend/.gradle-runtime; after fixing test regressions, the focused recommendation tests passed. No secrets were printed.`
+- status: `resolved`
+
+# 2026-05-11 03:09 +09:00
+
+- time: `2026-05-11 03:09 +09:00`
+- location: `Codex Security scan artifact setup`
+- summary: `The default C:\tmp\codex-security-scans path was not writable for this desktop session.`
+- details: `Creating the default Codex Security scan artifact directory failed with access denied before any scan output was written. The scan artifact root was moved to the ignored workspace-local .local/security-scans directory and the repository threat model was copied into the per-scan artifact directory there.`
+- status: `resolved`
+
+# 2026-05-11 02:49 +09:00
+
+- time: `2026-05-11 02:49 +09:00`
+- location: `Oracle deploy script dry-run`
+- summary: `PowerShell execution policy blocked direct .ps1 execution.`
+- details: `Running .\scripts\deploy\deploy_oracle_portfolio.ps1 directly returned PSSecurityException because scripts are disabled for this shell. The same dry-run was rerun with powershell -NoProfile -ExecutionPolicy Bypass -File; it passed, confirmed provider=codex, bridge token/server present, sanitized env generation, collector runtime paths, and hourly showtime sync enforcement. No secret values were printed.`
+- status: `resolved`

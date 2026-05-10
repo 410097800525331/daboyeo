@@ -186,7 +186,7 @@ public record RecommendationProperties(
     }
 
     public int responseTextMaxLengthFor(AiProvider provider, RecommendationMode mode) {
-        return mode == RecommendationMode.FAST ? 180 : 320;
+        return mode == RecommendationMode.FAST ? 180 : 420;
     }
 
     private static String defaultString(String value, String fallback) {
