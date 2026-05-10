@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>인기 영화 전체 보기 | DABOYEO</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../css/dd.css" />
+</head>
+
+<body class="basic-page">
+
+  <!-- 고정 헤더 -->
+  <header class="fixed-header">
+    <div class="header-content">
+      <a href="/" class="header-logo">
+        <span class="logo-text">DABOYEO.</span>
+      </a>
+      <nav class="header-nav">
+        <a href="#">영화 검색</a>
+        <a href="#">가격 비교</a>
+        <a href="#">AI 좌석 추천</a>
+        <a href="#" class="active">인기 영화</a>
+      </nav>
+      <button class="header-search-btn">
+        <i class="fas fa-search"></i> 영화 찾기
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- 페이지 헤더 -->
+    <section class="page-header">
+      <div class="page-header-inner">
+        <div class="breadcrumb">
+          <a href="/">홈</a>
+          <i class="fas fa-chevron-right"></i>
+          <span>인기 영화</span>
+        </div>
+        <h1 class="page-title">
+          지금 가장 인기 있는 영화
+          <span class="title-badge">LIVE</span>
+        </h1>
+        <p class="page-desc">실시간 예매율과 평점을 바탕으로 선정된 인기작입니다. 지금 이 순간 가장 많이 예매되는 영화를 확인하세요.</p>
+        <div class="page-meta">
+          <span><i class="fas fa-film"></i> 총 <strong>24편</strong></span>
+          <span><i class="fas fa-clock"></i> 마지막 업데이트: <strong>방금 전</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 필터 & 정렬 바 -->
+    <section class="filter-bar">
+      <div class="filter-left">
+        <button class="filter-chip active" data-filter="all">전체</button>
+        <button class="filter-chip" data-filter="action">액션</button>
+        <button class="filter-chip" data-filter="sf">SF</button>
+        <button class="filter-chip" data-filter="romance">로맨스</button>
+        <button class="filter-chip" data-filter="thriller">스릴러</button>
+        <button class="filter-chip" data-filter="animation">애니메이션</button>
+        <button class="filter-chip" data-filter="comedy">코미디</button>
+        <button class="filter-chip" data-filter="drama">드라마</button>
+      </div>
+      <div class="filter-right">
+        <div class="sort-select-wrapper">
+          <i class="fas fa-sort-amount-down"></i>
+          <select class="sort-select" id="sortSelect">
+            <option value="rank">예매율 순</option>
+            <option value="rating">평점 순</option>
+            <option value="price-asc">최저가 순</option>
+            <option value="price-desc">최고가 순</option>
+            <option value="newest">최신 개봉 순</option>
+          </select>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" id="gridViewBtn" title="그리드 보기">
+            <i class="fas fa-th"></i>
+          </button>
+          <button class="view-btn" id="listViewBtn" title="리스트 보기">
+            <i class="fas fa-list"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 영화 카드 그리드 -->
+    <section class="movies-grid-section" id="moviesGrid">
+
+      <!-- 1위 -->
+      <div class="movie-card rank-top3">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-12">12</span></div>
+          <div class="movie-rank rank-1">1</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>프로젝트 헤일메리</span>
+          </div>
+          <div class="rank-up-badge"><i class="fas fa-fire"></i> HOT</div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">프로젝트 헤일메리</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">SF</span>
+            <span class="genre-tag">모험</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 138분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩14,000</span>
+            </div>
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:28.5%"></div>
+              </div>
+              <span class="stat-value">28.5%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">9.2</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 2위 -->
+      <div class="movie-card rank-top3">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-12">12</span></div>
+          <div class="movie-rank rank-2">2</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>위 리브 인 타임</span>
+          </div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">위 리브 인 타임</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">로맨스</span>
+            <span class="genre-tag">드라마</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 107분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩14,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩11,000</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:22.1%"></div>
+              </div>
+              <span class="stat-value">22.1%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.9</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 3위 -->
+      <div class="movie-card rank-top3">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-15">15</span></div>
+          <div class="movie-rank rank-3">3</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>왕과 사는 남자</span>
+          </div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">왕과 사는 남자</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">코미디</span>
+            <span class="genre-tag">드라마</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 122분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩14,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩13,500</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:18.3%"></div>
+              </div>
+              <span class="stat-value">18.3%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.7</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 4위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-all">전체</span></div>
+          <div class="movie-rank">4</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>인사이드 아웃 3</span>
+          </div>
+          <div class="rank-change up"><i class="fas fa-arrow-up"></i> 2</div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">인사이드 아웃 3</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">애니메이션</span>
+            <span class="genre-tag">가족</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 100분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩15,000</span>
+            </div>
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩14,000</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:14.7%"></div>
+              </div>
+              <span class="stat-value">14.7%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★★</span>
+              <span class="stat-value">9.5</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 5위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-15">15</span></div>
+          <div class="movie-rank">5</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>미키 17</span>
+          </div>
+          <div class="rank-change down"><i class="fas fa-arrow-down"></i> 1</div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">미키 17</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">SF</span>
+            <span class="genre-tag">스릴러</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 137분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩13,500</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:11.2%"></div>
+              </div>
+              <span class="stat-value">11.2%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.4</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 6위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-12">12</span></div>
+          <div class="movie-rank">6</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>캡틴 아메리카: 브레이브 뉴 월드</span>
+          </div>
+          <div class="rank-change new"><i class="fas fa-star"></i> NEW</div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">캡틴 아메리카: 브레이브 뉴 월드</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">액션</span>
+            <span class="genre-tag">SF</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 118분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩14,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩14,000</span>
+            </div>
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩12,500</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:9.8%"></div>
+              </div>
+              <span class="stat-value">9.8%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★☆☆</span>
+              <span class="stat-value">7.1</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 7위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-15">15</span></div>
+          <div class="movie-rank">7</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>노스페라투</span>
+          </div>
+          <div class="rank-change up"><i class="fas fa-arrow-up"></i> 3</div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">노스페라투</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">공포</span>
+            <span class="genre-tag">드라마</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 132분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩11,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:7.5%"></div>
+              </div>
+              <span class="stat-value">7.5%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.8</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 8위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-all">전체</span></div>
+          <div class="movie-rank">8</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>도그맨</span>
+          </div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">도그맨</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">드라마</span>
+            <span class="genre-tag">범죄</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 115분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩11,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩12,500</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:6.1%"></div>
+              </div>
+              <span class="stat-value">6.1%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.6</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 9위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-12">12</span></div>
+          <div class="movie-rank">9</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>그랜드 투어</span>
+          </div>
+          <div class="rank-change new"><i class="fas fa-star"></i> NEW</div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">그랜드 투어</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">드라마</span>
+            <span class="genre-tag">로맨스</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 119분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩11,500</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:5.4%"></div>
+              </div>
+              <span class="stat-value">5.4%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.3</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 10위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-15">15</span></div>
+          <div class="movie-rank">10</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>하얼빈</span>
+          </div>
+          <div class="rank-change down"><i class="fas fa-arrow-down"></i> 2</div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">하얼빈</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">액션</span>
+            <span class="genre-tag">역사</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 114분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩14,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:4.9%"></div>
+              </div>
+              <span class="stat-value">4.9%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.1</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 11위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-all">전체</span></div>
+          <div class="movie-rank">11</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>라이온 킹: 무파사</span>
+          </div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">라이온 킹: 무파사</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">애니메이션</span>
+            <span class="genre-tag">가족</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 118분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:4.2%"></div>
+              </div>
+              <span class="stat-value">4.2%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.0</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+      <!-- 12위 -->
+      <div class="movie-card">
+        <div class="movie-poster">
+          <div class="movie-rating"><span class="age-badge age-15">15</span></div>
+          <div class="movie-rank">12</div>
+          <div class="poster-placeholder">
+            <i class="fas fa-film"></i>
+            <span>서브스턴스</span>
+          </div>
+          <div class="rank-change up"><i class="fas fa-arrow-up"></i> 5</div>
+        </div>
+        <div class="movie-info">
+          <div class="movie-title">서브스턴스</div>
+          <div class="movie-genre-row">
+            <span class="genre-tag">공포</span>
+            <span class="genre-tag">스릴러</span>
+            <span class="movie-runtime"><i class="fas fa-clock"></i> 141분</span>
+          </div>
+          <div class="price-list">
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot cgv-dot"></span>CGV</span>
+              <span class="price-amount">₩13,000</span>
+            </div>
+            <div class="price-item lowest-price">
+              <span class="price-cinema"><span class="cinema-dot lotte-dot"></span>롯데시네마</span>
+              <span class="price-amount">₩11,000</span>
+            </div>
+            <div class="price-item">
+              <span class="price-cinema"><span class="cinema-dot mega-dot"></span>메가박스</span>
+              <span class="price-amount">₩12,000</span>
+            </div>
+          </div>
+          <div class="movie-stats">
+            <div class="stat-item">
+              <span class="stat-label">예매율</span>
+              <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:3.8%"></div>
+              </div>
+              <span class="stat-value">3.8%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">평점</span>
+              <span class="stat-stars">★★★★☆</span>
+              <span class="stat-value">8.5</span>
+            </div>
+          </div>
+          <button class="booking-btn">예매하기</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 더 보기 버튼 -->
+    <div class="load-more-wrap">
+      <button class="load-more-btn">
+        <i class="fas fa-plus"></i> 더 많은 영화 보기 (12편 더)
+      </button>
+    </div>
+
+  </main>
+
+  <!-- 맨 위로 버튼 -->
+  <button class="scroll-to-top" id="scrollToTop">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- 푸터 -->
+  <footer id="footer">
+    <div class="footer-content">
+      <div class="footer-nav-top">
+        <a href="#">회사소개</a>
+        <a href="#">인재채용</a>
+        <a href="#">사회공헌</a>
+        <a href="#">제휴/광고/부대사업문의</a>
+        <a href="#" class="bold">이용약관</a>
+        <a href="#">위치기반서비스 이용약관</a>
+        <a href="#" class="bold">개인정보처리방침</a>
+        <a href="#">윤리경영</a>
+      </div>
+      <div class="footer-main">
+        <div>
+          <div class="footer-logo">
+            <span class="logo-text footer-logo-text">DABOYEO.</span>
+          </div>
+          <div class="footer-info">
+            경기도 성남시 분당구 분당로 73 (서현동, 7층) EMAIL ADMIN@DABOYEO.CO.KR<br />
+            사업자등록번호 856-87-00785 통신판매업신고번호 2017-성남분당-1106호
+          </div>
+          <div class="footer-copyright">© 2026 DABOYEO. ALL RIGHTS RESERVED.</div>
+        </div>
+        <div class="footer-right">
+          <div class="footer-socials">
+            <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-facebook"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 맨 위로 버튼
+    const scrollBtn = document.getElementById('scrollToTop');
+    window.addEventListener('scroll', () => {
+      scrollBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+    scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    // 필터 칩
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', function () {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // 뷰 토글
+    const gridBtn = document.getElementById('gridViewBtn');
+    const listBtn = document.getElementById('listViewBtn');
+    const grid = document.getElementById('moviesGrid');
+    gridBtn.addEventListener('click', () => {
+      grid.classList.remove('list-view');
+      gridBtn.classList.add('active');
+      listBtn.classList.remove('active');
+    });
+    listBtn.addEventListener('click', () => {
+      grid.classList.add('list-view');
+      listBtn.classList.add('active');
+      gridBtn.classList.remove('active');
+    });
+  </script>
+</body>
+
+</html>

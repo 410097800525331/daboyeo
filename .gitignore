@@ -4,6 +4,7 @@
 .codex-backups/
 .playwright-cli/
 .local/
+.vscode/
 
 # Python caches
 __pycache__/
@@ -13,16 +14,20 @@ collectors/*/__pycache__/
 # Root Markdown is private by default. Shared docs belong in README.md or docs/**.
 /*.md
 !/README.md
-
-# Root workflow/control files are local-only unless explicitly published later.
-/SEED.yaml
-/WORKSPACE_CONTEXT.toml
+!/AGENTS.md
+!/ERROR_LOG.md
+!/MULTI_AGENT_LOG.md
+!/STATE.md
 
 # Java / Spring
 .gradle/
+.gradle-runtime/
 build/
 backend/.gradle/
+backend/.gradle-user-home/
+backend/.gradle-runtime/
 backend/build/
+backend/bin/
 
 # Frontend
 node_modules/

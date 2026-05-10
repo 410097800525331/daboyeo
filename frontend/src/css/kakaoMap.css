@@ -1,0 +1,330 @@
+@charset "utf-8";
+
+/* Map Markers & Overlays for Nearby Feature */
+
+.user-location-marker {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-pulse {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: var(--purple50);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+  opacity: 0.4;
+}
+
+.user-dot {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  background: var(--purple50);
+  border-radius: 50%;
+  border: 2px solid var(--white0);
+  box-shadow: 0 0 10px var(--purple50);
+}
+
+.user-label {
+  position: absolute;
+  bottom: -25px;
+  white-space: nowrap;
+  background: var(--gray0);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--purple50);
+  border: 1px solid var(--purple50);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.custom-theater-overlay {
+  position: relative;
+  padding: 10px 15px;
+  background: var(--card-bg);
+  backdrop-filter: blur(5px);
+  border-radius: 12px;
+  border: 2px solid var(--gray50);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-width: 100px;
+  transform: translateY(-5px);
+}
+
+.custom-theater-overlay:hover {
+  border-color: var(--purple50);
+  transform: translateY(-10px);
+  z-index: 100;
+}
+
+.overlay-brand {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--white0);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+/* Brand specific colors (kept original for brand identity but integrated cleanly) */
+.brand-cgv .overlay-brand {
+  background: var(--red50);
+}
+
+.brand-lotte .overlay-brand {
+  background: #ED1C24;
+}
+
+.brand-mega .overlay-brand {
+  background: var(--purple0);
+}
+
+.overlay-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white0);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.overlay-arrow {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid var(--card-bg);
+}
+
+/* Hover/Border states for each brand */
+.brand-cgv.custom-theater-overlay {
+  border-color: rgba(255, 68, 68, 0.5); /* Using var(--red50) rgba equivalent */
+}
+
+.brand-lotte.custom-theater-overlay {
+  border-color: rgba(237, 28, 36, 0.5);
+}
+
+.brand-mega.custom-theater-overlay {
+  border-color: rgba(114, 100, 233, 0.5); /* using var(--purple0) rgba equivalent */
+}
+
+/* Nearby Section Layout */
+#nearby-section {
+  width: 100%;
+  max-width: 1000px;
+  background: var(--card-bg);
+  border: 1px solid var(--gray50);
+  border-radius: 24px;
+  padding: 30px;
+  margin: 0 auto 50px;
+}
+
+#nearby-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--white0);
+  margin-bottom: 5px;
+}
+
+#nearby-section {
+  position: relative; /* 닫기 버튼 기준점 */
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-20px);
+  transition:
+    max-height 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.6s ease-out,
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 0;
+}
+
+#close-nearby {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--gray50);
+  color: var(--gray100);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+#close-nearby:hover {
+  background: var(--red50);
+  color: var(--white0);
+  border-color: var(--red50);
+  transform: rotate(90deg);
+}
+
+#nearby-section.active {
+  max-height: 2000px; /* 충분히 큰 값 */
+  opacity: 1;
+  transform: translateY(0);
+  width: 95%;
+  max-width: 1200px;
+  margin: 60px auto; /* 가로 중앙 정렬 */
+}
+
+#nearby-section p {
+  color: var(--gray100);
+}
+
+.nearby-search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.nearby-search-bar input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--gray50);
+  border-radius: 12px;
+  color: var(--white0);
+  padding: 14px 16px;
+  outline: none;
+  font-size: 0.95rem;
+}
+
+.nearby-search-bar button {
+  background: var(--purple0);
+  color: var(--white0);
+  border: none;
+  border-radius: 12px;
+  padding: 0 18px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nearby-layout {
+  display: flex;
+  gap: 24px;
+  height: 480px;
+  margin-top: 20px;
+}
+
+.map-container {
+  flex: 2;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--gray50);
+  background: #000;
+  position: relative;
+}
+
+#go-to-my-location {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background: var(--white0);
+  color: var(--purple0);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+#go-to-my-location:hover {
+  background: var(--purple0);
+  color: var(--white0);
+  transform: scale(1.1);
+}
+
+.nearby-list-container {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 10px 5px 0; /* 호버 시 카드가 잘리지 않도록 상단 여백 추가 */
+}
+
+.theater-card {
+  background: rgba(29, 29, 29, 0.8);
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--gray50);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.theater-card:hover {
+  border-color: var(--purple50);
+  transform: translateY(-5px);
+  background: rgba(114, 100, 233, 0.1);
+}
+
+.theater-card h3 {
+  font-size: 1.1rem;
+  margin: 8px 0;
+  color: var(--white0);
+}
+
+.theater-card p {
+  font-size: 0.85rem;
+  color: var(--gray100);
+}
+
+.distance-badge {
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: var(--gray50);
+  color: var(--white0);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.booking-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--purple0);
+  color: var(--white0);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}

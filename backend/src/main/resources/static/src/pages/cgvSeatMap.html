@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DABOYEO | CGV 실좌표 좌석맵</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="../css/cgvSeatMap.css?v=20260429-real-cgv">
+</head>
+<body class="cgv-seat-page">
+  <main class="seat-shell" id="cgvSeatApp">
+    <header class="seat-topbar">
+      <a class="brand-link" href="../../index.html#ai" aria-label="DABOYEO 홈으로 이동">
+        <span class="brand-mark">D</span>
+        <span>DABOYEO</span>
+      </a>
+      <div class="topbar-title">
+        <strong>CGV 실좌표 좌석맵</strong>
+        <span id="dataSourceLabel">실시간 대기</span>
+      </div>
+      <div class="topbar-actions">
+        <label class="file-button" for="layoutFileInput" title="좌석 JSON 불러오기">
+          <input id="layoutFileInput" type="file" accept="application/json,.json">
+          JSON
+        </label>
+        <button class="ghost-button" type="button" id="reloadSampleButton">샘플</button>
+      </div>
+    </header>
+
+    <section class="seat-workspace" aria-label="CGV 좌석 배치도">
+      <aside class="seat-side-panel">
+        <form class="live-form" id="liveSeatForm" autocomplete="off">
+          <div class="form-grid">
+            <label>
+              <span>극장코드</span>
+              <input id="siteNoInput" name="siteNo" inputmode="numeric" pattern="[0-9]{4}" value="0056" required>
+            </label>
+            <label>
+              <span>상영일</span>
+              <input id="screeningDateInput" name="screeningDate" inputmode="numeric" pattern="[0-9]{8}" value="20260408" required>
+            </label>
+            <label>
+              <span>상영관</span>
+              <input id="screenNoInput" name="screenNo" inputmode="numeric" pattern="[0-9]{1,4}" value="002" required>
+            </label>
+            <label>
+              <span>회차</span>
+              <input id="screenSequenceInput" name="screenSequence" inputmode="numeric" pattern="[0-9]{1,4}" value="3" required>
+            </label>
+            <label>
+              <span>좌석구역</span>
+              <input id="seatAreaNoInput" name="seatAreaNo" inputmode="numeric" pattern="[0-9]{0,12}" placeholder="선택">
+            </label>
+          </div>
+          <div class="live-actions">
+            <button class="primary-button" type="submit" id="liveFetchButton">실시간 조회</button>
+            <label class="auto-refresh-toggle">
+              <input id="autoRefreshInput" type="checkbox">
+              <span>15초 갱신</span>
+            </label>
+          </div>
+        </form>
+
+        <section class="show-summary" aria-labelledby="showSummaryTitle">
+          <p class="section-label">CGV LAYOUT</p>
+          <h1 id="showSummaryTitle">좌석 배치도</h1>
+          <dl class="show-meta">
+            <div>
+              <dt>극장</dt>
+              <dd id="theaterName">-</dd>
+            </div>
+            <div>
+              <dt>상영관</dt>
+              <dd id="screenName">-</dd>
+            </div>
+            <div>
+              <dt>일시</dt>
+              <dd id="showTime">-</dd>
+            </div>
+            <div>
+              <dt>갱신</dt>
+              <dd id="fetchedAt">-</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="stat-grid" aria-label="좌석 통계">
+          <div class="stat-box">
+            <span>전체</span>
+            <strong id="totalSeatCount">0</strong>
+          </div>
+          <div class="stat-box">
+            <span>잔여</span>
+            <strong id="remainingSeatCount">0</strong>
+          </div>
+          <div class="stat-box">
+            <span>구역</span>
+            <strong id="zoneCount">0</strong>
+          </div>
+        </section>
+
+        <section class="control-block" aria-labelledby="statusFilterTitle">
+          <div class="control-head">
+            <h2 id="statusFilterTitle">상태</h2>
+            <button class="text-button" type="button" id="clearSelectionButton">해제</button>
+          </div>
+          <div class="status-filter" id="statusFilter"></div>
+        </section>
+
+        <section class="control-block" aria-labelledby="zoomTitle">
+          <div class="control-head">
+            <h2 id="zoomTitle">배율</h2>
+            <output id="zoomOutput" for="zoomRange">100%</output>
+          </div>
+          <input class="zoom-range" id="zoomRange" type="range" min="70" max="150" step="5" value="100">
+        </section>
+
+        <section class="selected-card" aria-live="polite" aria-labelledby="selectedSeatTitle">
+          <div class="control-head">
+            <h2 id="selectedSeatTitle">선택 좌석</h2>
+            <span class="seat-status-pill" id="selectedStatus">-</span>
+          </div>
+          <strong id="selectedLabel">좌석을 선택해봐.</strong>
+          <dl class="seat-detail-list">
+            <div>
+              <dt>좌표</dt>
+              <dd id="selectedCoords">-</dd>
+            </div>
+            <div>
+              <dt>종류</dt>
+              <dd id="selectedType">-</dd>
+            </div>
+            <div>
+              <dt>구역</dt>
+              <dd id="selectedZone">-</dd>
+            </div>
+          </dl>
+        </section>
+      </aside>
+
+      <section class="map-panel">
+        <div class="map-toolbar">
+          <div>
+            <span class="map-kicker">REAL CGV COORDINATES</span>
+            <strong id="mapTitle">좌석 좌표 로딩 중</strong>
+          </div>
+          <div class="map-counts" id="statusCounts"></div>
+        </div>
+
+        <div class="screen-ribbon" aria-hidden="true">SCREEN</div>
+        <div class="map-viewport" id="mapViewport">
+          <div class="seat-canvas" id="seatCanvas" role="group" aria-label="CGV 좌석 배치도"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="../js/pages/cgvSeatMap.js?v=20260429-real-cgv"></script>
+</body>
+</html>

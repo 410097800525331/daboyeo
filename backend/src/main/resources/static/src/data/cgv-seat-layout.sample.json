@@ -1,0 +1,2307 @@
+{
+  "key": "CGV",
+  "provider": "CGV",
+  "theaterName": "CGV 강남",
+  "screenName": "2관 (Laser)",
+  "screenType": "Laser",
+  "showDate": "20260408",
+  "startTime": "실좌표 샘플",
+  "totalSeatCount": 123,
+  "remainingSeatCount": 89,
+  "note": "CGV seat_records/sblcks/szones 실좌표 기반",
+  "rowLabels": [
+    {
+      "row": "J",
+      "y": 19
+    },
+    {
+      "row": "F",
+      "y": 11
+    },
+    {
+      "row": "K",
+      "y": 21
+    },
+    {
+      "row": "H",
+      "y": 15
+    },
+    {
+      "row": "C",
+      "y": 5
+    },
+    {
+      "row": "G",
+      "y": 13
+    },
+    {
+      "row": "I",
+      "y": 17
+    },
+    {
+      "row": "E",
+      "y": 9
+    },
+    {
+      "row": "D",
+      "y": 7
+    },
+    {
+      "row": "A",
+      "y": 1
+    },
+    {
+      "row": "B",
+      "y": 3
+    }
+  ],
+  "zoneBoxes": [
+    {
+      "label": "일반존",
+      "x": 1,
+      "y": 5,
+      "w": 28,
+      "h": 18,
+      "providerMeta": {
+        "zoneKindCode": "01"
+      }
+    },
+    {
+      "label": "Light존",
+      "x": 7,
+      "y": 1,
+      "w": 22,
+      "h": 4,
+      "providerMeta": {
+        "zoneKindCode": "02"
+      }
+    }
+  ],
+  "entrances": [
+    {
+      "label": "입구",
+      "x": 5,
+      "y": 23,
+      "providerMeta": {
+        "blockKindCode": "01",
+        "blockKindName": "입구"
+      }
+    }
+  ],
+  "seats": [
+    {
+      "id": "00100100150019",
+      "label": "J7",
+      "x": 15,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090011",
+      "label": "F4",
+      "x": 9,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230011",
+      "label": "F11",
+      "x": 23,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100250021",
+      "label": "K12",
+      "x": 25,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100190015",
+      "label": "H9",
+      "x": 19,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190019",
+      "label": "J9",
+      "x": 19,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170005",
+      "label": "C8",
+      "x": 17,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170011",
+      "label": "F8",
+      "x": 17,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110013",
+      "label": "G5",
+      "x": 11,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100010017",
+      "label": "I1",
+      "x": 1,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090009",
+      "label": "E4",
+      "x": 9,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110015",
+      "label": "H5",
+      "x": 11,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130011",
+      "label": "F6",
+      "x": 13,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100250007",
+      "label": "D12",
+      "x": 25,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170001",
+      "label": "A8",
+      "x": 17,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150007",
+      "label": "D7",
+      "x": 15,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130003",
+      "label": "B6",
+      "x": 13,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100250009",
+      "label": "E12",
+      "x": 25,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070007",
+      "label": "D3",
+      "x": 7,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100250015",
+      "label": "H12",
+      "x": 25,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100030019",
+      "label": "J2",
+      "x": 3,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100130015",
+      "label": "H6",
+      "x": 13,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130019",
+      "label": "J6",
+      "x": 13,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230003",
+      "label": "B11",
+      "x": 23,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070017",
+      "label": "I3",
+      "x": 7,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070005",
+      "label": "C3",
+      "x": 7,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210015",
+      "label": "H10",
+      "x": 21,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090017",
+      "label": "I4",
+      "x": 9,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100270003",
+      "label": "B13",
+      "x": 27,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100250005",
+      "label": "C12",
+      "x": 25,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100270007",
+      "label": "D13",
+      "x": 27,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100270011",
+      "label": "F13",
+      "x": 27,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100090001",
+      "label": "A4",
+      "x": 9,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100250017",
+      "label": "I12",
+      "x": 25,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130009",
+      "label": "E6",
+      "x": 13,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150013",
+      "label": "G7",
+      "x": 15,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100030017",
+      "label": "I2",
+      "x": 3,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100250011",
+      "label": "F12",
+      "x": 25,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070001",
+      "label": "A3",
+      "x": 7,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150015",
+      "label": "H7",
+      "x": 15,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150001",
+      "label": "A7",
+      "x": 15,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110021",
+      "label": "K5",
+      "x": 11,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110011",
+      "label": "F5",
+      "x": 11,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100270017",
+      "label": "I13",
+      "x": 27,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100230021",
+      "label": "K11",
+      "x": 23,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150009",
+      "label": "E7",
+      "x": 15,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190021",
+      "label": "K9",
+      "x": 19,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210017",
+      "label": "I10",
+      "x": 21,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100250001",
+      "label": "A12",
+      "x": 25,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070011",
+      "label": "F3",
+      "x": 7,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100250019",
+      "label": "J12",
+      "x": 25,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100210009",
+      "label": "E10",
+      "x": 21,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100270013",
+      "label": "G13",
+      "x": 27,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100090013",
+      "label": "G4",
+      "x": 9,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170019",
+      "label": "J8",
+      "x": 17,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070003",
+      "label": "B3",
+      "x": 7,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150011",
+      "label": "F7",
+      "x": 15,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110017",
+      "label": "I5",
+      "x": 11,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110019",
+      "label": "J5",
+      "x": 11,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130007",
+      "label": "D6",
+      "x": 13,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090003",
+      "label": "B4",
+      "x": 9,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230017",
+      "label": "I11",
+      "x": 23,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100250003",
+      "label": "B12",
+      "x": 25,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130005",
+      "label": "C6",
+      "x": 13,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090007",
+      "label": "D4",
+      "x": 9,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090015",
+      "label": "H4",
+      "x": 9,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070015",
+      "label": "H3",
+      "x": 7,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070013",
+      "label": "G3",
+      "x": 7,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210011",
+      "label": "F10",
+      "x": 21,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230019",
+      "label": "J11",
+      "x": 23,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210019",
+      "label": "J10",
+      "x": 21,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190017",
+      "label": "I9",
+      "x": 19,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210021",
+      "label": "K10",
+      "x": 21,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170015",
+      "label": "H8",
+      "x": 17,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190007",
+      "label": "D9",
+      "x": 19,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190003",
+      "label": "B9",
+      "x": 19,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100270001",
+      "label": "A13",
+      "x": 27,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100250013",
+      "label": "G12",
+      "x": 25,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090005",
+      "label": "C4",
+      "x": 9,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230015",
+      "label": "H11",
+      "x": 23,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170021",
+      "label": "K8",
+      "x": 17,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130013",
+      "label": "G6",
+      "x": 13,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100270005",
+      "label": "C13",
+      "x": 27,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100150017",
+      "label": "I7",
+      "x": 15,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210003",
+      "label": "B10",
+      "x": 21,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100030021",
+      "label": "K2",
+      "x": 3,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100230009",
+      "label": "E11",
+      "x": 23,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170003",
+      "label": "B8",
+      "x": 17,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210007",
+      "label": "D10",
+      "x": 21,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110003",
+      "label": "B5",
+      "x": 11,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110005",
+      "label": "C5",
+      "x": 11,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170007",
+      "label": "D8",
+      "x": 17,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170009",
+      "label": "E8",
+      "x": 17,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150021",
+      "label": "K7",
+      "x": 15,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210005",
+      "label": "C10",
+      "x": 21,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210013",
+      "label": "G10",
+      "x": 21,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150005",
+      "label": "C7",
+      "x": 15,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190013",
+      "label": "G9",
+      "x": 19,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100210001",
+      "label": "A10",
+      "x": 21,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110007",
+      "label": "D5",
+      "x": 11,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130021",
+      "label": "K6",
+      "x": 13,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230013",
+      "label": "G11",
+      "x": 23,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170013",
+      "label": "G8",
+      "x": 17,
+      "y": 13,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190005",
+      "label": "C9",
+      "x": 19,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100170017",
+      "label": "I8",
+      "x": 17,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100110009",
+      "label": "E5",
+      "x": 11,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070009",
+      "label": "E3",
+      "x": 7,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190001",
+      "label": "A9",
+      "x": 19,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100150003",
+      "label": "B7",
+      "x": 15,
+      "y": 3,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100010019",
+      "label": "J1",
+      "x": 1,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070021",
+      "label": "K3",
+      "x": 7,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100130017",
+      "label": "I6",
+      "x": 13,
+      "y": 17,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090019",
+      "label": "J4",
+      "x": 9,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100270009",
+      "label": "E13",
+      "x": 27,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    },
+    {
+      "id": "00100100190011",
+      "label": "F9",
+      "x": 19,
+      "y": 11,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230007",
+      "label": "D11",
+      "x": 23,
+      "y": 7,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100070019",
+      "label": "J3",
+      "x": 7,
+      "y": 19,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100090021",
+      "label": "K4",
+      "x": 9,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100010021",
+      "label": "K1",
+      "x": 1,
+      "y": 21,
+      "w": 2,
+      "h": 2,
+      "status": "special",
+      "type": "SWEETBOX",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "02",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "Y",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230001",
+      "label": "A11",
+      "x": 23,
+      "y": 1,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "Light존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "02",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100190009",
+      "label": "E9",
+      "x": 19,
+      "y": 9,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100230005",
+      "label": "C11",
+      "x": 23,
+      "y": 5,
+      "w": 2,
+      "h": 2,
+      "status": "available",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "00",
+        "leftPassageYn": "N",
+        "rightPassageYn": "N"
+      }
+    },
+    {
+      "id": "00100100270015",
+      "label": "H13",
+      "x": 27,
+      "y": 15,
+      "w": 2,
+      "h": 2,
+      "status": "sold",
+      "type": "일반석",
+      "zone": "일반존",
+      "providerMeta": {
+        "seatKindCode": "01",
+        "seatZoneKindCode": "01",
+        "seatStatusCode": "01",
+        "leftPassageYn": "N",
+        "rightPassageYn": "Y"
+      }
+    }
+  ]
+}

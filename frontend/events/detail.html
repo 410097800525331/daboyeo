@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Detail - Daboyeo</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .detail-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .detail-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .detail-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            background: #f8fafc;
+        }
+
+        .detail-body {
+            padding: 2rem;
+        }
+
+        .detail-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .detail-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: var(--text-sub);
+            margin-bottom: 2rem;
+        }
+
+        .placeholder-content {
+            padding: 2rem;
+            background: #f1f5f9;
+            border-radius: 8px;
+            text-align: center;
+            color: var(--text-sub);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>🎬 Daboyeo Movie Events</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="detail-container">
+            <div class="detail-header">
+                <button class="back-btn" onclick="history.back()">← 뒤로가기</button>
+                <h2 id="header-title">이벤트 상세</h2>
+            </div>
+
+            <img id="event-image" class="detail-image" src="" alt="Event Poster">
+
+            <div class="detail-body">
+                <div class="card-badges" id="event-badges">
+                    <!-- Badges will be here -->
+                </div>
+                <h1 id="event-title" class="detail-title">Loading...</h1>
+
+                <div class="detail-info">
+                    <p id="event-period">기간: </p>
+                    <p id="event-dday">남은 기간: </p>
+                </div>
+
+                <div class="placeholder-content">
+                    <p>상세 내용은 추후 API 연동 시 표시될 예정입니다.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const eventId = params.get('id');
+
+            if (!eventId) {
+                alert('잘못된 접근입니다.');
+                location.href = '/index.html';
+                return;
+            }
+
+            // For now, we don't have a detail API, so we fetch all and find the one.
+            // In a real app, you'd have GET /api/events/{id}
+            fetch('/api/events')
+                .then(res => res.json())
+                .then(events => {
+                    const event = events.find(e => e.id == eventId);
+                    if (event) {
+                        renderDetail(event);
+                    } else {
+                        document.getElementById('event-title').textContent = '이벤트를 찾을 수 없습니다.';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching event detail:', err);
+                    document.getElementById('event-title').textContent = '데이터를 불러오지 못했습니다.';
+                });
+        });
+
+        function renderDetail(event) {
+            document.getElementById('event-title').textContent = event.title;
+            document.getElementById('event-image').src = event.imageUrl || 'https://via.placeholder.com/800x400?text=No+Image';
+            document.getElementById('event-period').textContent = `기간: ${event.startDate || ''} ~ ${event.endDate || ''}`;
+            document.getElementById('event-dday').textContent = `남은 기간: ${event.dDay || '정보 없음'}`;
+
+            const badgeContainer = document.getElementById('event-badges');
+            const providerClass = `badge-${event.source.toLowerCase()}`;
+            badgeContainer.innerHTML = `
+                <span class="badge ${providerClass}">${event.source}</span>
+                <span class="badge badge-category">${event.category}</span>
+            `;
+        }
+    </script>
+</body>
+
+</html>

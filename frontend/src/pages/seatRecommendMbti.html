@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DABOYEO | MBTI별 좌석 추천</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="../css/seatRecommendMbti.css?v=20260427-map-cleanup">
+  <link rel="stylesheet" href="../css/responsive.css?v=20260510-real-responsive">
+</head>
+<body class="mbti-seat-page">
+  <main class="seat-shell" id="seatApp">
+    <div class="seat-context">
+      <a class="seat-back-link" href="../../index.html#ai" aria-label="좌석 추천 섹션으로 돌아가기">
+        <span aria-hidden="true">←</span>
+        좌석 추천으로 돌아가기
+      </a>
+      <span class="seat-breadcrumb">좌석 추천 / MBTI별 추천</span>
+    </div>
+
+    <section class="seat-layout" aria-labelledby="seatTitle">
+      <section class="seat-hero">
+        <p class="seat-kicker">MBTI SEAT MATCH</p>
+        <h1 id="seatTitle">
+          <span class="seat-title-line">내 <em>MBTI</em>에 맞는</span>
+          <span class="seat-title-line"><em>명당 좌석</em> 찾기</span>
+        </h1>
+        <p class="seat-description">
+          성격 유형에 맞는 관람 스타일과 좌석 특성을 계산해 오늘 영화에 어울리는 좌석 구역을 추천해드려요.
+        </p>
+      </section>
+
+      <section class="seat-main-row" aria-label="MBTI 좌석 추천 선택 영역">
+        <section class="mbti-panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-eyebrow">MBTI 유형 선택</p>
+            </div>
+            <button class="mini-help" type="button" id="randomButton">랜덤 선택</button>
+          </div>
+          <div class="mbti-grid" id="mbtiGrid"></div>
+        </section>
+
+        <aside class="seat-right-rail">
+          <section class="recommend-panel" aria-live="polite">
+          <div class="profile-topline">
+            <span class="profile-dot"></span>
+            당신의 선택
+          </div>
+
+          <div class="profile-stage">
+            <div>
+              <strong class="profile-code" id="selectedCode">INTJ</strong>
+              <span class="profile-title" id="selectedTitle">전략가</span>
+              <p class="profile-summary" id="selectedSummary">
+                한 번의 선택도 논리적으로, 최적의 몰입을 추구하는 타입이에요.
+              </p>
+            </div>
+            <span class="profile-piece mbti-sprite-icon" id="profileIcon" aria-hidden="true"></span>
+          </div>
+
+          <div class="keyword-box">
+            <strong>관람 스타일 키워드</strong>
+            <div class="trait-list" id="traitList"></div>
+          </div>
+
+          <div class="recommend-body">
+            <div class="panel-head">
+              <div>
+                <p class="panel-eyebrow">추천 좌석 성향</p>
+                <h2 id="zoneTitle">중앙 몰입석</h2>
+              </div>
+              <span class="zone-score" id="zoneScore">96%</span>
+            </div>
+
+            <div class="zone-cards">
+              <article class="zone-card is-primary">
+                <strong id="primaryZone">중앙 몰입석</strong>
+                <p id="primaryZoneCopy">화면과 사운드 균형이 가장 안정적인 중앙 구역</p>
+              </article>
+              <article class="zone-card">
+                <strong id="secondaryZone">후열 안정석</strong>
+                <p id="secondaryZoneCopy">전체 화면을 편하게 조망할 수 있는 후열 구역</p>
+              </article>
+            </div>
+
+            <div class="reason-box">
+              <strong>추천 이유</strong>
+              <ul id="reasonList"></ul>
+            </div>
+          </div>
+
+          <div class="fit-metrics" id="fitMetrics"></div>
+
+          <p class="fit-disclaimer">
+            공개적으로 검증된 MBTI별 영화관 좌석 선호 퍼센트가 없어, 이 화면은 성향 기반 계산 점수로 안내합니다.
+          </p>
+
+          <button class="seat-cta" type="button" id="ctaButton">INTJ 좌석 추천 보기</button>
+          </section>
+        </aside>
+      </section>
+
+      <section class="seat-map-section" aria-label="추천 좌석 맵">
+        <div class="map-head">
+          <div>
+            <p class="panel-eyebrow">THEATER MAP</p>
+            <h2>좌석마다 성향 적합도를 표시했어요</h2>
+          </div>
+          <div class="map-legend">
+            <span><i class="legend-dot is-best"></i> 90% 이상</span>
+            <span><i class="legend-dot is-good"></i> 75% 이상</span>
+            <span><i class="legend-dot"></i> 보통</span>
+          </div>
+        </div>
+        <div class="theater-map">
+          <div class="screen-line">SCREEN</div>
+          <div class="map-zone-label map-zone-label-center" id="primaryZoneLabel">중앙 몰입석</div>
+          <div class="map-zone-label map-zone-label-side-left">사이드 집중석(좌측)</div>
+          <div class="map-zone-label map-zone-label-side-right">사이드 집중석(우측)</div>
+          <div class="map-zone-label map-zone-label-rear" id="secondaryZoneLabel">후열 안정석</div>
+          <div class="seat-grid-map" id="seatMap"></div>
+        </div>
+        <p class="map-caveat">
+          퍼센트는 실제 MBTI 좌석 통계가 아니라, 성향 키워드와 좌석 특성을 조합한 적합도 점수입니다.
+          영화 장르, 상영관 구조, 음향/시야 조건에 따라 실제 체감은 달라질 수 있어요.
+        </p>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="../js/pages/seatRecommendMbti.js?v=20260424-dynamic-zone-labels"></script>
+</body>
+</html>

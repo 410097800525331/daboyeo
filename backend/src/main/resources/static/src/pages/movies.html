@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>실시간 통합 상영 정보 - 다보여(Daboyeo)</title>
+
+  <!-- favicon -->
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/kakaoMap.css">
+  <link rel="stylesheet" href="../css/movies.css">
+  <link rel="stylesheet" href="../css/responsive.css?v=20260510-real-responsive">
+</head>
+<body>
+  <div id="header"></div>
+  <div id="topButton"></div>
+
+  <div class="main-content sub-page-content">
+
+    <div class="movies-main-container">
+
+      <!-- 세로 배치형 통합 필터 박스 -->
+      <div class="movies-filter-system unified-filter-box">
+        <div class="filter-header">
+          <a href="../../index.html" class="sub-logo small">
+            <img src="../assets/logo.svg" alt="DABOYEO LOGO">
+          </a>
+          <span class="box-title">실시간 통합 필터</span>
+        </div>
+
+        <div class="filter-content">
+          <div class="filter-row">
+            <span class="filter-label">영화사</span>
+            <div class="check-group" id="check-provider">
+              <button class="filter-chip active" data-value="all" onclick="toggleChip(this, 'provider')">전체</button>
+              <button class="filter-chip" data-value="CGV" onclick="toggleChip(this, 'provider')">CGV</button>
+              <button class="filter-chip" data-value="LOTTE" onclick="toggleChip(this, 'provider')">롯데시네마</button>
+              <button class="filter-chip" data-value="MEGA" onclick="toggleChip(this, 'provider')">메가박스</button>
+            </div>
+          </div>
+
+          <!-- 특별관 필터 추가 -->
+          <div class="filter-row">
+            <span class="filter-label">특별관</span>
+            <div class="check-group" id="check-theater">
+              <button class="filter-chip active" data-value="all" onclick="toggleChip(this, 'theater')">전체</button>
+              <button class="filter-chip" data-value="IMAX" onclick="toggleChip(this, 'theater')">IMAX</button>
+              <button class="filter-chip" data-value="Dolby" onclick="toggleChip(this, 'theater')">Dolby</button>
+              <button class="filter-chip" data-value="4DX" onclick="toggleChip(this, 'theater')">4DX</button>
+              <button class="filter-chip" data-value="ScreenX" onclick="toggleChip(this, 'theater')">ScreenX</button>
+            </div>
+          </div>
+
+          <!-- 특별석 필터 추가 -->
+          <div class="filter-row">
+            <span class="filter-label">고급/특별석</span>
+            <div class="check-group" id="check-seat-type">
+              <button class="filter-chip active" data-value="all" onclick="toggleChip(this, 'seat-type')">전체</button>
+              <button class="filter-chip" data-value="RECLINER" onclick="toggleChip(this, 'seat-type')">🛋️ 리클라이너</button>
+              <button class="filter-chip" data-value="PRIVATE" onclick="toggleChip(this, 'seat-type')">💎 프라이빗/스위트</button>
+              <button class="filter-chip" data-value="CHEF" onclick="toggleChip(this, 'seat-type')">👨‍🍳 셰프/다이닝</button>
+            </div>
+          </div>
+
+          <div class="filter-row">
+            <span class="filter-label">좌석상태</span>
+            <div class="check-group" id="check-seats">
+              <button class="filter-chip active" data-value="all" onclick="toggleChip(this, 'seats')">전체</button>
+              <button class="filter-chip" data-value="spacious" onclick="toggleChip(this, 'seats')">여유(50%+)</button>
+              <button class="filter-chip" data-value="comfortable" onclick="toggleChip(this, 'seats')">보통(30%+)</button>
+              <button class="filter-chip" data-value="closing" onclick="toggleChip(this, 'seats')">매진임박(10%미만)</button>
+              <button class="filter-chip" data-value="group" onclick="toggleChip(this, 'seats')">단체가능(20석+)</button>
+            </div>
+          </div>
+
+          <!-- 검색창 -->
+          <div class="filter-row search-row">
+            <span class="filter-label">직접검색</span>
+            <div class="unified-search-input bottom-search">
+              <i class="fas fa-magnifying-glass"></i>
+              <input type="text" id="filter-search" placeholder="찾으시는 극장이나 영화를 검색하세요" onkeyup="if(event.key === 'Enter') loadLiveMovies()">
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-footer">
+          <button class="btn-refresh-filter" onclick="loadLiveMovies()">
+            <i class="fas fa-arrows-rotate"></i> 필터 적용 및 실시간 정보 갱신
+          </button>
+        </div>
+      </div>
+
+      <div class="search-result-info">
+        <div class="search-result-header">
+          <div id="search-info-text" class="search-context-info">
+            <!-- liveMovies.js 가 여기에 검색 정보를 주입합니다 -->
+          </div>
+          <div class="result-count-badge">
+            검색 결과 <span id="result-count">0</span>건
+          </div>
+        </div>
+        <p class="filter-description">필터를 변경하면 실시간 상영 정보가 자동으로 갱신됩니다.</p>
+      </div>
+
+      <div id="movie-grid" class="movie-grid">
+        <!-- liveMovies.js 가 카드를 주입합니다 -->
+        <div class="loading-spinner">실시간 정보를 연결 중입니다...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상영 시간표 상세 모달 -->
+  <div id="schedule-modal" class="modal-overlay">
+      <div class="modal-content">
+          <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+
+          <div class="modal-header">
+              <div class="modal-poster">
+                  <img id="modal-movie-poster" src="" alt="">
+              </div>
+              <div class="modal-movie-info">
+                  <h2 id="modal-movie-title">영화 제목</h2>
+                  <div id="modal-movie-tags" class="modal-tags">
+                      <!-- 연령 제한, 장르 등 표시 -->
+                  </div>
+              </div>
+          </div>
+
+          <div class="modal-tabs">
+              <button class="tab-btn active" onclick="switchTab('ALL')">전체</button>
+              <button class="tab-btn" onclick="switchTab('CGV')">CGV</button>
+              <button class="tab-btn" onclick="switchTab('LOTTE')">LOTTE</button>
+              <button class="tab-btn" onclick="switchTab('MEGA')">MEGABOX</button>
+          </div>
+
+          <div id="modal-schedule-list" class="schedule-list">
+              <!-- 시간표 리스트가 여기에 생성됨 -->
+          </div>
+      </div>
+  </div>
+
+  <!-- Global Footer -->
+  <div id="footer"></div>
+
+  <!-- Scripts -->
+  <script src="../js/include.js"></script>
+  <script src="../js/pages/common.js"></script>
+  <script src="../js/pages/script.js"></script>
+  <script src="../js/liveMovies.js"></script>
+  <script>
+    // 페이지 전용 초기화 (결과 개수 업데이트 등)
+    document.addEventListener('DOMContentLoaded', () => {
+        const observer = new MutationObserver(() => {
+            const count = document.querySelectorAll('.movie-card').length;
+            document.getElementById('result-count').innerText = count;
+        });
+        observer.observe(document.getElementById('movie-grid'), { childList: true });
+    });
+  </script>
+</body>
+</html>

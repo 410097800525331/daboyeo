@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이벤트 | 다보여 (DABOYEO)</title>
+  <!-- favicon fix -->
+  <link rel="icon" href="data:,">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="/favicon.png">
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/common.css">
+  <link rel="stylesheet" href="../css/events.css">
+  <link rel="stylesheet" href="../css/responsive.css?v=20260510-real-responsive">
+</head>
+
+<body class="basic-page">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <a class="seat-back-link" href="/index.html#events" aria-label="좌석 추천 섹션으로 돌아가기">
+          <span aria-hidden="true">←</span>
+          뒤로가기
+        </a>
+        <h1 class="hero-title">지금 가장 <span>뜨거운</span><br>영화관 이벤트를 확인하세요</h1>
+        <p class="hero-subtitle">CGV, 롯데시네마, 메가박스의 모든 혜택을 한눈에 비교합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <main class="main-content">
+    <!-- Filter Section -->
+    <section class="filter-section">
+      <div class="filter-container card">
+        <div class="filter-group">
+          <label for="provider-filter"><i class="fas fa-film"></i> 영화관</label>
+          <div class="custom-select-wrapper">
+            <select id="provider-filter">
+              <option value="">전체 영화관</option>
+              <option value="LOTTE">롯데시네마 (LOTTE)</option>
+              <option value="MEGABOX">메가박스 (MEGABOX)</option>
+              <option value="CGV">CGV</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tabs-container">
+          <label><i class="fas fa-tags"></i> 카테고리</label>
+          <div class="tabs" id="category-tabs">
+            <button class="tab-btn active" data-category="">전체</button>
+            <button class="tab-btn" data-category="HOT">HOT</button>
+            <button class="tab-btn" data-category="MOVIE">영화</button>
+            <button class="tab-btn" data-category="PREMIERE">시사회/무대인사</button>
+            <button class="tab-btn" data-category="DISCOUNT">제휴/할인</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Event Grid -->
+    <section id="event-grid" class="event-grid">
+      <!-- Skeletons will be rendered here by render.js initially -->
+    </section>
+
+    <!-- States -->
+    <div id="empty-state" class="empty-state hidden">
+      <div class="state-content">
+        <i class="fas fa-calendar-times"></i>
+        <p>조회된 이벤트가 없습니다.</p>
+      </div>
+    </div>
+
+    <div id="error-state" class="error-state hidden">
+      <div class="state-content">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>데이터를 가져오는 중 오류가 발생했습니다.</p>
+        <button class="btn-retry" onclick="location.reload()">새로고침</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <!-- Scroll to Top -->
+  <div id="topButton"></div>
+
+  <!-- Scripts -->
+  <script src="/src/js/include.js"></script>
+  <script src="/js/api.js?v=20260510-live-events"></script>
+  <script src="/js/render.js?v=20260510-safe-events"></script>
+  <script src="/js/filter.js"></script>
+  <script src="/js/events.js?v=20260510-db-events"></script>
+</body>
+
+</html>

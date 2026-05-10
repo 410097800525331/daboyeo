@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>다보여 | DABOYEO</title>
+  <!-- favicon -->
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/priceComparison.css">
+  <link rel="stylesheet" href="../css/style.css">
+
+</head>
+
+<body>
+  <!-- ============================================
+       1. 고정 헤더
+       ============================================ -->
+  <header class="fixed-header" id="fixedHeader">
+    <div class="header-content">
+      <h1 class="header-logo"><a href="../../index.html"><img src="../assets/logo.svg" alt="LOGO"></a></h1>
+      <nav class="header-nav">
+        <a href="./movieTheaterMap.html">영화관 찾기</a>
+        <a href="./screeningImminent.html">상영 임박</a>
+        <a href="./movieReview.html">영화 리뷰</a>
+        <a href="./seats.html">명당 좌석</a>
+        <a href="./priceComparison.html">가격 비교</a>
+        <a href="./daboyeoAi.html">AI 추천</a>
+      </nav>
+      <button class="header-search-btn" id="headerSearchBtn">빠른 검색</button>
+    </div>
+  </header>
+
+  <!-- ============================================
+       2. 맨 위로 버튼
+       ============================================ -->
+  <button class="scroll-to-top" id="scrollToTop" aria-label="맨 위로 이동">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- main -->
+  <div class="main-content">
+    <!-- Top Search Bar -->
+    <div class="search-bar">
+      <div class="search-item">
+        <i class="fas fa-search"></i>
+        <input type="text" id="movieInput" placeholder="영화 제목 검색">
+      </div>
+      <div class="search-item">
+        <input type="text" id="regionInput" placeholder="지역 검색(전체)">
+        <ul id="regionDropdown" class="region-dropdown"></ul>
+      </div>
+      <div class="search-item">
+        <i class="fas fa-calendar"></i>
+        <input type="text" id="dateInput" readonly placeholder="날짜 선택">
+      </div>
+      <!-- 커스텀 달력 -->
+      <!-- <div class="calendar" id="calendar">
+        <div class="calendar-header">
+          <button id="prevMonth">&lt;</button>
+          <span id="monthYear"></span>
+          <button id="nextMonth">&gt;</button>
+        </div>
+
+        <div class="calendar-days">
+          <div>일</div>
+          <div>월</div>
+          <div>화</div>
+          <div>수</div>
+          <div>목</div>
+          <div>금</div>
+          <div>토</div>
+        </div>
+
+        <div class="calendar-dates" id="calendarDates"></div>
+      </div> -->
+      <div class="search-item">
+        <i class="fas fa-user"></i>
+        <input type="text" id="dateInput" readonly placeholder="성인 1명">
+      </div>
+    </div>
+
+    <!-- Time Filter Row -->
+    <div class="time-filter-row">
+      <div class="time-range-container">
+          <div class="time-header">
+            <label>시간</label>
+            <span class="time-value" id="timeValue">10:00 - 22:00</span>
+          </div>
+          <div class="slider-container">
+            <div class="slider-track">
+              <div class="slider-progress" id="sliderProgress"></div>
+            </div>
+            <div class="slider-handle" id="sliderStart" data-index="0"></div>
+            <div class="slider-handle" id="sliderEnd" data-index="44"></div>
+          </div>
+          <div class="slider-labels">
+            <span class="slider-label start">00:00</span>
+            <span class="slider-label middle">12:00</span>
+            <span class="slider-label end">23:59</span>
+          </div>
+        </div>
+      <button class="header-search-btn" id="headerSearchBtn">최저가 검색</button>
+    </div>
+
+    <!-- Content Body -->
+    <div class="content-body">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="map-placeholder">
+          <div class="map-btn">지도에서 보기</div>
+        </div>
+        <div class="filter-section">
+          <h3>영화관 선택</h3>
+          <div class="filter-item">
+            <div class="filter-left">
+              <div class="checkbox"></div>
+              <span>CGV</span>
+            </div>
+            <span class="count">4</span>
+          </div>
+          <div class="filter-item">
+            <div class="filter-left">
+              <div class="checkbox"></div>
+              <span>롯데시네마</span>
+            </div>
+            <span class="count">5</span>
+          </div>
+          <div class="filter-item">
+            <div class="filter-left">
+              <div class="checkbox"></div>
+              <span>메가박스</span>
+            </div>
+            <span class="count">2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Area -->
+      <div class="results-area">
+        <div class="results-header">
+          <div class="results-count">11개의 결과</div>
+          <div class="sort-tabs">
+            <div class="sort-tab active">추천순</div>
+            <div class="sort-tab">빠른 상영순</div>
+            <div class="sort-tab">최저가순</div>
+            <div class="sort-tab">가까운 순서대로</div>
+          </div>
+        </div>
+
+        <!-- Movie Card -->
+        <div class="movie-card">
+          <div class="movie-poster">
+            <div class="age-rating">12</div>
+          </div>
+          <div class="movie-info">
+            <div class="movie-title-row">
+              <h2 class="movie-title">프로젝트 헤일메리</h2>
+              <i class="far fa-heart heart-icon"></i>
+            </div>
+            <div class="theater-info">CGV 성남점 1km</div>
+            <div class="genre">SF/모험</div>
+            <div class="time-info">14:30 <span>~ 16:48</span></div>
+            <div class="card-footer">
+              <div class="rating">평점 <span>3.7</span>(312)</div>
+              <div class="seats">좌석 22% 남음</div>
+            </div>
+          </div>
+          <div class="price-area">
+            <div class="cgv-logo">CGV</div>
+            <div class="price-tags">
+              <div class="tag">최저가</div>
+              <div class="tag">₩13,000</div>
+            </div>
+            <div class="original-price">₩13,000</div>
+            <div class="current-price">₩11,000</div>
+            <button class="booking-btn">예매하기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       3. 푸터
+       ============================================ -->
+  <footer class="footer">
+    <!-- Theater Overlay (극장 찾기 클릭 시 나타남) -->
+    <div class="theater-overlay" id="theaterOverlay">
+      <div class="overlay-inner">
+        <div class="overlay-header">
+          <div class="overlay-tabs">
+            <div class="overlay-tab-item active" data-brand="cgv">CGV</div>
+            <div class="overlay-tab-item" data-brand="megabox">메가박스</div>
+            <div class="overlay-tab-item" data-brand="lotte">롯데시네마</div>
+          </div>
+          <div class="close-overlay" id="closeOverlay">
+            <i class="fas fa-times"></i>
+          </div>
+        </div>
+        <div class="theater-grid" id="theaterGrid">
+          <!-- JS에서 데이터 주입 -->
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-content">
+      <div class="footer-nav-top">
+        <a href="#">회사소개</a>
+        <a href="#">인재채용</a>
+        <a href="#">사회공헌</a>
+        <a href="#">제휴/광고/부대사업문의</a>
+        <a href="#" class="bold">이용약관</a>
+        <a href="#" class="bold">위치기반서비스 이용약관</a>
+        <a href="#" class="bold">개인정보처리방침</a>
+        <a href="#">윤리경영</a>
+      </div>
+      <div class="footer-main">
+        <div class="footer-left">
+          <h1 class="footer-logo"><a href="../../index.html"><img src="../assets/logo.svg" alt="LOGO"></a>
+          </h1>
+          <div class="footer-info">
+            경기도 성남시 분당구 불마로 73 (금곡동), 7층 EMAIL ADMIN@DABOYEO.CO.KR
+          </div>
+          <div class="footer-info">
+            대표 임상인 사업자등록번호 856-87-00785 통신판매신고권은 2017-성남분당-1106호
+          </div>
+          <div class="footer-copyright">© 2026 DABOYEO. ALL RIGHTS RESERVED.</div>
+        </div>
+        <div class="footer-right">
+          <div class="theater-search-btn" id="theaterSearchBtn">
+            <span>전체 극장 찾기</span>
+            <i class="fas fa-search"></i>
+          </div>
+
+          <div class="custom-dropdown">
+            <div class="selected">DABOYEO.</div>
+            <ul class="dropdown-list">
+              <li data-url="/">DABOYEO.</li>
+              <li data-url="https://cgv.co.kr/">CGV</li>
+              <li data-url="https://www.lottecinema.co.kr/">롯데시네마</li>
+              <li data-url="https://www.megabox.co.kr/">메가박스</li>
+            </ul>
+          </div>
+          <div class="footer-socials">
+            <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-facebook"></i></a>
+            <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Kakao SDK -->
+  <script
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=0520b1a822c33d45a0a7075152d340fa&libraries=services"></script>
+  <script src="../js/pages/common.js"></script>
+  <script src="../js/pages/script.js"></script>
+  <script src="../js/api/kakaoMap.js"></script>
+</body>
+
+</html>
