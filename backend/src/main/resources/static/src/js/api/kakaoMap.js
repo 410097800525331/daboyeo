@@ -39,6 +39,16 @@ const LABEL_COLORS = {
   ETC: '#9E9E9E',
 };
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
 function setTriggerBusy(isBusy) {
   if (locationBtn) {
     locationBtn.style.opacity = isBusy ? '0.5' : '1';
@@ -202,7 +212,7 @@ async function loadAllTheatersToCluster() {
             white-space: nowrap;
             pointer-events: none;
           ">
-            ${theater.name}
+            ${escapeHtml(theater.name)}
           </div>
         `);
         hoverOverlay.setPosition(marker.getPosition());
@@ -321,19 +331,45 @@ function renderNearbyList(theaters, results) {
 
     const card = document.createElement('div');
     card.className = 'theater-card';
-    card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
-        <span style="font-weight: bold; color: ${brandColor};">${theater.provider}</span>
-        <div class="distance-badge">${distanceText}</div>
-      </div>
-      <h3>${theater.name}</h3>
-      <p style="margin-top: 6px; color: var(--gray100); font-size: 0.9rem;">실시간 상영 ${showtimeCount}건</p>
-      <div style="margin-top: 12px;">
-        <a href="${BRAND_URLS[theater.provider] || BRAND_URLS.ETC}" target="_blank" class="booking-link" onclick="event.stopPropagation();">
-          예매 바로가기 <i class="fas fa-external-link-alt" style="font-size: 10px; margin-left: 4px;"></i>
-        </a>
-      </div>
-    `;
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;';
+
+    const provider = document.createElement('span');
+    provider.style.fontWeight = 'bold';
+    provider.style.color = brandColor;
+    provider.textContent = theater.provider || 'ETC';
+
+    const distance = document.createElement('div');
+    distance.className = 'distance-badge';
+    distance.textContent = distanceText;
+
+    const title = document.createElement('h3');
+    title.textContent = theater.name || '극장명 없음';
+
+    const summary = document.createElement('p');
+    summary.style.cssText = 'margin-top: 6px; color: var(--gray100); font-size: 0.9rem;';
+    summary.textContent = `실시간 상영 ${showtimeCount}건`;
+
+    const actions = document.createElement('div');
+    actions.style.marginTop = '12px';
+
+    const bookingLink = document.createElement('a');
+    bookingLink.href = BRAND_URLS[theater.provider] || BRAND_URLS.ETC;
+    bookingLink.target = '_blank';
+    bookingLink.rel = 'noopener noreferrer';
+    bookingLink.className = 'booking-link';
+    bookingLink.append(document.createTextNode('예매 바로가기 '));
+    bookingLink.addEventListener('click', (event) => event.stopPropagation());
+
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-external-link-alt';
+    icon.style.cssText = 'font-size: 10px; margin-left: 4px;';
+    bookingLink.appendChild(icon);
+    actions.appendChild(bookingLink);
+
+    header.append(provider, distance);
+    card.append(header, title, summary, actions);
 
     card.onclick = () => {
       if (!map || !window.kakao?.maps) return;

@@ -500,6 +500,37 @@ class RecommendationServiceCandidateFilterTests {
     }
 
     @Test
+    void expandsUnderfilledExactSearchToThreeDistinctMovies() {
+        RecommendationService service = service(20);
+        LocalDate date = LocalDate.now().plusDays(1);
+        SearchFilters filters = new SearchFilters("Gangnam", date, "morning", 1);
+        SearchFilters withoutTime = new SearchFilters("Gangnam", date, "", 1);
+        ShowtimeCandidate exact = candidate(1, "Exact Match");
+        ShowtimeCandidate relaxedA = candidate(2, "Relaxed A");
+        ShowtimeCandidate relaxedB = candidate(3, "Relaxed B");
+        List<ShowtimeCandidate> expanded = List.of(exact, relaxedA, relaxedB);
+
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), eq(filters))).thenReturn(List.of(exact));
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class), eq(withoutTime)))
+            .thenReturn(List.of(relaxedA, relaxedB));
+        when(scorer.score(any(TagProfile.class), eq(expanded), eq(filters))).thenReturn(List.of(
+            scored(exact, 95),
+            scored(relaxedA, 90),
+            scored(relaxedB, 88)
+        ));
+        when(codexClient.rankAndExplain(any(), any(), any())).thenReturn(Optional.empty());
+
+        RecommendationResponse response = service.recommend(request("fast", filters));
+
+        assertThat(response.status()).isEqualTo("fallback");
+        assertThat(response.message()).contains("3개");
+        assertThat(response.recommendations()).hasSize(3);
+        assertThat(response.recommendations()).extracting(item -> item.title())
+            .containsExactly("Exact Match", "Relaxed A", "Relaxed B");
+        verify(scorer).score(any(TagProfile.class), eq(expanded), eq(filters));
+    }
+
+    @Test
     void fallsBackToBroadCandidateSearchWhenAllRelaxedFiltersMiss() {
         RecommendationService service = service(20);
         SearchFilters filters = new SearchFilters("Nowhere", LocalDate.now().plusDays(1), "morning", 4);

@@ -1,0 +1,92 @@
+[workspace]
+name = "daboyeo"
+summary = "CGV, 롯데시네마, 메가박스 상영 정보를 수집하고 비교하는 개인용 영화 상영 데이터 도구."
+owner_context = "이 컨텍스트는 현재 사용자의 Codex 작업 기준이다. 존재하지 않는 외부 작업 문서를 전제로 삼지 않는다."
+task_board_path = "STATE.md"
+multi_agent_log_path = "MULTI_AGENT_LOG.md"
+error_log_path = "ERROR_LOG.md"
+
+[architecture]
+source_of_truth = ["README.md", "collectors/**", "docs/**", "scripts/**"]
+shell_runtime = "PowerShell"
+runtime_style = "가능하면 단순한 로컬 스크립트와 명시적인 설정을 우선한다."
+data_goal = "극장별 원본 특성을 보존하면서 상영 비교에 필요한 최소 공통 필드를 정리한다."
+collector_priority = ["CGV", "롯데시네마", "메가박스"]
+
+[workflow]
+authoring_model = "실제 사용자가 유지보수하기 쉬운 로컬 실행, 수집, 검증 흐름을 우선한다."
+default_language = "ko"
+default_tone = "간결한 한국어 반말"
+spec_first_threshold = "여러 파일을 건드리거나 수집/정규화/렌더링 책임이 갈라지는 작업이면 STATE.md에 계약과 write set을 먼저 고정한다."
+tiny_hotfix_policy = "단일 파일의 작은 수정은 single-session으로 처리하되, 커지면 STATE.md를 갱신하고 재분류한다."
+
+[required_context]
+before_editing = ["README.md", "STATE.md", "WORKSPACE_CONTEXT.toml"]
+optional_when_relevant = ["docs/**", "collectors/**", "scripts/**", "AGENTS.md"]
+
+[verification]
+recommended_commands = [
+  "git status --short",
+  "Get-Content -Raw WORKSPACE_CONTEXT.toml",
+  "Select-String -Path WORKSPACE_CONTEXT.toml -Pattern '^\\[workspace\\]','^\\[architecture\\]','^\\[editing_rules\\]','^\\[verification\\]'"
+]
+browser_checks = "사용자가 명시적으로 요청한 경우에만 수행한다."
+external_runtime_checks = "배포 URL, preview URL, 외부 도메인 smoke check는 사용자가 명시적으로 요청한 경우에만 수행한다."
+
+[contracts]
+shared = [
+  "존재하지 않는 외부 작업 문서를 source of truth로 가정하지 않는다.",
+  "수집기는 각 영화관의 원본 데이터 특성을 가능한 한 보존한다.",
+  "비교 모델은 필요한 최소 공통 필드 중심으로 맞춘다.",
+  "인증 정보, 토큰, 쿠키, API 키는 코드에 하드코딩하지 않는다.",
+  "외부 입력과 HTML 렌더링은 경계에서 검증하고 이스케이프한다.",
+  "검증은 로컬 명령과 코드 리뷰를 기본값으로 둔다."
+]
+
+[paths]
+shared_assets = ["collectors/**", "docs/**", "scripts/**"]
+do_not_touch = ["dist/**", "generated/**", "vendor/**", ".git/**"]
+secret_files = [".env"]
+secret_examples = [".env.example"]
+
+[editing_rules]
+edit_in = ["collectors/**", "docs/**", "scripts/**", "README.md", "WORKSPACE_CONTEXT.toml", "STATE.md", "ERROR_LOG.md"]
+do_not_edit = ["dist/**", "generated/**", "vendor/**", ".git/**"]
+prefer_ascii = false
+comments_language = "Korean unless the surrounding file convention strongly suggests otherwise."
+preserve_user_changes = true
+
+[triggers]
+hard = [
+  "새 프레임워크나 큰 외부 라이브러리를 도입하는 변경",
+  "수집 데이터 모델이나 극장별 원본 속성 보존 정책을 바꾸는 변경",
+  "사용자용 기능과 관리자용 기능의 경계를 바꾸는 변경",
+  "PowerShell 기반 실행 흐름을 바꾸는 변경",
+  "인증, 권한, 세션, 비밀값, 외부 요청, HTML 렌더링을 건드리는 변경"
+]
+
+[approval]
+zones = [
+  "기술 스택 변경",
+  "배포 또는 외부 서비스 연결",
+  "비밀값 또는 계정 설정 변경",
+  "사용자/관리자 기능 경계 변경"
+]
+
+[workers]
+mapping = [
+  "worker_collectors = collectors/**",
+  "worker_shared = docs/** scripts/**",
+  "worker_state = STATE.md MULTI_AGENT_LOG.md ERROR_LOG.md"
+]
+default_topology = "single-session"
+parallel_policy = "계약이 고정되고 write set이 분리될 때만 delegated-parallel을 사용한다."
+
+[reviewer]
+focus = [
+  "수집기 우선순위와 데이터 보존 정책 유지",
+  "존재하지 않는 외부 작업 문서 참조 재유입 방지",
+  "비밀값 하드코딩 방지",
+  "검증 누락 여부",
+  "사용자용/관리자용 책임 분리 유지"
+]

@@ -74,6 +74,35 @@ class RecommendationServiceQualityTests {
     }
 
     @Test
+    void preciseAiUnderSelectionIsFilledFromHighestScoredRemainingMovies() {
+        RecommendationService service = service();
+        ShowtimeCandidate first = candidate(1L, 10L, "First A");
+        ShowtimeCandidate second = candidate(2L, 11L, "Second");
+        ShowtimeCandidate third = candidate(3L, 12L, "Third");
+        List<ShowtimeCandidate> candidates = List.of(first, second, third);
+        List<ScoredCandidate> scored = List.of(
+            scored(first, 94),
+            scored(second, 90),
+            scored(third, 88)
+        );
+        when(showtimeRepository.findUpcomingCandidates(anyInt(), any(LocalDateTime.class))).thenReturn(candidates);
+        when(showtimeRepository.countStoredShowtimes()).thenReturn(3);
+        when(scorer.score(any(TagProfile.class), anyList(), any())).thenReturn(scored);
+        when(codexClient.rankAndExplain(eq(RecommendationMode.PRECISE), any(TagProfile.class), anyList()))
+            .thenReturn(Optional.of(new AiResult(
+                "{\"r\":[{\"id\":1}]}",
+                "codex-test",
+                List.of(new AiPick(1L, "first", "ok", "time"))
+            )));
+
+        RecommendationResponse response = service.recommend(request("precise"));
+
+        assertThat(response.status()).isEqualTo("ok");
+        assertThat(response.recommendations()).hasSize(3);
+        assertThat(response.recommendations()).extracting("movieId").containsExactly(10L, 11L, 12L);
+    }
+
+    @Test
     void fallbackResultsPreferDistinctMoviesWhenEnoughDistinctChoicesExist() {
         RecommendationService service = service();
         ShowtimeCandidate first = candidate(1L, 10L, "First A");

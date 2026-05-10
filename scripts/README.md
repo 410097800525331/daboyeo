@@ -32,6 +32,8 @@
 
 - `deploy/deploy_oracle_portfolio.ps1`는 `.env`의 `ORACLE_HOST`, `ORACLE_USER`, `ORACLE_SSH_KEY_PATH`를 읽어 Oracle VM에 jar/env/브릿지 worker를 반영한다.
 - 서버로 올리는 env에서는 `ORACLE_*` 키를 자동 제외하고, 출력에는 토큰이나 비밀번호 값을 찍지 않는다.
+- 배포 env에는 상영 정보 1시간 갱신을 명시한다. `DABOYEO_SYNC_PYTHON=python3`, `DABOYEO_SHOWTIME_SYNC_ENABLED=true`, `DABOYEO_SHOWTIME_SYNC_CRON="0 0 * * * *"`, `DABOYEO_SHOWTIME_STARTUP_ENABLED=false`를 서버용 env에 반영한다.
+- Spring의 hourly sync가 Python 수집기를 import할 수 있도록 `collectors/`, `scripts/ingest/`, `requirements.txt`도 함께 배포한다.
 - remote install은 systemd `User=` 또는 `/opt/daboyeo` 소유자를 감지해서 적용한다.
 - 먼저 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy/deploy_oracle_portfolio.ps1 -DryRun`으로 계획만 확인한다.
 - 실제 반영은 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy/deploy_oracle_portfolio.ps1`로 실행한다.

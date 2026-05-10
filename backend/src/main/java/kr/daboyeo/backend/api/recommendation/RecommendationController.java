@@ -1,5 +1,6 @@
 package kr.daboyeo.backend.api.recommendation;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.AiProviderStatus;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.FeedbackRequest;
@@ -9,6 +10,7 @@ import kr.daboyeo.backend.domain.recommendation.RecommendationModels.Recommendat
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.RecommendationResponse;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.SessionRequest;
 import kr.daboyeo.backend.domain.recommendation.RecommendationModels.SessionResponse;
+import kr.daboyeo.backend.security.PublicApiRateLimiter;
 import kr.daboyeo.backend.service.recommendation.RecommendationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,19 +28,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class RecommendationController {
 
     private final RecommendationService recommendationService;
+    private final PublicApiRateLimiter rateLimiter;
 
-    public RecommendationController(RecommendationService recommendationService) {
+    public RecommendationController(RecommendationService recommendationService, PublicApiRateLimiter rateLimiter) {
         this.recommendationService = recommendationService;
+        this.rateLimiter = rateLimiter;
     }
 
     @PostMapping("/recommendation/sessions")
-    public SessionResponse createSession(@RequestBody(required = false) SessionRequest request) {
+    public SessionResponse createSession(
+        @RequestBody(required = false) SessionRequest request,
+        HttpServletRequest httpRequest
+    ) {
+        rateLimiter.requireSessionAllowed(httpRequest, request == null ? null : request.anonymousId());
         return recommendationService.ensureSession(request == null ? null : request.anonymousId());
     }
 
     @DeleteMapping("/recommendation/sessions/{anonymousId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteSession(@PathVariable String anonymousId) {
+    public void deleteSession(@PathVariable String anonymousId, HttpServletRequest httpRequest) {
+        rateLimiter.requireSessionAllowed(httpRequest, anonymousId);
         recommendationService.resetSession(anonymousId);
     }
 
@@ -56,12 +65,18 @@ public class RecommendationController {
     }
 
     @PostMapping("/recommendations")
-    public RecommendationResponse recommend(@RequestBody RecommendationRequest request) {
+    public RecommendationResponse recommend(@RequestBody RecommendationRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.requireRecommendationAllowed(httpRequest, request == null ? null : request.anonymousId());
         return recommendationService.recommend(request);
     }
 
     @PostMapping("/recommendations/{runId}/feedback")
-    public FeedbackResponse feedback(@PathVariable String runId, @RequestBody FeedbackRequest request) {
+    public FeedbackResponse feedback(
+        @PathVariable String runId,
+        @RequestBody FeedbackRequest request,
+        HttpServletRequest httpRequest
+    ) {
+        rateLimiter.requireFeedbackAllowed(httpRequest, request == null ? null : request.anonymousId());
         return recommendationService.feedback(runId, request);
     }
 }

@@ -12,7 +12,7 @@ class PortfolioAccessGateTests {
 
     @Test
     void collectionAccessIsBlockedByDefault() {
-        PortfolioAccessGate gate = new PortfolioAccessGate(new PortfolioSecurityProperties("", false, false, false));
+        PortfolioAccessGate gate = new PortfolioAccessGate(securityProperties("", false, false, false));
 
         assertThatThrownBy(() -> gate.requireCollectionAccess(null))
             .isInstanceOf(ResponseStatusException.class)
@@ -22,7 +22,7 @@ class PortfolioAccessGateTests {
 
     @Test
     void collectionAccessAllowsMatchingAdminToken() {
-        PortfolioAccessGate gate = new PortfolioAccessGate(new PortfolioSecurityProperties("secret-token", false, false, false));
+        PortfolioAccessGate gate = new PortfolioAccessGate(securityProperties("secret-token", false, false, false));
 
         assertThatCode(() -> gate.requireCollectionAccess("secret-token")).doesNotThrowAnyException();
         assertThatThrownBy(() -> gate.requireCollectionAccess("wrong"))
@@ -31,11 +31,28 @@ class PortfolioAccessGateTests {
 
     @Test
     void publicFlagsAllowOnlyTheirOwnSurfaces() {
-        PortfolioAccessGate gate = new PortfolioAccessGate(new PortfolioSecurityProperties("", true, false, false));
+        PortfolioAccessGate gate = new PortfolioAccessGate(securityProperties("", true, false, false));
 
         assertThatCode(() -> gate.requireCollectionAccess(null)).doesNotThrowAnyException();
         assertThatThrownBy(() -> gate.requireSeatLayoutAccess(null))
             .isInstanceOf(ResponseStatusException.class);
         assertThat(gate.publicNearbyRefreshEnabled()).isFalse();
+    }
+
+    private static PortfolioSecurityProperties securityProperties(
+        String adminToken,
+        boolean publicCollectionEnabled,
+        boolean publicNearbyRefreshEnabled,
+        boolean publicSeatLayoutEnabled
+    ) {
+        return new PortfolioSecurityProperties(
+            adminToken,
+            publicCollectionEnabled,
+            publicNearbyRefreshEnabled,
+            publicSeatLayoutEnabled,
+            null,
+            null,
+            null
+        );
     }
 }

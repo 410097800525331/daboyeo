@@ -53,7 +53,7 @@ Existing contract
 Suggested orchestration
 - `score_total`: medium
 - `selected_rules`: `exploration_required`, `contract_freeze_required`
-- `selected_skills`: `ouroboros-interview`
+- `selected_skills`: `none`
 - `execution_topology`: `single-session`
 
 Watch-outs

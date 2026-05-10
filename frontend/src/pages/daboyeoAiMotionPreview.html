@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DABOYEO AI 모션 로딩 프리뷰</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="45x45" href="../../favicon.png">
+  <link rel="stylesheet" href="../css/daboyeoAiMotionPreview.css?v=20260510-responsive-final">
+</head>
+<body class="motion-preview-page">
+  <div class="ai-shell">
+    <header class="ai-topbar" aria-label="AI 모션 로딩 프리뷰">
+      <div class="ai-topbar-left">
+        <a class="ai-back-button" href="./daboyeoAi.html">이전</a>
+        <a class="ai-brand" href="../../index.html" aria-label="DABOYEO 홈으로 이동">DABOYEO</a>
+      </div>
+      <div class="ai-progress">분석 중</div>
+    </header>
+
+    <main class="motion-stage" aria-live="polite">
+      <section class="motion-loading-card" aria-label="AI 분석 로딩 모션 프리뷰">
+        <div class="motion-copy">
+          <p class="motion-kicker">DABOYEO AI</p>
+          <h1>정밀 추천 분석 중</h1>
+          <p id="motionSceneCopy">포스터와 장르 선택값을 작은 취향 입자로 분해해서 후보를 좁히는 중이야.</p>
+        </div>
+
+        <div class="motion-viewport" aria-hidden="true">
+          <div class="poster-cluster">
+            <article class="preview-poster poster-a">
+              <span class="poster-art"></span>
+              <strong>poster</strong>
+            </article>
+            <article class="preview-poster poster-b">
+              <span class="poster-art"></span>
+              <strong>mood</strong>
+            </article>
+            <article class="preview-poster poster-c">
+              <span class="poster-art"></span>
+              <strong>genre</strong>
+            </article>
+          </div>
+
+          <div class="particle-field" id="particleField"></div>
+
+          <div class="taste-core">
+            <span class="core-ring ring-one"></span>
+            <span class="core-ring ring-two"></span>
+            <span class="core-ring ring-three"></span>
+            <span class="core-dot"></span>
+            <span class="core-label">taste vector</span>
+          </div>
+
+          <div class="signal-ribbons">
+            <span class="ribbon ribbon-one"></span>
+            <span class="ribbon ribbon-two"></span>
+            <span class="ribbon ribbon-three"></span>
+          </div>
+
+          <div class="candidate-stream" id="candidateStream"></div>
+
+          <div class="result-assembly">
+            <article class="result-shell result-one">
+              <span class="result-rank">1</span>
+              <span class="result-poster"></span>
+              <span class="result-line line-main"></span>
+              <span class="result-line line-sub"></span>
+              <span class="result-score"></span>
+            </article>
+            <article class="result-shell result-two">
+              <span class="result-rank">2</span>
+              <span class="result-poster"></span>
+              <span class="result-line line-main"></span>
+              <span class="result-line line-sub"></span>
+              <span class="result-score"></span>
+            </article>
+            <article class="result-shell result-three">
+              <span class="result-rank">3</span>
+              <span class="result-poster"></span>
+              <span class="result-line line-main"></span>
+              <span class="result-line line-sub"></span>
+              <span class="result-score"></span>
+            </article>
+          </div>
+        </div>
+
+        <div class="motion-status">
+          <div class="status-row">
+            <span id="motionSceneName">포스터 신호 추출</span>
+            <strong>예상 흐름</strong>
+          </div>
+          <div class="status-track">
+            <span class="status-sweep" id="motionStatusSweep"></span>
+          </div>
+          <div class="status-steps" aria-label="프리뷰 단계">
+            <span class="is-active">포스터</span>
+            <span>입자화</span>
+            <span>후보 제거</span>
+            <span>카드 조립</span>
+          </div>
+        </div>
+
+        <p class="motion-note">선택한 취향을 기준으로 추천 후보를 정리하고 있어.</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/pages/daboyeoAiMotionPreview.js?v=20260510-responsive-final"></script>
+</body>
+</html>
