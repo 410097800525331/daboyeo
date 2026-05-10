@@ -988,3 +988,11 @@ Do not rewrite existing entries; append only.
 - summary: `PowerShell execution policy blocked direct .ps1 execution.`
 - details: `Running .\scripts\deploy\deploy_oracle_portfolio.ps1 directly returned PSSecurityException because scripts are disabled for this shell. The same dry-run was rerun with powershell -NoProfile -ExecutionPolicy Bypass -File; it passed, confirmed provider=codex, bridge token/server present, sanitized env generation, collector runtime paths, and hourly showtime sync enforcement. No secret values were printed.`
 - status: `resolved`
+
+# 2026-05-11 02:55 +09:00
+
+- time: `2026-05-11 02:55 +09:00`
+- location: `origin/main push`
+- summary: `Direct push to main was rejected by GitHub repository rules.`
+- details: `git push origin main was rejected with GH013 because changes must be made through a pull request. The local main merge commit remains intact; the handoff path is to push the same HEAD to a codex/* branch and open a PR into main.`
+- status: `resolved-with-pr-path`
