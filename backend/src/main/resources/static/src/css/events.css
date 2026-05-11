@@ -278,15 +278,65 @@
     background: var(--skeleton-bg);
 }
 
+#main-event-grid .card-image-wrapper {
+    aspect-ratio: 180 / 83;
+}
+
 .card-image-wrapper img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     transition: transform 0.6s ease;
 }
 
 .event-card:hover .card-image-wrapper img {
-    transform: scale(1.1);
+    transform: scale(1.02);
+}
+
+.card-image-wrapper.is-image-missing {
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    background:
+        linear-gradient(135deg, rgba(114, 100, 233, 0.2), rgba(255, 68, 68, 0.14)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.34));
+}
+
+.event-image-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 22px 24px;
+    color: var(--white0);
+    font-weight: 800;
+    line-height: 1.35;
+    background:
+        radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.16), transparent 24%),
+        linear-gradient(135deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.5));
+}
+
+.event-image-fallback::before {
+    content: "LOTTE";
+    width: max-content;
+    padding: 4px 9px;
+    border-radius: 6px;
+    background: rgba(255, 68, 68, 0.92);
+    color: var(--white0);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+}
+
+.event-image-fallback span {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-size: clamp(0.95rem, 1.4vw, 1.25rem);
 }
 
 .card-overlay {

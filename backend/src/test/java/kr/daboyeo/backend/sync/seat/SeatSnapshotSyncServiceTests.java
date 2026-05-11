@@ -31,23 +31,23 @@ class SeatSnapshotSyncServiceTests {
             List.of(
                 new SeatSnapshotTarget(
                     1L,
-                    CollectorProvider.CGV,
-                    "CGV:0013:2026-04-24:02:3:20042000",
+                    CollectorProvider.LOTTE_CINEMA,
+                    "LOTTE_CINEMA:1003:2026-04-24:02:3:20042000",
                     LocalDateTime.now().plusHours(1),
                     100,
                     35,
                     Map.of(
-                        "site_no", "0013",
-                        "scn_ymd", "20260424",
-                        "scns_no", "02",
-                        "scn_sseq", "3"
+                        "cinema_id", "1003",
+                        "play_date", "2026-04-24",
+                        "screen_id", "02",
+                        "play_sequence", "3"
                     )
                 )
             )
         );
 
         PythonCollectorBridge bridge = mock(PythonCollectorBridge.class);
-        when(bridge.collectSeatSnapshot(any())).thenReturn(new SeatCollectionResult(Map.of("seat_count", 100), List.of(Map.of("seat_label", "A1", "seat_sale_yn", "Y"))));
+        when(bridge.collectSeatSnapshot(any())).thenReturn(new SeatCollectionResult(Map.of("seat_count", 100), List.of(Map.of("seat_label", "A1", "seat_status_code", "OK"))));
 
         SeatSnapshotPersistenceService persistenceService = mock(SeatSnapshotPersistenceService.class);
 

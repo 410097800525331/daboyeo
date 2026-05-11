@@ -1,7 +1,6 @@
 package kr.daboyeo.backend.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -42,13 +41,13 @@ class LiveMovieSearchCriteriaTests {
     }
 
     @Test
-    void rejectsReversedTimeRange() {
-        assertThatThrownBy(() -> LiveMovieSearchCriteria.of(
+    void allowsCrossMidnightTimeRange() {
+        LiveMovieSearchCriteria criteria = LiveMovieSearchCriteria.of(
             BigDecimal.valueOf(37.5d),
             BigDecimal.valueOf(127.0d),
             LocalDate.of(2026, 4, 21),
             LocalTime.of(21, 0),
-            LocalTime.of(18, 0),
+            LocalTime.of(2, 0),
             BigDecimal.valueOf(8),
             List.of(),
             List.of(),
@@ -57,7 +56,11 @@ class LiveMovieSearchCriteriaTests {
             "",
             100,
             fixedClock
-        )).isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("timeStart");
+        );
+
+        assertThat(criteria.crossesMidnight()).isTrue();
+        assertThat(criteria.matchesTime(LocalTime.of(22, 0))).isTrue();
+        assertThat(criteria.matchesTime(LocalTime.of(2, 0))).isTrue();
+        assertThat(criteria.matchesTime(LocalTime.of(12, 0))).isFalse();
     }
 }

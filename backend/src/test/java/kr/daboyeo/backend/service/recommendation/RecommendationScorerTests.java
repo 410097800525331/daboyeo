@@ -243,7 +243,7 @@ class RecommendationScorerTests {
             1L,
             10L,
             title,
-            "CGV",
+            "LOTTE",
             "movie-1",
             "Test Theater",
             "Seoul",

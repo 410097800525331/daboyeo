@@ -172,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderPlaces();
     }, {
       location: position,
-      radius: 5000,
+      radius: 8000,
       sort: kakao.maps.services.SortBy.DISTANCE,
     });
   }

@@ -36,10 +36,6 @@ public class PythonCollectorBridge {
     public Map<String, Object> collectShowtimeBundle(ShowtimeCollectionRequest request) {
         String script = buildShowtimeScript(request.provider());
         Map<String, String> env = switch (request.provider()) {
-            case CGV -> Map.of(
-                "SITE_NO", request.siteNo(),
-                "PLAY_DATE", request.playDate().toString().replace("-", "")
-            );
             case LOTTE_CINEMA -> Map.of(
                 "PLAY_DATE", request.playDate().toString(),
                 "CINEMA_SELECTOR", request.cinemaSelector(),
@@ -83,6 +79,13 @@ public class PythonCollectorBridge {
         return new ProviderDiscoveryPayload(listOfMaps(payload.get("targets")));
     }
 
+    public Map<String, Object> collectLotteNearbyBundle(java.time.LocalDate playDate, String cinemaSelector) {
+        Map<String, String> env = new LinkedHashMap<>();
+        env.put("PLAY_DATE", playDate.toString());
+        env.put("CINEMA_SELECTOR", cinemaSelector);
+        return executeJsonScript(buildNearbyLotteTheaterBundleScript(), env);
+    }
+
     public ProviderDiscoveryPayload collectMegaboxNearbyDiscovery(java.time.LocalDate playDate, String areaCode) {
         Map<String, String> env = new LinkedHashMap<>();
         env.put("PLAY_DATE", playDate.toString().replace("-", ""));
@@ -106,24 +109,6 @@ public class PythonCollectorBridge {
             castMap(payload.get("summary")),
             listOfMaps(payload.get("seats"))
         );
-    }
-
-    public Map<String, Object> collectCgvSeatLayout(
-        String siteNo,
-        String screeningDate,
-        String screenNo,
-        String screenSequence,
-        String seatAreaNo
-    ) {
-        Map<String, String> env = new LinkedHashMap<>();
-        env.put("SITE_NO", siteNo);
-        env.put("SCN_YMD", screeningDate);
-        env.put("SCNS_NO", screenNo);
-        env.put("SCN_SSEQ", screenSequence);
-        if (seatAreaNo != null && !seatAreaNo.isBlank()) {
-            env.put("SEAT_AREA_NO", seatAreaNo);
-        }
-        return executeJsonScript(buildCgvSeatLayoutScript(), env);
     }
 
     private Map<String, Object> executeJsonScript(String script, Map<String, String> env) {
@@ -189,12 +174,6 @@ public class PythonCollectorBridge {
 
     private static String buildShowtimeScript(CollectorProvider provider) {
         return switch (provider) {
-            case CGV -> """
-                import json, os
-                from pathlib import Path
-                bundle = {'movies': [], 'theaters': [], 'showtimes': []}
-                Path(os.environ['OUTPUT_JSON_PATH']).write_text(json.dumps(bundle, ensure_ascii=False), encoding='utf-8')
-                """;
             case LOTTE_CINEMA -> """
                 import json, os
                 from pathlib import Path
@@ -361,14 +340,6 @@ public class PythonCollectorBridge {
                     encoding='utf-8'
                 )
                 """;
-            case CGV -> """
-                import json, os
-                from pathlib import Path
-                Path(os.environ['OUTPUT_JSON_PATH']).write_text(
-                    json.dumps({'targets': []}, ensure_ascii=False),
-                    encoding='utf-8'
-                )
-                """;
         };
     }
 
@@ -411,6 +382,70 @@ public class PythonCollectorBridge {
             """;
     }
 
+    private static String buildNearbyLotteTheaterBundleScript() {
+        return """
+            import json, os
+            from pathlib import Path
+            from collectors.lotte.collector import LotteCinemaCollector
+
+            collector = LotteCinemaCollector()
+            play_date = os.environ['PLAY_DATE']
+            requested_selector = os.environ['CINEMA_SELECTOR']
+            cinema_id = requested_selector.split('|')[-1] if '|' in requested_selector else requested_selector
+
+            cinemas = [
+                cinema for cinema in collector.build_cinema_records()
+                if str(cinema.get('cinema_id') or '').strip() == cinema_id
+            ]
+            preferred_cinema = next(
+                (
+                    cinema for cinema in cinemas
+                    if str(cinema.get('division_code') or '').strip() == '1'
+                ),
+                cinemas[0] if cinemas else None
+            )
+            cinema_selector = collector.build_cinema_selector((preferred_cinema or {}).get('raw') or {}) or requested_selector
+
+            schedules = collector.build_theater_schedule_records(
+                play_date=play_date,
+                cinema_selector=cinema_selector,
+            )
+            matched_movie_ids = {
+                str(schedule.get('movie_no') or '').strip()
+                for schedule in schedules
+                if str(schedule.get('movie_no') or '').strip()
+            }
+            movies = [
+                movie for movie in collector.build_movie_records()
+                if str(movie.get('movie_no') or '').strip() in matched_movie_ids
+            ]
+            play_dates = [
+                play_day for play_day in collector.build_play_date_records()
+                if str(play_day.get('play_date') or '').strip() == play_date
+            ]
+
+            bundle = {
+                'play_date': play_date,
+                'movie_count': len(movies),
+                'cinema_count': len(cinemas),
+                'play_date_count': len(play_dates),
+                'schedule_count': len(schedules),
+                'seat_count': 0,
+                'movies': movies,
+                'cinemas': cinemas,
+                'play_dates': play_dates,
+                'schedules': schedules,
+                'seat_records': [],
+                'seat_summary': None,
+                'diagnostics': {
+                    'requested_cinema_selector': requested_selector,
+                    'resolved_cinema_selector': cinema_selector,
+                },
+            }
+            Path(os.environ['OUTPUT_JSON_PATH']).write_text(json.dumps(bundle, ensure_ascii=False), encoding='utf-8')
+            """;
+    }
+
     private static String buildNearbyMegaboxDiscoveryScript() {
         return """
             import json, os
@@ -445,14 +480,6 @@ public class PythonCollectorBridge {
 
     private static String buildSeatScript(CollectorProvider provider) {
         return switch (provider) {
-            case CGV -> """
-                import json, os
-                from pathlib import Path
-                Path(os.environ['OUTPUT_JSON_PATH']).write_text(
-                    json.dumps({'summary': {}, 'seats': []}, ensure_ascii=False),
-                    encoding='utf-8'
-                )
-                """;
             case LOTTE_CINEMA -> """
                 import json, os
                 from pathlib import Path
@@ -500,22 +527,6 @@ public class PythonCollectorBridge {
                 )
                 """;
         };
-    }
-
-    private static String buildCgvSeatLayoutScript() {
-        return """
-            import json, os
-            from pathlib import Path
-            from collectors.cgv.collector import CgvCollector
-            layout = CgvCollector().build_seat_layout(
-                site_no=os.environ['SITE_NO'],
-                scn_ymd=os.environ['SCN_YMD'],
-                scns_no=os.environ['SCNS_NO'],
-                scn_sseq=os.environ['SCN_SSEQ'],
-                seat_area_no=os.environ.get('SEAT_AREA_NO', ''),
-            )
-            Path(os.environ['OUTPUT_JSON_PATH']).write_text(json.dumps(layout, ensure_ascii=False), encoding='utf-8')
-            """;
     }
 
     @SuppressWarnings("unchecked")

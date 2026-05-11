@@ -430,7 +430,7 @@
 /* 영화 카드 전용 스타일 (kakaoMap.css에서 이관됨) */
 .movie-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4개 배치로 가독성 및 공간 최적화 */
+  grid-template-columns: repeat(4, 1fr) !important; /* 4개 배치로 가독성 및 공간 최적화 */
   gap: 30px;
   padding: 10px 0;
   width: 100% !important;

@@ -97,8 +97,10 @@ function New-SanitizedDeployEnv {
     "DABOYEO_SHOWTIME_SYNC_CRON" = '"' + $HourlyCron + '"'
     "DABOYEO_SHOWTIME_STARTUP_ENABLED" = "false"
     "DABOYEO_PUBLIC_COLLECTION_ENABLED" = "false"
-    "DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED" = "false"
+    "DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED" = "true"
     "DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED" = "false"
+    "DABOYEO_NEARBY_REFRESH_RATE_LIMIT_PER_MINUTE" = "20"
+    "DABOYEO_SHOWTIME_NEARBY_REFRESH_RADIUS_KM" = "8"
   }
   $writtenForced = @{}
   $lines = New-Object System.Collections.Generic.List[string]
@@ -239,7 +241,7 @@ $collectorArchivePath = Join-Path ".local" "daboyeo.collector-runtime.tar.gz"
 
 try {
   New-SanitizedDeployEnv -SourcePath $EnvPath -OutputPath $deployEnvPath -HourlyCron $ShowtimeSyncCron
-  Write-Step "sanitized env prepared: ORACLE_* keys excluded; hourly showtime sync enforced"
+  Write-Step "sanitized env prepared: ORACLE_* keys excluded; hourly showtime sync and bounded public nearby refresh enforced"
   if (-not $SkipCollectorRuntimeUpload) {
     Assert-CollectorRuntimePaths
     Write-Step "collector runtime paths verified"
@@ -297,6 +299,7 @@ printf 'remote_owner=%s\n' "`$owner"
 printf 'service_status=%s\n' "`$status"
 "@
 
+  $remoteInstall = $remoteInstall -replace "`r`n", "`n"
   Invoke-Checked -Label "install and restart remote service" -Command { & ssh @sshArgs $remoteInstall }
 
   if (-not $SkipHealthCheck) {

@@ -75,7 +75,7 @@ class LiveMovieServiceDemoFallbackTests {
     void schedulesReturnUnavailableWarningInsteadOfDemoDataWhenDatabaseLookupFails() {
         LiveMovieRepository repository = mock(LiveMovieRepository.class);
         LiveMovieSearchCriteria criteria = sampleCriteria(List.of(), List.of(), List.of(), SeatState.ALL, "");
-        when(repository.findMovieSchedules("CGV:demo_dune", criteria)).thenThrow(new DataAccessResourceFailureException("db down"));
+        when(repository.findMovieSchedules("LOTTE_CINEMA:demo_victory", criteria)).thenThrow(new DataAccessResourceFailureException("db down"));
         LiveMovieService service = new LiveMovieService(
             repository,
             new SeatStateCalculator(),
@@ -86,7 +86,7 @@ class LiveMovieServiceDemoFallbackTests {
             FIXED_CLOCK
         );
 
-        LiveMovieService.MovieSchedulesResponse response = service.findMovieSchedules("CGV:demo_dune", criteria);
+        LiveMovieService.MovieSchedulesResponse response = service.findMovieSchedules("LOTTE_CINEMA:demo_victory", criteria);
 
         assertThat(response.search().databaseAvailable()).isFalse();
         assertThat(response.search().warning()).isEqualTo("database lookup failed.");

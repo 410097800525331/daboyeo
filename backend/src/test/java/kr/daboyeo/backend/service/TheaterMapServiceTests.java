@@ -29,9 +29,9 @@ class TheaterMapServiceTests {
             repository,
             List.of(
                 new TheaterMapService.TheaterMapReference(
-                    "CGV",
-                    "0056",
-                    "CGV Gangnam",
+                    "MEGABOX",
+                    "1372",
+                    "MEGABOX Gangnam",
                     new BigDecimal("37.5016573944824"),
                     new BigDecimal("127.026391177132"),
                     "Seoul"
@@ -42,7 +42,7 @@ class TheaterMapServiceTests {
         assertThat(service.findAllSyncSources())
             .extracting(TheaterMapService.TheaterSyncSource::providerCode, TheaterMapService.TheaterSyncSource::externalTheaterId)
             .contains(
-                org.assertj.core.groups.Tuple.tuple("CGV", "0056"),
+                org.assertj.core.groups.Tuple.tuple("MEGABOX", "1372"),
                 org.assertj.core.groups.Tuple.tuple("LOTTE_CINEMA", "1003")
             );
     }
@@ -52,9 +52,9 @@ class TheaterMapServiceTests {
         TheaterMapRepository repository = mock(TheaterMapRepository.class);
         when(repository.findAllWithCoordinates()).thenReturn(List.of(
             new TheaterMapRepository.TheaterMapRow(
-                "CGV",
-                "0056",
-                "CGV Gangnam DB",
+                "MEGABOX",
+                "1372",
+                "MEGABOX Gangnam DB",
                 new BigDecimal("37.6000"),
                 new BigDecimal("127.1000"),
                 "DB Address"
@@ -65,9 +65,9 @@ class TheaterMapServiceTests {
             repository,
             List.of(
                 new TheaterMapService.TheaterMapReference(
-                    "CGV",
-                    "0056",
-                    "CGV Gangnam Fallback",
+                    "MEGABOX",
+                    "1372",
+                    "MEGABOX Gangnam Fallback",
                     new BigDecimal("37.5016573944824"),
                     new BigDecimal("127.026391177132"),
                     "Fallback Address"
@@ -78,9 +78,9 @@ class TheaterMapServiceTests {
         assertThat(service.findAllSyncSources())
             .singleElement()
             .satisfies(item -> {
-                assertThat(item.providerCode()).isEqualTo("CGV");
-                assertThat(item.externalTheaterId()).isEqualTo("0056");
-                assertThat(item.name()).isEqualTo("CGV Gangnam DB");
+                assertThat(item.providerCode()).isEqualTo("MEGABOX");
+                assertThat(item.externalTheaterId()).isEqualTo("1372");
+                assertThat(item.name()).isEqualTo("MEGABOX Gangnam DB");
                 assertThat(item.latitude()).isEqualByComparingTo("37.6000");
                 assertThat(item.longitude()).isEqualByComparingTo("127.1000");
             });

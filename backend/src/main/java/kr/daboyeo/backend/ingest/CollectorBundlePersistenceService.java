@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.springframework.stereotype.Service;
@@ -18,14 +19,22 @@ public class CollectorBundlePersistenceService {
 
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
+    private final TheaterLocationEnricher theaterLocationEnricher;
 
-    public CollectorBundlePersistenceService(DataSource dataSource, ObjectMapper objectMapper) {
+    public CollectorBundlePersistenceService(
+        DataSource dataSource,
+        ObjectMapper objectMapper,
+        TheaterLocationEnricher theaterLocationEnricher
+    ) {
         this.dataSource = dataSource;
         this.objectMapper = objectMapper;
+        this.theaterLocationEnricher = theaterLocationEnricher;
     }
 
     public CollectorBundleIngestCommand.IngestResult persist(String providerCode, Map<String, Object> bundle, boolean dryRun) {
-        CollectorBundleIngestCommand.NormalizedBundle normalizedBundle = CollectorBundleIngestCommand.normalizeBundle(providerCode, bundle);
+        CollectorBundleIngestCommand.NormalizedBundle normalizedBundle = theaterLocationEnricher.enrich(
+            CollectorBundleIngestCommand.normalizeBundle(providerCode, bundle)
+        );
         CollectorBundleIngestCommand.IngestResult result = new CollectorBundleIngestCommand.IngestResult(
             normalizedBundle.movies().size(),
             normalizedBundle.theaters().size(),
@@ -45,6 +54,7 @@ public class CollectorBundlePersistenceService {
                 upsertTheaters(connection, normalizedBundle);
                 upsertScreens(connection, normalizedBundle);
                 upsertShowtimes(connection, normalizedBundle);
+                repairShowtimeLinks(connection, providerCode);
                 connection.commit();
                 return result;
             } catch (Exception exception) {
@@ -123,9 +133,9 @@ public class CollectorBundlePersistenceService {
               name = VALUES(name),
               region_code = VALUES(region_code),
               region_name = VALUES(region_name),
-              address = VALUES(address),
-              latitude = VALUES(latitude),
-              longitude = VALUES(longitude),
+              address = COALESCE(VALUES(address), address),
+              latitude = COALESCE(VALUES(latitude), latitude),
+              longitude = COALESCE(VALUES(longitude), longitude),
               raw_json = VALUES(raw_json),
               last_collected_at = CURRENT_TIMESTAMP(3)
             """;
@@ -266,6 +276,37 @@ public class CollectorBundlePersistenceService {
         }
     }
 
+    private void repairShowtimeLinks(Connection connection, String providerCode) throws SQLException {
+        String sql = """
+            UPDATE showtimes s
+            JOIN theaters t
+              ON t.provider_code = s.provider_code
+             AND t.external_theater_id = s.external_theater_id
+            LEFT JOIN screens sc
+              ON sc.provider_code = s.provider_code
+             AND sc.external_theater_id = s.external_theater_id
+             AND sc.external_screen_id = s.external_screen_id
+            SET s.theater_id = t.id,
+                s.screen_id = COALESCE(sc.id, s.screen_id),
+                s.region_name = COALESCE(NULLIF(s.region_name, ''), t.region_name),
+                s.region_code = COALESCE(NULLIF(s.region_code, ''), t.region_code)
+            WHERE s.provider_code = ?
+              AND s.external_theater_id IS NOT NULL
+              AND (
+                s.theater_id IS NULL
+                OR (sc.id IS NOT NULL AND s.screen_id IS NULL)
+                OR s.region_name IS NULL
+                OR s.region_name = ''
+                OR s.region_code IS NULL
+                OR s.region_code = ''
+              )
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, normalizeProviderCode(providerCode));
+            statement.executeUpdate();
+        }
+    }
+
     private Long findId(Connection connection, String table, String column, String providerCode, String externalId) throws SQLException {
         if (externalId == null || externalId.isBlank()) {
             return null;
@@ -305,6 +346,14 @@ public class CollectorBundlePersistenceService {
 
     private static String blankToDefault(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private static String normalizeProviderCode(String value) {
+        return switch ((value == null ? "" : value.trim()).toUpperCase(Locale.ROOT)) {
+            case "LOTTE", "LOTTE_CINEMA" -> "LOTTE_CINEMA";
+            case "MEGA", "MEGABOX" -> "MEGABOX";
+            default -> value;
+        };
     }
 
     private static void setInteger(PreparedStatement statement, int index, Integer value) throws SQLException {

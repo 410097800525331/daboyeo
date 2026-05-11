@@ -24,7 +24,7 @@
 
 ## 포트폴리오 공개 API 가드
 
-- Oracle 배포에서는 `DABOYEO_PUBLIC_COLLECTION_ENABLED=false`, `DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED=false`, `DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED=false`를 기본으로 둔다.
+- Oracle 배포에서는 `DABOYEO_PUBLIC_COLLECTION_ENABLED=false`, `DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED=false`를 기본으로 둔다. `/api/live/nearby`는 지도 선택 지역 시연을 위해 `DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED=true`로 열되, `DABOYEO_NEARBY_REFRESH_RATE_LIMIT_PER_MINUTE`와 nearby refresh TTL/in-flight 키로 수집 트리거를 제한한다.
 - 관리자가 수동 refresh/crawl을 호출해야 할 때만 `DABOYEO_ADMIN_TOKEN`을 설정하고 `X-DABOYEO-ADMIN-TOKEN` 헤더로 호출한다.
 - `DABOYEO_FRONTEND_ORIGINS`는 배포 origin을 정확히 적는다. `http://*:5173` 같은 wildcard dev-port origin은 운영 env에 넣지 않는다.
 

@@ -1,19 +1,20 @@
 # Collectors
 
-CGV, 롯데시네마, 메가박스 원본 데이터를 수집하는 Python 영역이다.
+Lotte Cinema and Megabox raw-data collectors live here.
 
-현재 구조는 유지한다. Spring Boot 백엔드는 이 수집기를 대체하지 않고, 수집 결과를 DB/API로 다루는 쪽에 집중한다.
+Current scope is intentionally limited to the providers still used by the app.
+Spring Boot owns persistence and API serving; these Python modules only collect
+provider payloads while preserving source-specific fields as much as possible.
 
-## 책임
+## Responsibilities
 
-- 극장별 API 호출
-- 원본 응답 특성 보존
-- 공통 비교 모델로 넘길 최소 필드 추출
-- 비밀값은 환경변수로만 사용
+- Call provider APIs.
+- Preserve raw response details.
+- Extract the smallest common comparison fields.
+- Read secrets only from environment variables.
 
-## 현재 공급자
+## Providers
 
-- `cgv/`
 - `lotte/`
 - `megabox/`
 - `common/`

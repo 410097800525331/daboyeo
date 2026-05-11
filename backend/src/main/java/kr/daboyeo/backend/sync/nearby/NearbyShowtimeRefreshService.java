@@ -125,9 +125,8 @@ public class NearbyShowtimeRefreshService {
         }
 
         logger.info(
-            "Nearby refresh requested date={} cgvCandidates={} lotteCandidates={} megaboxCandidates={} radiusKm={}",
+            "Nearby refresh requested date={} lotteCandidates={} megaboxCandidates={} radiusKm={}",
             criteria.date(),
-            resolution.cgvEntries().size(),
             resolution.lotteEntries().size(),
             resolution.megaboxEntries().size(),
             criteria.radiusKm()
@@ -149,11 +148,6 @@ public class NearbyShowtimeRefreshService {
 
     private void refreshNearby(LiveMovieSearchCriteria criteria, NearbyTheaterTargetResolver.Resolution resolution) {
         try {
-            refreshCgv(criteria.date(), resolution.cgvEntries());
-        } catch (Exception exception) {
-            logger.warn("Nearby refresh failed for provider={} date={}", CollectorProvider.CGV, criteria.date(), exception);
-        }
-        try {
             refreshLotte(criteria.date(), resolution.lotteEntries());
         } catch (Exception exception) {
             logger.warn("Nearby refresh failed for provider={} date={}", CollectorProvider.LOTTE_CINEMA, criteria.date(), exception);
@@ -162,53 +156,6 @@ public class NearbyShowtimeRefreshService {
             refreshMegabox(criteria.date(), resolution.megaboxEntries());
         } catch (Exception exception) {
             logger.warn("Nearby refresh failed for provider={} date={}", CollectorProvider.MEGABOX, criteria.date(), exception);
-        }
-    }
-
-    private void refreshCgv(LocalDate showDate, List<NearbyTheaterTargetResolver.TheaterMapEntry> entries) {
-        if (entries.isEmpty()) {
-            return;
-        }
-        Map<String, LocalDateTime> latestCollectedAt = repository.findLatestShowtimeCollectedAt(
-            CollectorProvider.CGV,
-            showDate,
-            entries.stream().map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId).toList()
-        );
-        List<NearbyTheaterTargetResolver.TheaterMapEntry> staleTheaters = new ArrayList<>();
-        for (NearbyTheaterTargetResolver.TheaterMapEntry item : entries) {
-            if (!isStale(showDate, latestCollectedAt.get(item.externalTheaterId()))) {
-                logger.info("Nearby refresh skipped provider={} theater={} date={} reason=fresh", CollectorProvider.CGV, item.externalTheaterId(), showDate);
-                continue;
-            }
-            if (!acquire(inFlightKey(CollectorProvider.CGV, item.externalTheaterId(), showDate))) {
-                logger.info("Nearby refresh skipped provider={} theater={} date={} reason=in_flight", CollectorProvider.CGV, item.externalTheaterId(), showDate);
-                continue;
-            }
-            staleTheaters.add(item);
-        }
-        if (staleTheaters.isEmpty()) {
-            return;
-        }
-        try {
-            for (NearbyTheaterTargetResolver.TheaterMapEntry theater : staleTheaters) {
-                logger.info(
-                    "Nearby refresh collecting provider={} theater={} date={}",
-                    CollectorProvider.CGV,
-                    theater.externalTheaterId(),
-                    showDate
-                );
-                persistCollectedBundle(new ShowtimeCollectionRequest(
-                    CollectorProvider.CGV,
-                    showDate,
-                    theater.externalTheaterId(),
-                    null,
-                    null,
-                    null,
-                    null
-                ));
-            }
-        } finally {
-            releaseForTheaters(CollectorProvider.CGV, showDate, staleTheaters.stream().map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId).toList());
         }
     }
 
@@ -251,33 +198,24 @@ public class NearbyShowtimeRefreshService {
         try {
             for (NearbyRefreshRepository.TheaterSyncMetadata theater : staleTheaters) {
                 logger.info(
-                    "Nearby refresh discovery starting provider={} theater={} date={}",
+                    "Nearby refresh theater-first collection starting provider={} theater={} date={} selector={}",
                     CollectorProvider.LOTTE_CINEMA,
                     theater.externalTheaterId(),
-                    showDate
-                );
-                PythonCollectorBridge.ProviderDiscoveryPayload discovery = collectorBridge.collectLotteNearbyDiscovery(
                     showDate,
                     theater.cinemaSelector()
                 );
+                Map<String, Object> bundle = collectorBridge.collectLotteNearbyBundle(showDate, theater.cinemaSelector());
+                int movieCount = listOfMaps(bundle.get("movies")).size();
+                int scheduleCount = listOfMaps(bundle.get("schedules")).size();
                 logger.info(
-                    "Nearby refresh discovered provider={} theater={} date={} matchedTargets={}",
+                    "Nearby refresh theater-first collected provider={} theater={} date={} movies={} schedules={}",
                     CollectorProvider.LOTTE_CINEMA,
                     theater.externalTheaterId(),
                     showDate,
-                    discovery.targets().size()
+                    movieCount,
+                    scheduleCount
                 );
-                for (Map<String, Object> target : discovery.targets()) {
-                    persistCollectedBundle(new ShowtimeCollectionRequest(
-                        CollectorProvider.LOTTE_CINEMA,
-                        showDate,
-                        null,
-                        null,
-                        text(target.get("cinema_selector")),
-                        text(target.get("representation_movie_code")),
-                        null
-                    ));
-                }
+                persistCollectedBundle(CollectorProvider.LOTTE_CINEMA, showDate, bundle);
             }
         } finally {
             releaseForTheaters(CollectorProvider.LOTTE_CINEMA, showDate, staleTheaters.stream().map(NearbyRefreshRepository.TheaterSyncMetadata::externalTheaterId).toList());
@@ -450,6 +388,18 @@ public class NearbyShowtimeRefreshService {
         persistCollectedBundle(request, List.of(), List.of());
     }
 
+    private void persistCollectedBundle(CollectorProvider provider, LocalDate showDate, Map<String, Object> bundle) {
+        CollectorBundleIngestCommand.IngestResult result = persistenceService.persist(provider.name(), bundle, false);
+        logger.info(
+            "Nearby refresh stored provider={} date={} theaters={} screens={} showtimes={}",
+            provider,
+            showDate,
+            result.theaters(),
+            result.screens(),
+            result.showtimes()
+        );
+    }
+
     private void persistCollectedBundle(ShowtimeCollectionRequest request, Collection<String> allowedExternalTheaterIds) {
         persistCollectedBundle(request, allowedExternalTheaterIds, List.of());
     }
@@ -590,17 +540,12 @@ public class NearbyShowtimeRefreshService {
             .distinct()
             .sorted()
             .toList();
-        List<String> cgvIds = resolution.cgvEntries().stream()
-            .map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId)
-            .distinct()
-            .sorted()
-            .toList();
         List<String> megaboxIds = resolution.megaboxEntries().stream()
             .map(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId)
             .distinct()
             .sorted()
             .toList();
-        return showDate + "|CGV:" + String.join(",", cgvIds) + "|LOTTE:" + String.join(",", lotteIds) + "|MEGA:" + String.join(",", megaboxIds);
+        return showDate + "|LOTTE:" + String.join(",", lotteIds) + "|MEGA:" + String.join(",", megaboxIds);
     }
 
     private static String text(Object value) {

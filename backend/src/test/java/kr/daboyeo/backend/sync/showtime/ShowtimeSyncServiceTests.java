@@ -29,14 +29,8 @@ class ShowtimeSyncServiceTests {
         properties.setEnabled(true);
         properties.setTimezone("Asia/Seoul");
         properties.getShowtimes().setEnabled(true);
-        properties.getShowtimes().setIncludeCgv(true);
         properties.getShowtimes().setAutoDiscoveryEnabled(false);
         properties.getShowtimes().setDateOffsetDays(List.of(0, 1));
-
-        CollectorSyncProperties.CgvTarget cgvTarget = new CollectorSyncProperties.CgvTarget();
-        cgvTarget.setSiteNo("0013");
-        cgvTarget.setMovieNo("20042000");
-        properties.getShowtimes().setCgvTargets(List.of(cgvTarget));
 
         CollectorSyncProperties.LotteTarget lotteTarget = new CollectorSyncProperties.LotteTarget();
         lotteTarget.setCinemaSelector("1|101|0001");
@@ -62,36 +56,29 @@ class ShowtimeSyncServiceTests {
         service.syncDailyShowtimes();
 
         ArgumentCaptor<ShowtimeCollectionRequest> requestCaptor = ArgumentCaptor.forClass(ShowtimeCollectionRequest.class);
-        verify(bridge, times(6)).collectShowtimeBundle(requestCaptor.capture());
-        verify(persistenceService, times(6)).persist(any(), any(), eq(false));
+        verify(bridge, times(4)).collectShowtimeBundle(requestCaptor.capture());
+        verify(persistenceService, times(4)).persist(any(), any(), eq(false));
         verify(cleanupService, times(1)).cleanupForBaseDate(any());
 
         List<ShowtimeCollectionRequest> requests = new ArrayList<>(requestCaptor.getAllValues());
         assertThat(requests).extracting(ShowtimeCollectionRequest::provider)
             .containsExactlyInAnyOrder(
-                CollectorProvider.CGV,
-                CollectorProvider.CGV,
                 CollectorProvider.LOTTE_CINEMA,
                 CollectorProvider.LOTTE_CINEMA,
                 CollectorProvider.MEGABOX,
                 CollectorProvider.MEGABOX
             );
-        assertThat(requests).extracting(ShowtimeCollectionRequest::playDate).hasSize(6).allSatisfy(date -> assertThat(date).isAfterOrEqualTo(LocalDate.now().minusDays(1)));
+        assertThat(requests).extracting(ShowtimeCollectionRequest::playDate).hasSize(4).allSatisfy(date -> assertThat(date).isAfterOrEqualTo(LocalDate.now().minusDays(1)));
     }
 
     @Test
-    void dailySyncExcludesCgvByDefault() {
+    void dailySyncUsesConfiguredLotteTargets() {
         CollectorSyncProperties properties = new CollectorSyncProperties();
         properties.setEnabled(true);
         properties.setTimezone("Asia/Seoul");
         properties.getShowtimes().setEnabled(true);
         properties.getShowtimes().setAutoDiscoveryEnabled(false);
         properties.getShowtimes().setDateOffsetDays(List.of(0));
-
-        CollectorSyncProperties.CgvTarget cgvTarget = new CollectorSyncProperties.CgvTarget();
-        cgvTarget.setSiteNo("0013");
-        cgvTarget.setMovieNo("20042000");
-        properties.getShowtimes().setCgvTargets(List.of(cgvTarget));
 
         CollectorSyncProperties.LotteTarget lotteTarget = new CollectorSyncProperties.LotteTarget();
         lotteTarget.setCinemaSelector("1|101|0001");
@@ -169,7 +156,7 @@ class ShowtimeSyncServiceTests {
     }
 
     @Test
-    void entrySyncExcludesCgvAndSkipsCleanup() {
+    void entrySyncSkipsCleanup() {
         CollectorSyncProperties properties = new CollectorSyncProperties();
         properties.setEnabled(true);
         properties.setTimezone("Asia/Seoul");
@@ -177,11 +164,6 @@ class ShowtimeSyncServiceTests {
         properties.getShowtimes().setAutoDiscoveryEnabled(false);
         properties.getShowtimes().setDateOffsetDays(List.of(0, 1, 2));
         properties.getShowtimes().setEntryRefreshMaxDates(2);
-
-        CollectorSyncProperties.CgvTarget cgvTarget = new CollectorSyncProperties.CgvTarget();
-        cgvTarget.setSiteNo("0013");
-        cgvTarget.setMovieNo("20042000");
-        properties.getShowtimes().setCgvTargets(List.of(cgvTarget));
 
         CollectorSyncProperties.LotteTarget lotteTarget = new CollectorSyncProperties.LotteTarget();
         lotteTarget.setCinemaSelector("1|101|0001");

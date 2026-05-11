@@ -26,66 +26,6 @@ public class LiveMovieDemoDataService {
         return List.of(
             sample(
                 criteria,
-                "CGV:demo_dune",
-                "Dune Part Two",
-                "CGV",
-                "CGV",
-                "cgv-gangnam",
-                "CGV Gangnam",
-                "screen-1",
-                "IMAX",
-                "IMAX",
-                List.of("RECLINER"),
-                "12",
-                "18:20",
-                "21:05",
-                122,
-                92,
-                new BigDecimal("1.80"),
-                "https://demo.example/cgv/dune"
-            ),
-            sample(
-                criteria,
-                "CGV:demo_dune",
-                "Dune Part Two",
-                "CGV",
-                "CGV",
-                "cgv-gangnam",
-                "CGV Gangnam",
-                "screen-2",
-                "IMAX",
-                "IMAX",
-                List.of("RECLINER"),
-                "12",
-                "08:20",
-                "11:05",
-                220,
-                150,
-                new BigDecimal("1.80"),
-                "https://demo.example/cgv/dune"
-            ),
-            sample(
-                criteria,
-                "CGV:demo_dune",
-                "Dune Part Two",
-                "CGV",
-                "CGV",
-                "cgv-gangnam",
-                "CGV Gangnam",
-                "screen-3",
-                "IMAX",
-                "IMAX",
-                List.of("RECLINER"),
-                "12",
-                "13:20",
-                "16:05",
-                220,
-                40,
-                new BigDecimal("1.80"),
-                "https://demo.example/cgv/dune"
-            ),
-            sample(
-                criteria,
                 "MEGABOX:demo_inside_out_2",
                 "Inside Out 2",
                 "MEGA",
@@ -249,7 +189,8 @@ public class LiveMovieDemoDataService {
             "",
             distanceKm,
             bookingUrl,
-            LocalDateTime.of(criteria.date(), LocalTime.of(9, 0))
+            LocalDateTime.of(criteria.date(), LocalTime.of(9, 0)),
+            ""
         );
     }
 

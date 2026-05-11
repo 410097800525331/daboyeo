@@ -105,7 +105,6 @@ public class CollectorBundleIngestCommand {
 
     static NormalizedBundle normalizeBundle(String providerCode, Map<String, Object> bundle) {
         return switch (normalizeProviderCode(providerCode)) {
-            case "CGV" -> new CgvNormalizer().normalize(bundle);
             case "LOTTE_CINEMA" -> new LotteNormalizer().normalize(bundle);
             case "MEGABOX" -> new MegaboxNormalizer().normalize(bundle);
             default -> throw new IllegalArgumentException("Unsupported provider: " + providerCode);
@@ -446,7 +445,6 @@ public class CollectorBundleIngestCommand {
             throw new IllegalArgumentException("--provider is required.");
         }
         return switch (providerCode.trim().toUpperCase(Locale.ROOT)) {
-            case "CGV" -> "CGV";
             case "LOTTE", "LOTTE_CINEMA" -> "LOTTE_CINEMA";
             case "MEGA", "MEGABOX" -> "MEGABOX";
             default -> throw new IllegalArgumentException("Unsupported provider: " + providerCode);
@@ -576,114 +574,6 @@ public class CollectorBundleIngestCommand {
 
     private interface ProviderNormalizer {
         NormalizedBundle normalize(Map<String, Object> bundle);
-    }
-
-    private static final class CgvNormalizer implements ProviderNormalizer {
-
-        @Override
-        public NormalizedBundle normalize(Map<String, Object> bundle) {
-            List<MovieRow> movies = listOfMaps(bundle.get("movies")).stream()
-                .map(movie -> new MovieRow(
-                    "CGV",
-                    text(movie.get("movie_no")),
-                    null,
-                    text(movie.get("movie_name")),
-                    text(movie.get("movie_name_en")),
-                    firstNonBlank(movie.get("age_rating_name"), movie.get("age_rating_code")),
-                    integerOrNull(movie.get("runtime_minutes")),
-                    null,
-                    decimalOrNull(movie.get("booking_rate")),
-                    null,
-                    text(movie.get("poster_filename")),
-                    firstNonBlank(movie.get("poster_source_url"), movie.get("poster_url"), movie.get("poster_filename")),
-                    text(movie.get("poster_r2_key")),
-                    text(movie.get("poster_etag")),
-                    firstNonBlank(movie.get("poster_storage_status"), text(movie.get("poster_filename")).isBlank() ? "missing" : "source_only"),
-                    parseDateTime(text(movie.get("poster_stored_at"))),
-                    movie.get("raw")
-                ))
-                .toList();
-
-            List<TheaterRow> theaters = listOfMaps(bundle.get("sites")).stream()
-                .map(site -> new TheaterRow(
-                    "CGV",
-                    text(site.get("site_no")),
-                    text(site.get("site_name")),
-                    text(site.get("region_code")),
-                    text(site.get("region_name")),
-                    text(site.get("address")),
-                    decimalOrNull(site.get("latitude")),
-                    decimalOrNull(site.get("longitude")),
-                    site.get("raw")
-                ))
-                .toList();
-
-            Map<String, TheaterRow> theatersById = theaters.stream()
-                .collect(java.util.stream.Collectors.toMap(TheaterRow::externalTheaterId, theater -> theater, (left, right) -> left, LinkedHashMap::new));
-
-            List<Map<String, Object>> schedules = listOfMaps(bundle.get("schedules"));
-            List<ScreenRow> screens = uniqueBy(schedules, schedule -> text(schedule.get("site_no")) + "::" + text(schedule.get("screen_no"))).stream()
-                .map(schedule -> new ScreenRow(
-                    "CGV",
-                    text(schedule.get("site_no")),
-                    text(schedule.get("screen_no")),
-                    firstNonBlank(schedule.get("screen_name"), schedule.get("screen_no")),
-                    firstNonBlank(schedule.get("screen_grade_name"), schedule.get("format_name")),
-                    null,
-                    integerOrNull(schedule.get("total_seat_count")),
-                    schedule.get("raw")
-                ))
-                .toList();
-
-            List<ShowtimeRow> showtimes = schedules.stream()
-                .map(schedule -> {
-                    String siteNo = text(schedule.get("site_no"));
-                    String movieNo = text(schedule.get("movie_no"));
-                    String screenNo = text(schedule.get("screen_no"));
-                    String sequence = text(schedule.get("screen_sequence"));
-                    LocalDate showDate = parseDate(text(schedule.get("screening_date")));
-                    String startTimeRaw = text(schedule.get("start_time"));
-                    String endTimeRaw = text(schedule.get("end_time"));
-                    TimeRange timeRange = toDateTimeRange(showDate, startTimeRaw, endTimeRaw);
-                    Integer totalSeatCount = integerOrNull(schedule.get("total_seat_count"));
-                    Integer remainingSeatCount = integerOrNull(schedule.get("available_seat_count"));
-                    Integer soldSeatCount = soldSeatCount(totalSeatCount, remainingSeatCount, null);
-                    TheaterRow theater = theatersById.get(siteNo);
-
-                    return new ShowtimeRow(
-                        "CGV",
-                        !siteNo.isBlank() && !movieNo.isBlank() && !screenNo.isBlank() && !sequence.isBlank() && showDate != null,
-                        String.join(":", "CGV", siteNo, showDate == null ? "" : showDate.toString(), screenNo, sequence, movieNo),
-                        movieNo,
-                        siteNo,
-                        screenNo,
-                        firstNonBlank(schedule.get("movie_name"), movieNo),
-                        firstNonBlank(schedule.get("site_name"), theater == null ? "" : theater.name()),
-                        theater == null ? "" : theater.regionName(),
-                        theater == null ? "" : theater.regionCode(),
-                        firstNonBlank(schedule.get("screen_name"), screenNo),
-                        firstNonBlank(schedule.get("screen_grade_name"), schedule.get("format_name")),
-                        firstNonBlank(schedule.get("format_name"), schedule.get("screen_grade_name"), schedule.get("screen_name")),
-                        showDate,
-                        timeRange.startsAt(),
-                        timeRange.endsAt(),
-                        startTimeRaw,
-                        endTimeRaw,
-                        totalSeatCount,
-                        remainingSeatCount,
-                        soldSeatCount,
-                        occupancyRate(soldSeatCount, totalSeatCount),
-                        "provider",
-                        null,
-                        schedule.get("booking_key"),
-                        null,
-                        schedule.get("raw")
-                    );
-                })
-                .toList();
-
-            return new NormalizedBundle(movies, theaters, screens, showtimes);
-        }
     }
 
     private static final class LotteNormalizer implements ProviderNormalizer {

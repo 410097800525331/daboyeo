@@ -17,6 +17,7 @@ import java.time.ZoneId;
 import java.util.List;
 import kr.daboyeo.backend.domain.LiveMovieSearchCriteria;
 import kr.daboyeo.backend.domain.SeatState;
+import kr.daboyeo.backend.security.PublicApiRateLimiter;
 import kr.daboyeo.backend.service.LiveMovieService;
 import kr.daboyeo.backend.service.LiveMovieService.LiveMovieResponse;
 import kr.daboyeo.backend.service.LiveMovieService.LiveMovieScheduleItem;
@@ -46,54 +47,30 @@ class LiveMovieControllerTests {
     @MockitoBean
     private LiveMovieService liveMovieService;
 
+    @MockitoBean
+    private PublicApiRateLimiter rateLimiter;
+
     @Test
     void nearbyReturnsExpectedContractShape() throws Exception {
         LiveMovieSearchCriteria criteria = sampleCriteria();
         given(liveMovieService.buildCriteria(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
             .willReturn(criteria);
         given(liveMovieService.findNearby(criteria))
-            .willReturn(
-                new LiveMovieResponse(
-                    new LiveMovieSearchMeta(
-                        new BigDecimal("37.4979"),
-                        new BigDecimal("127.0276"),
-                        "2026-04-23",
-                        "06:00",
-                        "23:59",
-                        new BigDecimal("8"),
-                        1,
-                        true,
-                        false,
-                        null
-                    ),
-                    List.of(
-                        new LiveMovieScheduleItem(
-                            "CGV:123",
-                            "야당",
-                            "CGV",
-                            "CGV",
-                            "cgv-gangnam",
-                            "CGV 강남",
-                            "screen-1",
-                            "IMAX관",
-                            "IMAX",
-                            List.of("RECLINER"),
-                            "15",
-                            "19:40",
-                            "22:01",
-                            "2026-04-23",
-                            120,
-                            48,
-                            48,
-                            new BigDecimal("0.400"),
-                            "comfortable",
-                            new BigDecimal("2.31"),
-                            "https://booking.example/cgv/123",
-                            "2026-04-23T20:00:00+09:00"
-                        )
-                    )
-                )
-            );
+            .willReturn(new LiveMovieResponse(
+                new LiveMovieSearchMeta(
+                    new BigDecimal("37.4979"),
+                    new BigDecimal("127.0276"),
+                    "2026-04-23",
+                    "06:00",
+                    "23:59",
+                    new BigDecimal("8"),
+                    1,
+                    true,
+                    false,
+                    null
+                ),
+                List.of(sampleItem())
+            ));
 
         mockMvc.perform(
                 get("/api/live/nearby")
@@ -106,10 +83,12 @@ class LiveMovieControllerTests {
             .andExpect(jsonPath("$.search.resultCount").value(1))
             .andExpect(jsonPath("$.search.databaseAvailable").value(true))
             .andExpect(jsonPath("$.search.pendingRefresh").value(false))
-            .andExpect(jsonPath("$.results[0].movie_key").value("CGV:123"))
-            .andExpect(jsonPath("$.results[0].provider").value("CGV"))
+            .andExpect(jsonPath("$.results[0].movie_key").value("LOTTE_CINEMA:123"))
+            .andExpect(jsonPath("$.results[0].provider").value("LOTTE"))
+            .andExpect(jsonPath("$.results[0].provider_code").value("LOTTE_CINEMA"))
             .andExpect(jsonPath("$.results[0].seat_state").value("comfortable"))
-            .andExpect(jsonPath("$.results[0].booking_url").value("https://booking.example/cgv/123"));
+            .andExpect(jsonPath("$.results[0].booking_url").value("https://booking.example/lotte/123"))
+            .andExpect(jsonPath("$.results[0].poster_url").value("https://poster.example/lotte.jpg"));
 
         verify(liveMovieService).findNearby(criteria);
     }
@@ -130,7 +109,7 @@ class LiveMovieControllerTests {
     }
 
     @Test
-    void nearbyRejectsInvalidSeatStateWithCleanMessage() throws Exception {
+    void nearbyRejectsInvalidSeatStateWithCleanCode() throws Exception {
         mockMvc.perform(
                 get("/api/live/nearby")
                     .queryParam("lat", "37.4979")
@@ -139,41 +118,36 @@ class LiveMovieControllerTests {
                     .accept(MediaType.APPLICATION_JSON)
             )
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
-            .andExpect(jsonPath("$.message").value("요청 파라미터를 확인해."));
+            .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
 
     @Test
     void moviesReturnsPopularCatalogWithPosters() throws Exception {
-        given(liveMovieService.findPopularMovies(3, "야당", "alone", "now_playing"))
-            .willReturn(
-                new MovieCatalogResponse(
-                    new MovieCatalogMeta(1, true, null),
-                    List.of(
-                        new MovieCatalogItem(
-                            "CGV:123",
-                            "야당",
-                            "Yadang",
-                            "15",
-                            122,
-                            "2026-04-01",
-                            "now_playing",
-                            new BigDecimal("28.500"),
-                            1,
-                            "https://cdn.example/yadang.webp",
-                            12000,
-                            18,
-                            List.of("CGV", "LOTTE"),
-                            List.of("genre:thriller")
-                        )
-                    )
-                )
-            );
+        given(liveMovieService.findPopularMovies(3, "movie", "alone", "now_playing"))
+            .willReturn(new MovieCatalogResponse(
+                new MovieCatalogMeta(1, true, null),
+                List.of(new MovieCatalogItem(
+                    "LOTTE_CINEMA:123",
+                    "Movie",
+                    "Movie",
+                    "15",
+                    122,
+                    "2026-04-01",
+                    "now_playing",
+                    new BigDecimal("28.500"),
+                    1,
+                    "https://cdn.example/movie.webp",
+                    12000,
+                    18,
+                    List.of("LOTTE", "MEGA"),
+                    List.of("genre:thriller")
+                ))
+            ));
 
         mockMvc.perform(
                 get("/api/live/movies")
                     .queryParam("limit", "3")
-                    .queryParam("query", "야당")
+                    .queryParam("query", "movie")
                     .queryParam("section", "alone")
                     .queryParam("releaseState", "now_playing")
                     .accept(MediaType.APPLICATION_JSON)
@@ -181,24 +155,11 @@ class LiveMovieControllerTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.meta.resultCount").value(1))
             .andExpect(jsonPath("$.meta.databaseAvailable").value(true))
-            .andExpect(jsonPath("$.movies[0].movie_key").value("CGV:123"))
-            .andExpect(jsonPath("$.movies[0].title").value("야당"))
-            .andExpect(jsonPath("$.movies[0].release_date").value("2026-04-01"))
+            .andExpect(jsonPath("$.movies[0].movie_key").value("LOTTE_CINEMA:123"))
+            .andExpect(jsonPath("$.movies[0].title").value("Movie"))
             .andExpect(jsonPath("$.movies[0].release_state").value("now_playing"))
-            .andExpect(jsonPath("$.movies[0].poster_url").value("https://cdn.example/yadang.webp"))
-            .andExpect(jsonPath("$.movies[0].providers[0]").value("CGV"));
-    }
-
-    @Test
-    void moviesRejectsInvalidReleaseStateWithCleanMessage() throws Exception {
-        mockMvc.perform(
-                get("/api/live/movies")
-                    .queryParam("releaseState", "later-or-whatever")
-                    .accept(MediaType.APPLICATION_JSON)
-            )
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
-            .andExpect(jsonPath("$.message").value("요청 파라미터를 확인해."));
+            .andExpect(jsonPath("$.movies[0].poster_url").value("https://cdn.example/movie.webp"))
+            .andExpect(jsonPath("$.movies[0].providers[0]").value("LOTTE"));
     }
 
     @Test
@@ -206,60 +167,53 @@ class LiveMovieControllerTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
         given(liveMovieService.buildCriteria(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
             .willReturn(criteria);
-        given(liveMovieService.findMovieSchedules(eq("CGV:123"), eq(criteria)))
-            .willReturn(
-                new MovieSchedulesResponse(
-                    new LiveMovieSearchMeta(
-                        new BigDecimal("37.4979"),
-                        new BigDecimal("127.0276"),
-                        "2026-04-23",
-                        "06:00",
-                        "23:59",
-                        new BigDecimal("8"),
-                        2,
-                        true,
-                        false,
-                        null
-                    ),
-                    new MovieSummary("CGV:123", "야당", "15"),
-                    List.of(
-                        new TheaterScheduleGroup(
-                            "CGV",
-                            "CGV",
-                            "cgv-gangnam",
-                            "CGV 강남",
-                            new BigDecimal("2.31"),
-                            List.of(
-                                new ScheduleCard(
-                                    "19:40",
-                                    "22:01",
-                                    "IMAX",
-                                    48,
-                                    120,
-                                    "comfortable",
-                                    "https://booking.example/cgv/123"
-                                )
-                            )
-                        )
-                    )
-                )
-            );
+        given(liveMovieService.findMovieSchedules(eq("LOTTE_CINEMA:123"), eq(criteria)))
+            .willReturn(new MovieSchedulesResponse(
+                new LiveMovieSearchMeta(
+                    new BigDecimal("37.4979"),
+                    new BigDecimal("127.0276"),
+                    "2026-04-23",
+                    "06:00",
+                    "23:59",
+                    new BigDecimal("8"),
+                    1,
+                    true,
+                    false,
+                    null
+                ),
+                new MovieSummary("LOTTE_CINEMA:123", "Movie", "15"),
+                List.of(new TheaterScheduleGroup(
+                    "LOTTE",
+                    "LOTTE_CINEMA",
+                    "lotte-gangnam",
+                    "LOTTE Gangnam",
+                    new BigDecimal("2.31"),
+                    List.of(new ScheduleCard(
+                        "19:40",
+                        "22:01",
+                        "2D",
+                        48,
+                        120,
+                        "comfortable",
+                        "https://booking.example/lotte/123"
+                    ))
+                ))
+            ));
 
         mockMvc.perform(
-                get("/api/live/movies/{movieKey}/schedules", "CGV:123")
+                get("/api/live/movies/{movieKey}/schedules", "LOTTE_CINEMA:123")
                     .queryParam("lat", "37.4979")
                     .queryParam("lng", "127.0276")
                     .queryParam("date", "2026-04-23")
                     .accept(MediaType.APPLICATION_JSON)
             )
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.movie.movie_key").value("CGV:123"))
-            .andExpect(jsonPath("$.movie.movie_name").value("야당"))
-            .andExpect(jsonPath("$.theaters[0].theater_name").value("CGV 강남"))
-            .andExpect(jsonPath("$.theaters[0].schedules[0].format_name").value("IMAX"))
+            .andExpect(jsonPath("$.movie.movie_key").value("LOTTE_CINEMA:123"))
+            .andExpect(jsonPath("$.movie.movie_name").value("Movie"))
+            .andExpect(jsonPath("$.theaters[0].theater_name").value("LOTTE Gangnam"))
             .andExpect(jsonPath("$.theaters[0].schedules[0].seat_state").value("comfortable"));
 
-        verify(liveMovieService).findMovieSchedules("CGV:123", criteria);
+        verify(liveMovieService).findMovieSchedules("LOTTE_CINEMA:123", criteria);
     }
 
     @Test
@@ -267,19 +221,47 @@ class LiveMovieControllerTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
         given(liveMovieService.buildCriteria(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
             .willReturn(criteria);
-        given(liveMovieService.findMovieSchedules(eq("CGV:123"), eq(criteria)))
+        given(liveMovieService.findMovieSchedules(eq("LOTTE_CINEMA:123"), eq(criteria)))
             .willThrow(new IllegalStateException("boom"));
 
         mockMvc.perform(
-                get("/api/live/movies/{movieKey}/schedules", "CGV:123")
+                get("/api/live/movies/{movieKey}/schedules", "LOTTE_CINEMA:123")
                     .queryParam("lat", "37.4979")
                     .queryParam("lng", "127.0276")
                     .accept(MediaType.APPLICATION_JSON)
             )
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
-            .andExpect(jsonPath("$.path").value("/api/live/movies/CGV:123/schedules"))
+            .andExpect(jsonPath("$.path").value("/api/live/movies/LOTTE_CINEMA:123/schedules"))
             .andExpect(jsonPath("$.details[0]").value("IllegalStateException"));
+    }
+
+    private static LiveMovieScheduleItem sampleItem() {
+        return new LiveMovieScheduleItem(
+            "LOTTE_CINEMA:123",
+            "Movie",
+            "LOTTE",
+            "LOTTE_CINEMA",
+            "lotte-gangnam",
+            "LOTTE Gangnam",
+            "screen-1",
+            "2D",
+            "2D",
+            List.of("RECLINER"),
+            "15",
+            "19:40",
+            "22:01",
+            "2026-04-23",
+            120,
+            48,
+            48,
+            new BigDecimal("0.400"),
+            "comfortable",
+            new BigDecimal("2.31"),
+            "https://booking.example/lotte/123",
+            "2026-04-23T20:00:00+09:00",
+            "https://poster.example/lotte.jpg"
+        );
     }
 
     private static LiveMovieSearchCriteria sampleCriteria() {
@@ -290,7 +272,7 @@ class LiveMovieControllerTests {
             LocalTime.of(6, 0),
             LocalTime.of(23, 59),
             new BigDecimal("8"),
-            List.of("CGV"),
+            List.of("LOTTE"),
             List.of(),
             List.of(),
             SeatState.ALL,

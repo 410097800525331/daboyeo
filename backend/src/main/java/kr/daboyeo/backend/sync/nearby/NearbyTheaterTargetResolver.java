@@ -50,10 +50,6 @@ public class NearbyTheaterTargetResolver {
         }
 
         int perProviderLimit = Math.max(1, properties.getShowtimes().getNearbyRefreshMaxTheatersPerProvider());
-        List<TheaterMapEntry> cgvEntries = grouped.getOrDefault(CollectorProvider.CGV, List.of()).stream()
-            .sorted(Comparator.comparingDouble(TheaterMapEntry::distanceKm))
-            .limit(perProviderLimit)
-            .toList();
         List<TheaterMapEntry> lotteEntries = grouped.getOrDefault(CollectorProvider.LOTTE_CINEMA, List.of()).stream()
             .sorted(Comparator.comparingDouble(TheaterMapEntry::distanceKm))
             .limit(perProviderLimit)
@@ -63,7 +59,7 @@ public class NearbyTheaterTargetResolver {
             .limit(perProviderLimit)
             .toList();
 
-        return new Resolution(cgvEntries, lotteEntries, megaboxEntries);
+        return new Resolution(lotteEntries, megaboxEntries);
     }
 
     private static TheaterMapEntry toEntry(TheaterSyncSource row) {
@@ -84,7 +80,7 @@ public class NearbyTheaterTargetResolver {
     }
 
     private static boolean supports(CollectorProvider provider) {
-        return provider == CollectorProvider.CGV || provider == CollectorProvider.LOTTE_CINEMA || provider == CollectorProvider.MEGABOX;
+        return provider == CollectorProvider.LOTTE_CINEMA || provider == CollectorProvider.MEGABOX;
     }
 
     private double refreshRadiusKm(LiveMovieSearchCriteria criteria) {
@@ -102,7 +98,6 @@ public class NearbyTheaterTargetResolver {
         return requestedProviders.stream()
             .map(value -> value == null ? "" : value.trim().toUpperCase(Locale.ROOT))
             .map(value -> switch (value) {
-                case "CGV" -> "CGV";
                 case "LOTTE", "LOTTE_CINEMA" -> "LOTTE_CINEMA";
                 case "MEGA", "MEGABOX" -> "MEGABOX";
                 default -> value;
@@ -125,13 +120,12 @@ public class NearbyTheaterTargetResolver {
     }
 
     public record Resolution(
-        List<TheaterMapEntry> cgvEntries,
         List<TheaterMapEntry> lotteEntries,
         List<TheaterMapEntry> megaboxEntries
     ) {
 
         public boolean isEmpty() {
-            return cgvEntries.isEmpty() && lotteEntries.isEmpty() && megaboxEntries.isEmpty();
+            return lotteEntries.isEmpty() && megaboxEntries.isEmpty();
         }
     }
 

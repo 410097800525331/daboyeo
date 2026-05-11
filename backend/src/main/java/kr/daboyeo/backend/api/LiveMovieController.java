@@ -3,12 +3,14 @@ package kr.daboyeo.backend.api;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Pattern;
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import kr.daboyeo.backend.domain.SeatState;
+import kr.daboyeo.backend.security.PublicApiRateLimiter;
 import kr.daboyeo.backend.service.LiveMovieService;
 import kr.daboyeo.backend.service.LiveMovieService.LiveMovieResponse;
 import kr.daboyeo.backend.service.LiveMovieService.MovieCatalogResponse;
@@ -26,9 +28,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class LiveMovieController {
 
     private final LiveMovieService liveMovieService;
+    private final PublicApiRateLimiter rateLimiter;
 
-    public LiveMovieController(LiveMovieService liveMovieService) {
+    public LiveMovieController(LiveMovieService liveMovieService, PublicApiRateLimiter rateLimiter) {
         this.liveMovieService = liveMovieService;
+        this.rateLimiter = rateLimiter;
     }
 
     @GetMapping("/nearby")
@@ -59,8 +63,10 @@ public class LiveMovieController {
         @Pattern(regexp = "all|spacious|comfortable|closing|group|sold_out", flags = Pattern.Flag.CASE_INSENSITIVE, message = "seatState 값이 잘못됐다.")
         String seatState,
         @RequestParam(required = false) String query,
-        @RequestParam(required = false) Integer limit
+        @RequestParam(required = false) Integer limit,
+        HttpServletRequest request
     ) {
+        rateLimiter.requireNearbyAllowed(request);
         return liveMovieService.findNearby(
             liveMovieService.buildCriteria(
                 lat,

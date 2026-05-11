@@ -62,9 +62,10 @@ h1 span {
   left: 0;
   right: 0;
   width: 100%;
-  background: rgba(20, 20, 20, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(114, 100, 233, 0.3);
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
   z-index: 1000;
   opacity: 0;
   transform: translateY(-100%);
@@ -80,7 +81,7 @@ h1 span {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 40px;
+  gap: 24px;
   min-height: var(--fixed-header-height);
   /* max-width: 1200px; */
   padding: 0 30px;
@@ -88,7 +89,7 @@ h1 span {
 }
 
 .header-nav {
-  display: flex;
+  display: none !important;
   gap: 25px;
   flex: 1;
   justify-content: center;

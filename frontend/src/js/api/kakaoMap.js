@@ -5,6 +5,8 @@ let clusterer;
 let markers = [];
 let kakaoReadyPromise;
 let theaterDatabasePromise;
+const NEARBY_RADIUS_KM = 8;
+const NEARBY_RADIUS_METERS = NEARBY_RADIUS_KM * 1000;
 
 const mapContainer = document.getElementById('map');
 const nearbySection = document.getElementById('nearby-section');
@@ -65,6 +67,30 @@ function openNearbySection() {
       map.relayout();
     }
   }, 150);
+}
+
+function closeNearbySection(options = {}) {
+  if (!nearbySection) return;
+
+  nearbySection.classList.remove('active');
+  if (options.scrollTop) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function rememberSelectedLocation(lat, lng, label = '', region = '') {
+  const selectedLat = Number(lat);
+  const selectedLng = Number(lng);
+  if (!Number.isFinite(selectedLat) || !Number.isFinite(selectedLng)) return;
+
+  const detail = {
+    lat: selectedLat,
+    lng: selectedLng,
+    label: String(label || '').trim(),
+    region: String(region || label || '').trim(),
+  };
+  window.daboyeoSelectedLocation = detail;
+  window.dispatchEvent(new CustomEvent('daboyeo:location-selected', { detail }));
 }
 
 function openNearbyTheaters() {
@@ -249,7 +275,7 @@ async function fetchLiveNearby(lat, lng) {
 
   try {
     const apiBaseUrl = getApiBaseUrl();
-    const response = await fetch(`${apiBaseUrl}/api/live/nearby?lat=${lat}&lng=${lng}`);
+    const response = await fetch(`${apiBaseUrl}/api/live/nearby?lat=${lat}&lng=${lng}&radiusKm=${NEARBY_RADIUS_KM}`);
     if (!response.ok) {
       throw new Error('Backend API response error');
     }
@@ -484,7 +510,7 @@ async function findNearbyLocal(lat, lng) {
         ...theater,
         distance: getDistance(lat, lng, theater.lat, theater.lng),
       }))
-      .filter((theater) => theater.distance <= 10000)
+      .filter((theater) => theater.distance <= NEARBY_RADIUS_METERS)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 10);
   } catch (error) {
@@ -506,12 +532,14 @@ async function handleGeo() {
     async (position) => {
       const userLat = position.coords.latitude;
       const userLng = position.coords.longitude;
+      rememberSelectedLocation(userLat, userLng);
       const nearby = await findNearbyLocal(userLat, userLng);
       await updateMapWithServerData(nearby, [], userLat, userLng);
       setTriggerBusy(false);
     },
     async () => {
       alert('위치 정보를 가져오지 못했습니다. 강남 지역을 기준으로 검색합니다.');
+      rememberSelectedLocation(37.5015, 127.0263);
       await fetchLiveNearby(37.5015, 127.0263);
       setTriggerBusy(false);
     },
@@ -608,6 +636,7 @@ async function handleRegionSearch() {
 
   try {
     const found = await searchLocationByQuery(query);
+    let resolvedRegion = found.label || query;
     if (map) {
       const moveLatLon = new kakao.maps.LatLng(found.lat, found.lng);
       map.setCenter(moveLatLon);
@@ -620,8 +649,10 @@ async function handleRegionSearch() {
         geocoder.coord2Address(found.lng, found.lat, (result, status) => {
           if (status === kakao.maps.services.Status.OK && result[0]?.address) {
             const addr = result[0].address;
+            const fullRegion = `${addr.region_1depth_name} ${addr.region_2depth_name} ${addr.region_3depth_name}`.trim();
+            resolvedRegion = fullRegion || resolvedRegion;
             if (mapRegionInput) {
-              mapRegionInput.value = `${addr.region_1depth_name} ${addr.region_2depth_name} ${addr.region_3depth_name}`.trim();
+              mapRegionInput.value = fullRegion;
             }
             if (window.updateRegionFromMap) {
               window.updateRegionFromMap(
@@ -649,8 +680,14 @@ async function handleRegionSearch() {
     if (regionInput) {
       regionInput.value = found.label;
     }
+    const selectedRegionInput = document.getElementById('selectedRegionInput');
+    if (selectedRegionInput && resolvedRegion) {
+      selectedRegionInput.value = resolvedRegion;
+    }
+    rememberSelectedLocation(found.lat, found.lng, found.label, resolvedRegion);
 
     await fetchLiveNearby(found.lat, found.lng);
+    closeNearbySection();
 
     if (mapRegionSearchFeedback) {
       mapRegionSearchFeedback.innerText = `"${found.label}" 기준으로 주변 극장을 표시했습니다.`;
@@ -687,10 +724,7 @@ if (mapRegionInput) {
 
 if (closeNearbyBtn) {
   closeNearbyBtn.addEventListener('click', () => {
-    if (nearbySection) {
-      nearbySection.classList.remove('active');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    closeNearbySection({ scrollTop: true });
   });
 }
 
