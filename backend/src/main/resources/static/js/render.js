@@ -2,6 +2,7 @@ const Render = {
     grid: document.getElementById("event-grid"),
     empty: document.getElementById("empty-state"),
     error: document.getElementById("error-state"),
+    reclinerImageUrl: "",
 
     text(value, fallback = "") {
         const normalized = value === undefined || value === null ? "" : String(value).trim();
@@ -93,6 +94,7 @@ const Render = {
 
         if (this.empty) this.empty.classList.add("hidden");
         if (this.error) this.error.classList.add("hidden");
+        this.reclinerImageUrl = this.findReclinerImageUrl(events);
 
         const fragment = document.createDocumentFragment();
         events.forEach((event) => {
@@ -101,20 +103,50 @@ const Render = {
         targetGrid.appendChild(fragment);
     },
 
+    findReclinerImageUrl(events) {
+        const matched = events.find((event) => {
+            const title = this.text(event.title);
+            return title.includes("리클라이너") && title.includes("오픈") && this.text(event.imageUrl);
+        });
+        return matched ? this.text(matched.imageUrl) : "";
+    },
+
+    replacementImageUrl(event, currentUrl) {
+        const title = this.text(event.title);
+        if (!title.includes("리클라이너") || !title.includes("리뉴얼")) {
+            return "";
+        }
+        const replacement = this.text(this.reclinerImageUrl);
+        return replacement && replacement !== currentUrl ? replacement : "";
+    },
+
     createCard(event) {
         const card = this.createElement("article", "event-card");
         card.dataset.eventId = this.text(event.id);
         card.dataset.url = this.text(event.eventUrl);
+        const title = this.text(event.title, "Event");
 
         const imageWrapper = this.createElement("div", "card-image-wrapper");
         imageWrapper.style.pointerEvents = "none";
         const image = document.createElement("img");
         image.src = this.text(event.imageUrl, "https://via.placeholder.com/400x225?text=No+Image");
-        image.alt = this.text(event.title, "영화관 이벤트");
+        image.alt = title;
         image.loading = "lazy";
         image.decoding = "async";
         image.addEventListener("error", () => {
-            image.src = "https://via.placeholder.com/400x225?text=Image+Load+Error";
+            const replacement = this.replacementImageUrl(event, image.src);
+            if (replacement && image.dataset.replaced !== "true") {
+                image.dataset.replaced = "true";
+                image.src = replacement;
+                return;
+            }
+            image.remove();
+            imageWrapper.classList.add("is-image-missing");
+            if (!imageWrapper.querySelector(".event-image-fallback")) {
+                const fallback = this.createElement("div", "event-image-fallback");
+                fallback.appendChild(this.createElement("span", null, title));
+                imageWrapper.prepend(fallback);
+            }
         }, { once: true });
         imageWrapper.appendChild(image);
 
@@ -134,7 +166,7 @@ const Render = {
         badges.appendChild(this.createElement("span", `badge badge-${source.toLowerCase()}`, source));
         badges.appendChild(this.createElement("span", "badge badge-category", this.text(event.category, "ALL")));
         content.appendChild(badges);
-        content.appendChild(this.createElement("h3", "card-title", this.text(event.title, "이벤트")));
+        content.appendChild(this.createElement("h3", "card-title", title));
 
         const footer = this.createElement("div", "card-footer");
         footer.appendChild(this.createElement("p", "card-date", `${this.formatDate(event.startDate)} ~ ${this.formatDate(event.endDate)}`));

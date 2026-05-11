@@ -44,7 +44,6 @@ class NearbyShowtimeRefreshServiceTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
 
         when(resolver.resolve(criteria)).thenReturn(new NearbyTheaterTargetResolver.Resolution(
-            List.of(),
             List.of(new NearbyTheaterTargetResolver.TheaterMapEntry(CollectorProvider.LOTTE_CINEMA, "1003", "Test", 37.0d, 127.0d, 1.0d)),
             List.of()
         ));
@@ -58,11 +57,11 @@ class NearbyShowtimeRefreshServiceTests {
             )));
         when(repository.findLatestShowtimeCollectedAt(eq(CollectorProvider.LOTTE_CINEMA), eq(criteria.date()), any()))
             .thenReturn(Map.of("1003", LocalDateTime.of(2026, 4, 29, 0, 0)));
-        when(bridge.collectLotteNearbyDiscovery(eq(criteria.date()), eq("2|0986|1003")))
-            .thenReturn(new PythonCollectorBridge.ProviderDiscoveryPayload(List.of(
-                Map.of("cinema_id", "1003", "cinema_selector", "2|0986|1003", "representation_movie_code", "L100")
-            )));
-        when(bridge.collectShowtimeBundle(any())).thenReturn(Map.of());
+        when(bridge.collectLotteNearbyBundle(eq(criteria.date()), eq("2|0986|1003")))
+            .thenReturn(Map.of(
+                "movies", List.of(Map.of("movie_no", "L100")),
+                "schedules", List.of(Map.of("movie_no", "L100"))
+            ));
         when(persistenceService.persist(eq("LOTTE_CINEMA"), any(), eq(false)))
             .thenReturn(new CollectorBundleIngestCommand.IngestResult(1, 1, 1, 1));
 
@@ -78,8 +77,9 @@ class NearbyShowtimeRefreshServiceTests {
 
         service.requestRefresh(criteria);
 
-        verify(bridge, times(1)).collectLotteNearbyDiscovery(criteria.date(), "2|0986|1003");
-        verify(bridge, times(1)).collectShowtimeBundle(any());
+        verify(bridge, times(1)).collectLotteNearbyBundle(criteria.date(), "2|0986|1003");
+        verify(bridge, never()).collectLotteNearbyDiscovery(any(), any());
+        verify(bridge, never()).collectShowtimeBundle(any());
         verify(persistenceService, times(1)).persist(eq("LOTTE_CINEMA"), any(), eq(false));
     }
 
@@ -93,7 +93,6 @@ class NearbyShowtimeRefreshServiceTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
 
         when(resolver.resolve(criteria)).thenReturn(new NearbyTheaterTargetResolver.Resolution(
-            List.of(),
             List.of(),
             List.of(new NearbyTheaterTargetResolver.TheaterMapEntry(CollectorProvider.MEGABOX, "1372", "Gangnam", 37.0d, 127.0d, 1.0d))
         ));
@@ -135,7 +134,6 @@ class NearbyShowtimeRefreshServiceTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
 
         when(resolver.resolve(criteria)).thenReturn(new NearbyTheaterTargetResolver.Resolution(
-            List.of(),
             List.of(),
             List.of(
                 new NearbyTheaterTargetResolver.TheaterMapEntry(CollectorProvider.MEGABOX, "1372", "Gangnam", 37.0d, 127.0d, 1.0d),
@@ -222,7 +220,6 @@ class NearbyShowtimeRefreshServiceTests {
         LiveMovieSearchCriteria criteria = sampleCriteria();
 
         when(resolver.resolve(criteria)).thenReturn(new NearbyTheaterTargetResolver.Resolution(
-            List.of(),
             List.of(new NearbyTheaterTargetResolver.TheaterMapEntry(CollectorProvider.LOTTE_CINEMA, "1003", "Test", 37.0d, 127.0d, 1.0d)),
             List.of()
         ));
@@ -236,8 +233,10 @@ class NearbyShowtimeRefreshServiceTests {
             )));
         when(repository.findLatestShowtimeCollectedAt(eq(CollectorProvider.LOTTE_CINEMA), eq(criteria.date()), any()))
             .thenReturn(Map.of("1003", LocalDateTime.of(2026, 4, 29, 0, 0)));
-        when(bridge.collectLotteNearbyDiscovery(eq(criteria.date()), eq("2|0986|1003")))
-            .thenReturn(new PythonCollectorBridge.ProviderDiscoveryPayload(List.of()));
+        when(bridge.collectLotteNearbyBundle(eq(criteria.date()), eq("2|0986|1003")))
+            .thenReturn(Map.of());
+        when(persistenceService.persist(eq("LOTTE_CINEMA"), any(), eq(false)))
+            .thenReturn(new CollectorBundleIngestCommand.IngestResult(0, 0, 0, 0));
 
         NearbyShowtimeRefreshService service = new NearbyShowtimeRefreshService(
             properties,

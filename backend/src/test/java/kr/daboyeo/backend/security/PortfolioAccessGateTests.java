@@ -52,6 +52,7 @@ class PortfolioAccessGateTests {
             publicSeatLayoutEnabled,
             null,
             null,
+            null,
             null
         );
     }

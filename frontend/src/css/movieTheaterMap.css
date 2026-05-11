@@ -1,5 +1,5 @@
 @charset "utf-8";
-@import url(./common.css);
+@import url(./common.css?v=20260511-browser-comments);
 
 /* 내 주변 영화관 찾기 컨테이너 */
 .nearby-theater-container {

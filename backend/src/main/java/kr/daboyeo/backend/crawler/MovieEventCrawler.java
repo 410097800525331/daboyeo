@@ -4,7 +4,7 @@ import kr.daboyeo.backend.domain.MovieEvent;
 import java.util.List;
 
 /**
- * Common interface for movie theater event crawlers (CGV, Lotte, Megabox, etc.)
+ * Common interface for movie theater event crawlers (Lotte, Megabox, etc.)
  */
 public interface MovieEventCrawler {
 

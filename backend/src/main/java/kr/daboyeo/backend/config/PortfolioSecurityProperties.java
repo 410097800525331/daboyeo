@@ -8,6 +8,7 @@ public record PortfolioSecurityProperties(
     boolean publicCollectionEnabled,
     boolean publicNearbyRefreshEnabled,
     boolean publicSeatLayoutEnabled,
+    Integer nearbyRefreshRateLimitPerMinute,
     Integer recommendationRateLimitPerMinute,
     Integer sessionRateLimitPerMinute,
     Integer feedbackRateLimitPerMinute
@@ -15,6 +16,7 @@ public record PortfolioSecurityProperties(
 
     public PortfolioSecurityProperties {
         adminToken = adminToken == null ? "" : adminToken.trim();
+        nearbyRefreshRateLimitPerMinute = normalizeLimit(nearbyRefreshRateLimitPerMinute, 20);
         recommendationRateLimitPerMinute = normalizeLimit(recommendationRateLimitPerMinute, 12);
         sessionRateLimitPerMinute = normalizeLimit(sessionRateLimitPerMinute, 30);
         feedbackRateLimitPerMinute = normalizeLimit(feedbackRateLimitPerMinute, 60);

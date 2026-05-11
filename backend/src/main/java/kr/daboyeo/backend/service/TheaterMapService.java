@@ -108,7 +108,6 @@ public class TheaterMapService {
         return switch (providerCode.trim().toUpperCase(Locale.ROOT)) {
             case "LOTTE", "LOTTE_CINEMA" -> "LOTTE_CINEMA";
             case "MEGA", "MEGABOX" -> "MEGABOX";
-            case "CGV" -> "CGV";
             default -> "";
         };
     }

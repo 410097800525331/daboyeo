@@ -60,7 +60,6 @@ class ShowtimeRefreshControllerTests {
                 "job-1",
                 List.of("LOTTE_CINEMA", "MEGABOX"),
                 true,
-                false,
                 null,
                 null,
                 null,

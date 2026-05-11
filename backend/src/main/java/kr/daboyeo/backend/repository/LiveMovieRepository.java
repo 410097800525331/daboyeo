@@ -266,6 +266,7 @@ public class LiveMovieRepository {
               st.booking_url,
               st.updated_at,
               m.age_rating,
+              m.poster_url,
               t.latitude,
               t.longitude,
               (
@@ -346,7 +347,6 @@ public class LiveMovieRepository {
 
     private static List<String> mapProviderCodes(List<String> providers) {
         Map<String, String> mapping = new HashMap<>();
-        mapping.put("CGV", "CGV");
         mapping.put("LOTTE", "LOTTE_CINEMA");
         mapping.put("LOTTE_CINEMA", "LOTTE_CINEMA");
         mapping.put("MEGA", "MEGABOX");
@@ -400,7 +400,8 @@ public class LiveMovieRepository {
                 "",
                 rs.getBigDecimal("distance_km"),
                 rs.getString("booking_url"),
-                updatedAt == null ? null : updatedAt.toLocalDateTime()
+                updatedAt == null ? null : updatedAt.toLocalDateTime(),
+                rs.getString("poster_url")
             );
         }
 

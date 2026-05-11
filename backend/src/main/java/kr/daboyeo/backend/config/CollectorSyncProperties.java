@@ -60,7 +60,6 @@ public class CollectorSyncProperties {
         private boolean enabled = false;
         private String cron = "0 0 * * * *";
         private boolean startupEnabled = true;
-        private boolean includeCgv = false;
         private List<Integer> dateOffsetDays = new ArrayList<>(List.of(0, 1, 2));
         private boolean autoDiscoveryEnabled = false;
         private boolean cleanupEnabled = true;
@@ -77,14 +76,13 @@ public class CollectorSyncProperties {
         private int entryRefreshMaxSchedulesPerBundle = 40;
         private boolean nearbyRefreshEnabled = true;
         private int nearbyRefreshMaxTheatersPerProvider = 6;
-        private BigDecimal nearbyRefreshRadiusKm = new BigDecimal("3");
+        private BigDecimal nearbyRefreshRadiusKm = new BigDecimal("8");
         private long nearbyRefreshWaitMillis = 2500L;
         private int nearbyRefreshTodayTtlMinutes = 60;
         private int nearbyRefreshNextDayTtlMinutes = 360;
         private int nearbyRefreshFutureTtlMinutes = 1440;
         private int persistenceMaxRetries = 2;
         private long persistenceRetryBackoffMillis = 1000L;
-        private List<CgvTarget> cgvTargets = new ArrayList<>();
         private List<LotteTarget> lotteTargets = new ArrayList<>();
         private List<MegaboxTarget> megaboxTargets = new ArrayList<>();
         private List<String> lottePreferredCinemaIds = new ArrayList<>();
@@ -113,14 +111,6 @@ public class CollectorSyncProperties {
 
         public void setStartupEnabled(boolean startupEnabled) {
             this.startupEnabled = startupEnabled;
-        }
-
-        public boolean isIncludeCgv() {
-            return includeCgv;
-        }
-
-        public void setIncludeCgv(boolean includeCgv) {
-            this.includeCgv = includeCgv;
         }
 
         public List<Integer> getDateOffsetDays() {
@@ -256,7 +246,7 @@ public class CollectorSyncProperties {
         }
 
         public void setNearbyRefreshRadiusKm(BigDecimal nearbyRefreshRadiusKm) {
-            this.nearbyRefreshRadiusKm = nearbyRefreshRadiusKm == null ? new BigDecimal("3") : nearbyRefreshRadiusKm;
+            this.nearbyRefreshRadiusKm = nearbyRefreshRadiusKm == null ? new BigDecimal("8") : nearbyRefreshRadiusKm;
         }
 
         public long getNearbyRefreshWaitMillis() {
@@ -305,14 +295,6 @@ public class CollectorSyncProperties {
 
         public void setPersistenceRetryBackoffMillis(long persistenceRetryBackoffMillis) {
             this.persistenceRetryBackoffMillis = persistenceRetryBackoffMillis;
-        }
-
-        public List<CgvTarget> getCgvTargets() {
-            return cgvTargets;
-        }
-
-        public void setCgvTargets(List<CgvTarget> cgvTargets) {
-            this.cgvTargets = cgvTargets == null ? new ArrayList<>() : new ArrayList<>(cgvTargets);
         }
 
         public List<LotteTarget> getLotteTargets() {
@@ -393,27 +375,6 @@ public class CollectorSyncProperties {
 
         public void setLimit(int limit) {
             this.limit = limit;
-        }
-    }
-
-    public static class CgvTarget {
-        private String siteNo = "";
-        private String movieNo = "";
-
-        public String getSiteNo() {
-            return siteNo;
-        }
-
-        public void setSiteNo(String siteNo) {
-            this.siteNo = siteNo;
-        }
-
-        public String getMovieNo() {
-            return movieNo;
-        }
-
-        public void setMovieNo(String movieNo) {
-            this.movieNo = movieNo;
         }
     }
 

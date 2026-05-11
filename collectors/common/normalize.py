@@ -57,19 +57,6 @@ def combine_datetime(date_value: Any, time_value: Any) -> str | None:
     return f"{date_text} {time_text}"
 
 
-def cgv_showtime_key(row: dict[str, Any]) -> str:
-    booking_key = row.get("booking_key") or {}
-    return "|".join(
-        str(booking_key.get(key) or row.get(fallback) or "")
-        for key, fallback in [
-            ("site_no", "site_no"),
-            ("scn_ymd", "screening_date"),
-            ("scns_no", "screen_no"),
-            ("scn_sseq", "screen_sequence"),
-        ]
-    )
-
-
 def lotte_showtime_key(row: dict[str, Any]) -> str:
     booking_key = row.get("booking_key") or {}
     return "|".join(
@@ -102,12 +89,6 @@ def normalize_seat_status(provider: str, status_code: Any, raw: dict[str, Any] |
         if code in {"SELL_END", "BOKD", "SOLD"}:
             return "sold"
         return "special" if "STOP" in code or "DISABLED" in code else "unavailable"
-    if provider == "CGV":
-        if code == "00":
-            return "available"
-        if code == "01":
-            return "sold"
-        return "special"
     return "unknown"
 
 

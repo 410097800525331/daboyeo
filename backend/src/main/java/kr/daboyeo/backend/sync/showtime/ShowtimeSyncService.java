@@ -43,7 +43,6 @@ public class ShowtimeSyncService {
     public ShowtimeSyncRunResult syncDailyShowtimes() {
         return syncShowtimes(
             "scheduled",
-            properties.getShowtimes().isIncludeCgv(),
             properties.getShowtimes().getDateOffsetDays().size(),
             properties.getShowtimes().isCleanupEnabled(),
             0
@@ -53,7 +52,6 @@ public class ShowtimeSyncService {
     public ShowtimeSyncRunResult syncEntryShowtimes() {
         return syncShowtimes(
             "entry",
-            false,
             Math.max(1, properties.getShowtimes().getEntryRefreshMaxDates()),
             false,
             Math.max(0, properties.getShowtimes().getEntryRefreshMaxSchedulesPerBundle())
@@ -62,7 +60,6 @@ public class ShowtimeSyncService {
 
     private ShowtimeSyncRunResult syncShowtimes(
         String trigger,
-        boolean includeCgv,
         int maxDateCount,
         boolean cleanupExpired,
         int maxSchedulesPerBundle
@@ -84,22 +81,17 @@ public class ShowtimeSyncService {
             LocalDate baseDate = LocalDate.now(ZoneId.of(properties.getTimezone()));
             List<Integer> offsets = limitedDateOffsets(maxDateCount);
             logger.info(
-                "Showtime sync starting trigger={} timezone={} baseDate={} offsets={} includeCgv={} cgvTargets={} lotteTargets={} megaboxTargets={}",
+                "Showtime sync starting trigger={} timezone={} baseDate={} offsets={} lotteTargets={} megaboxTargets={}",
                 trigger,
                 properties.getTimezone(),
                 baseDate,
                 offsets,
-                includeCgv,
-                validCgvTargets(),
                 validLotteTargets(),
                 validMegaboxTargets()
             );
             SyncTotals totals = new SyncTotals();
             for (Integer offset : offsets) {
                 LocalDate playDate = baseDate.plusDays(offset == null ? 0 : offset);
-                if (includeCgv) {
-                    totals.add(syncCgv(playDate, maxSchedulesPerBundle));
-                }
                 totals.add(syncLotte(playDate, maxSchedulesPerBundle));
                 totals.add(syncMegabox(playDate, maxSchedulesPerBundle));
                 if (properties.getShowtimes().isAutoDiscoveryEnabled()) {
@@ -125,26 +117,6 @@ public class ShowtimeSyncService {
         } finally {
             running.set(false);
         }
-    }
-
-    private SyncTotals syncCgv(LocalDate playDate, int maxSchedulesPerBundle) {
-        SyncTotals totals = new SyncTotals();
-        for (CollectorSyncProperties.CgvTarget target : properties.getShowtimes().getCgvTargets()) {
-            if (isBlank(target.getSiteNo())) {
-                continue;
-            }
-            ShowtimeCollectionRequest request = new ShowtimeCollectionRequest(
-                CollectorProvider.CGV,
-                playDate,
-                target.getSiteNo(),
-                isBlank(target.getMovieNo()) ? null : target.getMovieNo(),
-                null,
-                null,
-                null
-            );
-            totals.add(persistCollectedBundleWithResult(request, maxSchedulesPerBundle));
-        }
-        return totals;
     }
 
     private SyncTotals syncLotte(LocalDate playDate, int maxSchedulesPerBundle) {
@@ -208,14 +180,6 @@ public class ShowtimeSyncService {
             );
             return result;
         } catch (Exception exception) {
-            if (request.provider() == CollectorProvider.CGV && exception.getMessage() != null && exception.getMessage().contains("401")) {
-                logger.warn(
-                    "CGV collector is blocked by upstream 401 for siteNo={} movieNo={} date={}.",
-                    request.siteNo(),
-                    request.movieNo(),
-                    request.playDate()
-                );
-            }
             logger.error("Showtime sync failed for provider={} date={}", request.provider(), request.playDate(), exception);
             return new CollectorBundleIngestCommand.IngestResult(0, 0, 0, 0);
         }
@@ -338,12 +302,6 @@ public class ShowtimeSyncService {
             counts.deletedSeatSnapshots(),
             counts.deletedSeatSnapshotItems()
         );
-    }
-
-    private long validCgvTargets() {
-        return properties.getShowtimes().getCgvTargets().stream()
-            .filter(target -> !isBlank(target.getSiteNo()))
-            .count();
     }
 
     private long validLotteTargets() {

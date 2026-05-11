@@ -45,13 +45,13 @@ class NearbyTheaterTargetResolverTests {
     }
 
     @Test
-    void resolveIncludesCgvEntriesWhenProviderFilterAllowsThem() {
+    void resolveIgnoresUnsupportedProviders() {
         CollectorSyncProperties properties = new CollectorSyncProperties();
         properties.getShowtimes().setNearbyRefreshMaxTheatersPerProvider(6);
         properties.getShowtimes().setNearbyRefreshRadiusKm(new BigDecimal("3"));
         TheaterMapService theaterMapService = Mockito.mock(TheaterMapService.class);
         given(theaterMapService.findAllSyncSources()).willReturn(List.of(
-            new TheaterSyncSource("CGV", "0056", "CGV Gangnam", new BigDecimal("37.4979"), new BigDecimal("127.0276"), ""),
+            new TheaterSyncSource("OTHER", "0056", "Other Gangnam", new BigDecimal("37.4979"), new BigDecimal("127.0276"), ""),
             new TheaterSyncSource("LOTTE_CINEMA", "1003", "LOTTE Gangnam", new BigDecimal("37.4979"), new BigDecimal("127.0276"), "")
         ));
         NearbyTheaterTargetResolver resolver = new NearbyTheaterTargetResolver(
@@ -59,12 +59,10 @@ class NearbyTheaterTargetResolverTests {
             theaterMapService
         );
 
-        NearbyTheaterTargetResolver.Resolution resolution = resolver.resolve(sampleCriteria(new BigDecimal("8"), List.of("CGV")));
+        NearbyTheaterTargetResolver.Resolution resolution = resolver.resolve(sampleCriteria(new BigDecimal("8"), List.of("OTHER")));
 
-        assertThat(resolution.cgvEntries())
-            .extracting(NearbyTheaterTargetResolver.TheaterMapEntry::externalTheaterId)
-            .containsExactly("0056");
         assertThat(resolution.lotteEntries()).isEmpty();
+        assertThat(resolution.megaboxEntries()).isEmpty();
     }
 
     private static LiveMovieSearchCriteria sampleCriteria(BigDecimal radiusKm) {

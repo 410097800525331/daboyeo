@@ -38,6 +38,10 @@ public class PublicApiRateLimiter {
         requireAllowed("feedback", request, anonymousId, properties.feedbackRateLimitPerMinute());
     }
 
+    public void requireNearbyAllowed(HttpServletRequest request) {
+        requireAllowed("nearby", request, "", properties.nearbyRefreshRateLimitPerMinute());
+    }
+
     private void requireAllowed(
         String bucketName,
         HttpServletRequest request,

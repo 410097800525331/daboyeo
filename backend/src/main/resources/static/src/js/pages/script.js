@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const AI_PAGE_URL = "./src/pages/daboyeoAi.html";
   const DIRECT_COMPARE_PAGE_URL = "./src/pages/movies.html";
   const SEAT_MBTI_PAGE_URL = "./src/pages/seatRecommendMbti.html";
+  const DIRECT_COMPARE_RADIUS_KM = 8;
   const TIME_RANGE_PARAMS = {
     morning: { timeStart: "06:00", timeEnd: "10:59" },
     brunch: { timeStart: "11:00", timeEnd: "16:59" },
@@ -21,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const decreaseBtn = document.getElementById("decreaseBtn");
   const searchBtn = document.getElementById("searchBtn");
   const nearbyBtn = document.getElementById("nearbyBtn");
-  const regionInput = document.getElementById("regionInput");
+  const regionInput = document.getElementById("selectedRegionInput") || document.getElementById("regionInput");
   const seatFlowTriggers = document.querySelectorAll("[data-seat-flow]");
 
   const sidoContainer = document.getElementById("sidoContainer");
@@ -33,6 +34,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidoOptions = document.getElementById("sidoOptions");
   const gugunOptions = document.getElementById("gugunOptions");
   const dongOptions = document.getElementById("dongOptions");
+  const splitSidoDisplay = document.getElementById("sidoValue");
+  const splitSigunguDisplay = document.getElementById("sigunguValue");
+  const splitGuDisplay = document.getElementById("guValue");
+  const splitDongDisplay = document.getElementById("dongValue");
+  const locationBtn = document.getElementById("locationBtn");
 
   let currentDate = new Date();
   let currentPersonCount = 1;
@@ -41,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedDong = "";
   let regionSelectInitialized = false;
   let pendingRestoreRegion = null;
+  let selectedMapLocation = null;
 
   function initializeDateInput() {
     if (!dateInput || dateInput.value) {
@@ -113,6 +120,26 @@ document.addEventListener("DOMContentLoaded", () => {
     return trimmed && trimmed !== DEFAULT_REGION ? trimmed : DEFAULT_REGION;
   }
 
+  function normalizeLocation(value) {
+    if (!value || typeof value !== "object") {
+      return null;
+    }
+
+    const lat = Number(value.lat);
+    const lng = Number(value.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat === 0 || lng === 0) {
+      return null;
+    }
+
+    const label = typeof value.label === "string"
+      ? value.label.trim()
+      : typeof value.locationLabel === "string"
+        ? value.locationLabel.trim()
+        : "";
+    const region = normalizeRegion(value.region || label);
+    return { lat, lng, label, region };
+  }
+
   function selectedRegion() {
     if (sidoContainer && selectedSido) {
       const dong = selectedDong && selectedDong !== DEFAULT_REGION ? selectedDong : "";
@@ -129,12 +156,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildSearchContext() {
-    return {
+    const context = {
       region: selectedRegion(),
       date: dateInput?.value || "",
       timeRange: selectedTimeRange(),
       personCount: currentPersonCount,
     };
+
+    const location = normalizeLocation(selectedMapLocation || window.daboyeoSelectedLocation);
+    if (location) {
+      context.lat = location.lat;
+      context.lng = location.lng;
+      context.locationLabel = location.label || location.region;
+      if (location.region !== DEFAULT_REGION) {
+        context.region = location.region;
+      }
+    }
+
+    return context;
   }
 
   function saveSearchContext(searchContext) {
@@ -154,12 +193,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const personCount = Number(parsed.personCount);
-      return {
+      const context = {
         region: normalizeRegion(parsed.region),
         date: typeof parsed.date === "string" ? parsed.date : "",
         timeRange: typeof parsed.timeRange === "string" ? parsed.timeRange : "morning",
         personCount: Number.isFinite(personCount) && personCount > 0 ? Math.floor(personCount) : 1,
       };
+      const location = normalizeLocation(parsed);
+      if (location) {
+        context.lat = location.lat;
+        context.lng = location.lng;
+        context.locationLabel = location.label || location.region;
+      }
+      return context;
     } catch {
       return null;
     }
@@ -174,6 +220,41 @@ document.addEventListener("DOMContentLoaded", () => {
     if (span) {
       span.textContent = value;
     }
+  }
+
+  function updateSplitRegionUI(data) {
+    if (!splitSidoDisplay || !splitSigunguDisplay || !splitGuDisplay || !splitDongDisplay) {
+      return;
+    }
+
+    let sido = DEFAULT_REGION;
+    let sigungu = DEFAULT_REGION;
+    let gu = DEFAULT_REGION;
+    let dong = DEFAULT_REGION;
+
+    if (typeof data === "string") {
+      const [nextSido, nextSigungu, nextGu, ...dongParts] = data.trim().split(/\s+/).filter(Boolean);
+      sido = nextSido || DEFAULT_REGION;
+      sigungu = nextSigungu || DEFAULT_REGION;
+      gu = nextGu || DEFAULT_REGION;
+      dong = dongParts.join(" ") || DEFAULT_REGION;
+    } else if (data && typeof data === "object") {
+      sido = data.sido || DEFAULT_REGION;
+      const rawSigungu = data.sigungu || "";
+      if (rawSigungu.includes(" ")) {
+        const [nextSigungu, nextGu] = rawSigungu.split(/\s+/, 2);
+        sigungu = nextSigungu || DEFAULT_REGION;
+        gu = nextGu || DEFAULT_REGION;
+      } else {
+        sigungu = rawSigungu || DEFAULT_REGION;
+      }
+      dong = data.dong || DEFAULT_REGION;
+    }
+
+    splitSidoDisplay.textContent = sido;
+    splitSigunguDisplay.textContent = sigungu;
+    splitGuDisplay.textContent = gu;
+    splitDongDisplay.textContent = dong;
   }
 
   function populateOptions(listEl, options) {
@@ -317,12 +398,15 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    selectedMapLocation = normalizeLocation(context);
+
     pendingRestoreRegion = context.region;
     setRegionSelection(context.region);
 
     if (regionInput && context.region !== DEFAULT_REGION) {
       regionInput.value = context.region;
     }
+    updateSplitRegionUI(context.region);
 
     if (dateInput && context.date) {
       dateInput.value = context.date;
@@ -349,17 +433,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildDirectCompareUrl(searchContext, coordinates) {
     const timeRange = TIME_RANGE_PARAMS[searchContext.timeRange] || TIME_RANGE_PARAMS.morning;
+    const location = normalizeLocation(coordinates) || normalizeLocation(searchContext);
+    const region = location?.region && location.region !== DEFAULT_REGION
+      ? location.region
+      : searchContext.region;
     const params = new URLSearchParams({
-      region: searchContext.region,
+      region,
       date: searchContext.date,
       timeStart: timeRange.timeStart,
       timeEnd: timeRange.timeEnd,
       personCount: String(searchContext.personCount),
+      radiusKm: String(DIRECT_COMPARE_RADIUS_KM),
     });
 
-    if (coordinates) {
-      params.set("lat", String(coordinates.lat));
-      params.set("lng", String(coordinates.lng));
+    if (location) {
+      params.set("lat", String(location.lat));
+      params.set("lng", String(location.lng));
     }
 
     return `${DIRECT_COMPARE_PAGE_URL}?${params.toString()}`;
@@ -380,7 +469,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const geocoder = new kakao.maps.services.Geocoder();
       geocoder.addressSearch(region, (result, status) => {
         if (status === kakao.maps.services.Status.OK && result.length > 0) {
-          resolve({ lat: Number(result[0].y), lng: Number(result[0].x) });
+          resolve({ lat: Number(result[0].y), lng: Number(result[0].x), label: region, region });
           return;
         }
         resolve(null);
@@ -391,8 +480,18 @@ document.addEventListener("DOMContentLoaded", () => {
   async function openDirectCompare(event) {
     event?.preventDefault();
     const searchContext = buildSearchContext();
+    const storedLocation = normalizeLocation(selectedMapLocation || window.daboyeoSelectedLocation);
+    const coordinates = storedLocation || await geocodeRegion(searchContext.region);
+    const location = normalizeLocation(coordinates);
+    if (location) {
+      searchContext.lat = location.lat;
+      searchContext.lng = location.lng;
+      searchContext.locationLabel = location.label || location.region;
+      if (location.region !== DEFAULT_REGION) {
+        searchContext.region = location.region;
+      }
+    }
     saveSearchContext(searchContext);
-    const coordinates = await geocodeRegion(searchContext.region);
     window.location.href = buildDirectCompareUrl(searchContext, coordinates);
   }
 
@@ -464,6 +563,20 @@ document.addEventListener("DOMContentLoaded", () => {
     nearbyBtn.addEventListener("click", openDirectCompare);
   }
 
+  window.addEventListener("daboyeo:location-selected", (event) => {
+    const location = normalizeLocation(event.detail);
+    if (!location) {
+      return;
+    }
+    selectedMapLocation = location;
+  });
+
+  document.querySelectorAll(".region-part-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      locationBtn?.click();
+    });
+  });
+
   seatFlowTriggers.forEach((trigger) => {
     const open = () => openSeatFlow(trigger.dataset.seatFlow);
 
@@ -480,22 +593,37 @@ document.addEventListener("DOMContentLoaded", () => {
     let sido = "";
     let gugun = "";
     let dong = "";
+    let fullRegion = "";
 
-    if (maybeGugun && maybeDong) {
+    if (sidoOrAddress && typeof sidoOrAddress === "object") {
+      fullRegion = String(sidoOrAddress.full || "").trim();
+      sido = sidoOrAddress.sido || "";
+      gugun = sidoOrAddress.sigungu || "";
+      dong = sidoOrAddress.dong || "";
+    } else if (maybeGugun && maybeDong) {
       sido = sidoOrAddress || "";
       gugun = maybeGugun;
       dong = maybeDong;
     } else if (sidoOrAddress) {
       const parts = String(sidoOrAddress).split(/\s+/);
       [sido = "", gugun = "", dong = ""] = parts;
+      fullRegion = String(sidoOrAddress).trim();
     } else {
       return;
+    }
+
+    if (!fullRegion) {
+      fullRegion = [sido, gugun, dong].filter(Boolean).join(" ");
     }
 
     const regions = regionData();
     const matchedSidoKey = Object.keys(regions)
       .find((key) => key.startsWith(sido) || sido.startsWith(key));
     if (!matchedSidoKey) {
+      if (regionInput && fullRegion) {
+        regionInput.value = fullRegion;
+      }
+      updateSplitRegionUI({ full: fullRegion, sido, sigungu: gugun, dong });
       return;
     }
 
@@ -526,6 +654,7 @@ document.addEventListener("DOMContentLoaded", () => {
       displayText(dongDisplay, "읍/면/동 선택");
       dongContainer?.classList.add("disabled");
       syncHiddenRegionInput();
+      updateSplitRegionUI({ full: fullRegion, sido: matchedSidoKey, sigungu: gugun, dong });
       return;
     }
 
@@ -558,10 +687,17 @@ document.addEventListener("DOMContentLoaded", () => {
     displayText(dongDisplay, selectedDong);
     markSelected(dongOptions, selectedDong);
     syncHiddenRegionInput();
+    updateSplitRegionUI({
+      full: fullRegion,
+      sido: matchedSidoKey,
+      sigungu: matchedGugunKey,
+      dong: selectedDong,
+    });
   };
 
   initializeDateInput();
   initializeRegionSelects();
   restoreSearchContext();
+  updateSplitRegionUI(regionInput?.value || DEFAULT_REGION);
   updatePersonCount();
 });

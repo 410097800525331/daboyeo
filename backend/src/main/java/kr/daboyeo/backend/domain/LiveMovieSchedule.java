@@ -27,6 +27,7 @@ public record LiveMovieSchedule(
     String seatState,
     BigDecimal distanceKm,
     String bookingUrl,
-    LocalDateTime updatedAt
+    LocalDateTime updatedAt,
+    String posterUrl
 ) {
 }

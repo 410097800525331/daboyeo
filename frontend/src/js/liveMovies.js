@@ -4,6 +4,7 @@
 
 const movieGrid = document.getElementById('movie-grid');
 const DEFAULT_API_BASE_ORIGIN = 'http://localhost:5500';
+const NEARBY_RADIUS_KM = 8;
 const FRONTEND_DEV_PORTS = new Set(['4173', '5173', '5510']);
 const API_BASE_URL = resolveApiBaseUrl();
 
@@ -66,6 +67,12 @@ function providerColor(provider) {
   return '#361771';
 }
 
+function safeImageUrl(value) {
+  const url = normalizeText(value);
+  if (!/^https?:\/\//i.test(url)) return '';
+  return url;
+}
+
 function showMessage(container, message, inlineStyle = '') {
   container.replaceChildren();
   const emptyBox = createElement('div', 'loading-container');
@@ -101,6 +108,7 @@ let allRawSchedules = [];
 let modalRawSchedules = [];
 let currentSelectedMovie = null;
 let currentSelectedMovieKey = null;
+let currentSelectedPosterUrl = '';
 let currentTab = 'ALL';
 let latestSearchMeta = null;
 let pendingRetryTimeoutId = null;
@@ -163,8 +171,7 @@ function updateSearchInfoUI() {
 function hasExplicitCoordinates() {
   const lat = Number(currentSearchConfig.lat);
   const lng = Number(currentSearchConfig.lng);
-  // Only return true if coordinates are NOT the default Seoul City Hall ones
-  return lat !== 0 && lng !== 0 && lat !== MOCK_DEFAULTS.lat && lng !== MOCK_DEFAULTS.lng;
+  return Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0;
 }
 
 function shouldResolveRegionCoordinates() {
@@ -294,6 +301,25 @@ function showPendingMessage(container, message) {
   container.appendChild(box);
 }
 
+function normalizeNearbyWarning(message, pendingRefresh = false) {
+  if (pendingRefresh) {
+    return '주변 상영 정보를 수집하고 있어. 잠시 후 자동으로 다시 확인할게.';
+  }
+  if (!message) {
+    return '조건에 맞는 상영 데이터가 아직 없어.';
+  }
+  if (message === 'no nearby showtimes are available for the selected conditions yet.') {
+    return '선택한 조건에 맞는 주변 상영 정보가 아직 없어.';
+  }
+  if (message === 'nearby refresh failed before data became available. retry shortly.') {
+    return '주변 상영 정보 수집에 실패했어. 잠시 후 다시 시도해줘.';
+  }
+  if (message.includes('showtimes are still being collected')) {
+    return '일부 영화관 상영 정보를 아직 수집 중이야. 잠시 후 다시 확인해줘.';
+  }
+  return message;
+}
+
 async function loadLiveMovies(options = {}) {
   if (!movieGrid) return;
   const { skipLoader = false } = options;
@@ -334,6 +360,7 @@ async function loadLiveMovies(options = {}) {
       date,
       timeStart,
       timeEnd,
+      radiusKm: String(NEARBY_RADIUS_KM),
     });
     const response = await fetch(`${API_BASE_URL}/live/nearby?${searchParams.toString()}`);
     const data = await response.json();
@@ -349,7 +376,7 @@ async function loadLiveMovies(options = {}) {
         void loadLiveMovies({ skipLoader: true });
       }, 3000);
       if (data.results.length === 0) {
-        showPendingMessage(movieGrid, data.search.warning);
+        showPendingMessage(movieGrid, normalizeNearbyWarning(data.search.warning, true));
         return;
       }
     }
@@ -365,6 +392,7 @@ async function loadLiveMovies(options = {}) {
         total_seats: item.total_seat_count || 100,
         available_seats: item.available_seat_count || item.remaining_seat_count || 0,
         start_time: item.start_time || '00:00',
+        poster_url: safeImageUrl(item.poster_url),
       },
     }));
 
@@ -429,11 +457,15 @@ function applyFilters() {
         title,
         providers: new Set([current.normalized.provider]),
         rating: current.normalized.rating,
+        posterUrl: current.normalized.poster_url,
         max_available: current.normalized.available_seats,
         total_matches: 1,
       };
     } else {
       acc[title].providers.add(current.normalized.provider);
+      if (!acc[title].posterUrl && current.normalized.poster_url) {
+        acc[title].posterUrl = current.normalized.poster_url;
+      }
       acc[title].max_available = Math.max(acc[title].max_available, current.normalized.available_seats);
       acc[title].total_matches += 1;
     }
@@ -452,7 +484,7 @@ function renderMovieCards(movies) {
 
   if (movies.length === 0) {
     const emptyMessage = latestSearchMeta?.warning && !latestSearchMeta.pendingRefresh
-      ? latestSearchMeta.warning
+      ? normalizeNearbyWarning(latestSearchMeta.warning, false)
       : '조건에 맞는 상영 데이터가 없어.';
     showMessage(movieGrid, emptyMessage, 'padding: 5rem 0; opacity: 0.5;');
     return;
@@ -465,8 +497,12 @@ function renderMovieCards(movies) {
 
     const posterContainer = createElement('div', 'poster-container');
     const poster = document.createElement('img');
-    poster.src = getPosterUrl(movie.title);
+    poster.src = getPosterUrl(movie);
     poster.alt = normalizeText(movie.title, '영화 포스터');
+
+    poster.addEventListener('error', () => {
+      poster.src = fallbackPosterUrl();
+    }, { once: true });
 
     const rating = normalizeText(movie.rating, 'ALL');
     const ratingBadge = createElement('div', `rating-badge rating-${cssToken(rating)}`, rating);
@@ -505,6 +541,7 @@ function renderMovieCards(movies) {
 window.openModal = async function openModal(movie) {
   currentSelectedMovie = typeof movie === 'string' ? movie : movie.title;
   currentSelectedMovieKey = typeof movie === 'string' ? movie : movie.movieKey;
+  currentSelectedPosterUrl = typeof movie === 'string' ? '' : safeImageUrl(movie.posterUrl);
   const modal = document.getElementById('schedule-modal');
   if (!modal) return;
 
@@ -512,7 +549,12 @@ window.openModal = async function openModal(movie) {
   const posterEl = document.getElementById('modal-movie-poster');
 
   if (titleEl) titleEl.innerText = currentSelectedMovie;
-  if (posterEl) posterEl.src = getPosterUrl(currentSelectedMovie);
+  if (posterEl) {
+    posterEl.src = getPosterUrl({ title: currentSelectedMovie, posterUrl: currentSelectedPosterUrl });
+    posterEl.onerror = () => {
+      posterEl.src = fallbackPosterUrl();
+    };
+  }
 
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -609,6 +651,7 @@ async function fetchMovieSchedulesForModal() {
       date,
       timeStart,
       timeEnd,
+      radiusKm: String(NEARBY_RADIUS_KM),
     });
     const response = await fetch(`${API_BASE_URL}/live/movies/${encodeURIComponent(currentSelectedMovieKey)}/schedules?${searchParams.toString()}`);
     if (!response.ok) {
@@ -665,8 +708,15 @@ window.addEventListener('click', (event) => {
   if (event.target === modal) window.closeModal();
 });
 
-function getPosterUrl() {
+function fallbackPosterUrl() {
   return 'https://search.pstatic.net/common/?src=http%3A%2F%2Fattachment.namu.wiki%2Fmovie_poster.jpg&type=f308_432';
+}
+
+function getPosterUrl(movie) {
+  if (movie && typeof movie === 'object') {
+    return safeImageUrl(movie.posterUrl) || fallbackPosterUrl();
+  }
+  return fallbackPosterUrl();
 }
 
 window.toggleChip = function toggleChip(element) {

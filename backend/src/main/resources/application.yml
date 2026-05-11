@@ -30,6 +30,7 @@ daboyeo:
     public-collection-enabled: ${DABOYEO_PUBLIC_COLLECTION_ENABLED:false}
     public-nearby-refresh-enabled: ${DABOYEO_PUBLIC_NEARBY_REFRESH_ENABLED:false}
     public-seat-layout-enabled: ${DABOYEO_PUBLIC_SEAT_LAYOUT_ENABLED:false}
+    nearby-refresh-rate-limit-per-minute: ${DABOYEO_NEARBY_REFRESH_RATE_LIMIT_PER_MINUTE:20}
     recommendation-rate-limit-per-minute: ${DABOYEO_RECOMMENDATION_RATE_LIMIT_PER_MINUTE:12}
     session-rate-limit-per-minute: ${DABOYEO_SESSION_RATE_LIMIT_PER_MINUTE:30}
     feedback-rate-limit-per-minute: ${DABOYEO_FEEDBACK_RATE_LIMIT_PER_MINUTE:60}
@@ -63,7 +64,6 @@ daboyeo:
       enabled: ${DABOYEO_SHOWTIME_SYNC_ENABLED:true}
       cron: ${DABOYEO_SHOWTIME_SYNC_CRON:0 0 * * * *}
       startup-enabled: ${DABOYEO_SHOWTIME_STARTUP_ENABLED:true}
-      include-cgv: ${DABOYEO_SHOWTIME_INCLUDE_CGV:false}
       date-offset-days: ${DABOYEO_SHOWTIME_DATE_OFFSETS:0,1,2}
       cleanup-enabled: ${DABOYEO_SHOWTIME_CLEANUP_ENABLED:true}
       retention-days: ${DABOYEO_SHOWTIME_RETENTION_DAYS:3}
@@ -80,7 +80,7 @@ daboyeo:
       entry-refresh-max-schedules-per-bundle: ${DABOYEO_SHOWTIME_ENTRY_REFRESH_MAX_SCHEDULES_PER_BUNDLE:40}
       nearby-refresh-enabled: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_ENABLED:true}
       nearby-refresh-max-theaters-per-provider: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_MAX_THEATERS_PER_PROVIDER:6}
-      nearby-refresh-radius-km: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_RADIUS_KM:3}
+      nearby-refresh-radius-km: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_RADIUS_KM:8}
       nearby-refresh-wait-millis: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_WAIT_MILLIS:2500}
       nearby-refresh-today-ttl-minutes: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_TODAY_TTL_MINUTES:60}
       nearby-refresh-next-day-ttl-minutes: ${DABOYEO_SHOWTIME_NEARBY_REFRESH_NEXT_DAY_TTL_MINUTES:360}

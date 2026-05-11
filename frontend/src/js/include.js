@@ -22,7 +22,9 @@
       return;
     }
 
-    const response = await fetch(new URL(componentPath, siteRootUrl));
+    const componentUrl = new URL(componentPath, siteRootUrl);
+    componentUrl.searchParams.set("v", "20260511-browser-comments");
+    const response = await fetch(componentUrl, { cache: "no-store" });
     if (!response.ok) {
       throw new Error(`Failed to load ${componentPath}: ${response.status}`);
     }

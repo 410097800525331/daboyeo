@@ -76,9 +76,10 @@ body.basic-page {
   left: 0;
   right: 0;
   width: 100%;
-  background: rgba(14, 14, 14, 0.96);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(114, 100, 233, 0.3);
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
   z-index: 1000;
 }
 
@@ -86,7 +87,7 @@ body.basic-page {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 40px;
+  gap: 24px;
   min-height: var(--fixed-header-height);
   max-width: 1280px;
   padding: 0 30px;
@@ -101,7 +102,7 @@ body.basic-page {
 }
 
 .header-nav {
-  display: flex;
+  display: none !important;
   gap: 28px;
   flex: 1;
   justify-content: center;

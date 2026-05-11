@@ -9,9 +9,9 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="45x45" href="favicon.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="./src/css/style.css?v=20260511-ranked-upcoming">
+  <link rel="stylesheet" href="./src/css/style.css?v=20260511-kmh-followup">
   <link rel="stylesheet" href="./src/css/kakaoMap.css">
-  <link rel="stylesheet" href="./src/css/events.css">
+  <link rel="stylesheet" href="./src/css/events.css?v=20260511-browser-comments">
   <link rel="stylesheet" href="./src/css/responsive.css?v=20260510-real-responsive">
 </head>
 
@@ -31,37 +31,34 @@
       <div class="form-row">
         <div class="form-group">
           <label>지역</label>
-          <div class="wrapper region-select-wrapper">
-            <input type="hidden" id="regionInput" value="">
-            <div class="custom-select-container main-region">
-              <div class="custom-select" id="sidoContainer">
-                <div class="select-display" id="sidoDisplay">
-                  <i class="fas fa-map-marker-alt"></i>
-                  <span>시/도 선택</span>
-                  <i class="fas fa-chevron-down arrow"></i>
-                </div>
-                <ul class="select-options" id="sidoOptions"></ul>
-              </div>
-            </div>
-            <div class="region-sub-row">
-              <div class="custom-select-container">
-                <div class="custom-select disabled" id="gugunContainer">
-                  <div class="select-display" id="gugunDisplay">
-                    <span>시/군/구 선택</span>
-                    <i class="fas fa-chevron-down arrow"></i>
-                  </div>
-                  <ul class="select-options" id="gugunOptions"></ul>
+          <div class="wrapper region-search-wrapper">
+            <div class="region-search-row">
+              <div class="region-part-card" id="card-sido">
+                <i class="fas fa-map-marker-alt region-display-icon"></i>
+                <div class="region-part-info">
+                  <span class="part-label">시/도</span>
+                  <span class="part-value" id="sidoValue">전체</span>
                 </div>
               </div>
-              <div class="custom-select-container">
-                <div class="custom-select disabled" id="dongContainer">
-                  <div class="select-display" id="dongDisplay">
-                    <span>읍/면/동 선택</span>
-                    <i class="fas fa-chevron-down arrow"></i>
-                  </div>
-                  <ul class="select-options" id="dongOptions"></ul>
+              <div class="region-part-card" id="card-sigungu">
+                <div class="region-part-info">
+                  <span class="part-label">시/군</span>
+                  <span class="part-value" id="sigunguValue">전체</span>
                 </div>
               </div>
+              <div class="region-part-card" id="card-gu">
+                <div class="region-part-info">
+                  <span class="part-label">구</span>
+                  <span class="part-value" id="guValue">전체</span>
+                </div>
+              </div>
+              <div class="region-part-card" id="card-dong">
+                <div class="region-part-info">
+                  <span class="part-label">상세 주소</span>
+                  <span class="part-value" id="dongValue">전체</span>
+                </div>
+              </div>
+              <input type="hidden" id="selectedRegionInput" value="전체">
               <button class="btn-map" id="locationBtn" type="button"><i class="fas fa-location-dot"></i> 지도에서 찾기</button>
             </div>
           </div>
@@ -148,7 +145,7 @@
 
       <div class="action-row">
         <button class="btn-search" id="searchBtn"><i class="fas fa-wand-magic-sparkles"></i> AI 추천받기</button>
-        <a class="btn-nearby" id="nearbyBtn" href="./src/pages/movies.html">직접 비교하기</a>
+        <button class="btn-nearby" id="nearbyBtn" type="button">직접 비교하기</button>
       </div>
     </div>
 
@@ -383,10 +380,10 @@
   <script
     src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=c5dd99e7c9d162fa2b1e4bb830bbc480&autoload=false&libraries=services,clusterer"></script>
 
-  <script src="./src/js/include.js"></script>
+  <script src="./src/js/include.js?v=20260511-browser-comments"></script>
   <script src="./src/js/pages/common.js"></script>
   <script src="./js/api.js?v=20260510-live-events"></script>
-  <script src="./js/render.js?v=20260510-safe-events"></script>
+  <script src="./js/render.js?v=20260511-recliner-real-image"></script>
   <script src="./js/main.js?v=20260510-db-events"></script>
   <script type="module" src="./src/js/pages/homePopularMovies.js?v=20260511-ranked-upcoming"></script>
   <script type="module">
@@ -395,8 +392,8 @@
     window.DABOYEO_REGIONS = REGIONS;
     window.dispatchEvent(new Event('daboyeo:regions-ready'));
   </script>
-  <script src="./src/js/pages/script.js?v=20260504-hourly-sync"></script>
-  <script type="module" src="./src/js/api/kakaoMap.js?v=20260504-nearby-sdk"></script>
+  <script src="./src/js/pages/script.js?v=20260511-radius-8"></script>
+  <script type="module" src="./src/js/api/kakaoMap.js?v=20260511-radius-8"></script>
 </body>
 
 </html>

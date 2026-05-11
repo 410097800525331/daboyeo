@@ -111,8 +111,17 @@ public class LiveMovieService {
     public LiveMovieResponse findNearby(LiveMovieSearchCriteria criteria) {
         try {
             List<LiveMovieScheduleItem> results = findNearbyItems(criteria);
-            if (!results.isEmpty() && hasExpectedRefreshProviderCoverage(results, criteria)) {
+            if (!results.isEmpty()) {
                 triggerNearbyRefresh(criteria);
+                if (!hasExpectedRefreshProviderCoverage(results, criteria)) {
+                    return nearbyResponse(
+                        criteria,
+                        results,
+                        true,
+                        warningForPartialNearbyResults(results, criteria),
+                        true
+                    );
+                }
                 return nearbyResponse(criteria, results, true, null, false);
             }
 
@@ -130,7 +139,7 @@ public class LiveMovieService {
                     refreshedResults,
                     true,
                     warningForPartialNearbyResults(refreshedResults, criteria),
-                    true
+                    refreshOutcome == NearbyShowtimeRefreshService.RefreshWaitOutcome.TIMED_OUT
                 );
             }
 
@@ -313,14 +322,13 @@ public class LiveMovieService {
     private Set<String> expectedRefreshBackedProviders(LiveMovieSearchCriteria criteria) {
         Set<String> selectedProviders = new LinkedHashSet<>();
         if (criteria.providers().isEmpty()) {
-            selectedProviders.add("CGV");
             selectedProviders.add("LOTTE");
             selectedProviders.add("MEGA");
             return selectedProviders;
         }
         criteria.providers().stream()
             .map(this::normalizeProviderValue)
-            .filter(value -> value.equals("CGV") || value.equals("LOTTE") || value.equals("MEGA"))
+            .filter(value -> value.equals("LOTTE") || value.equals("MEGA"))
             .forEach(selectedProviders::add);
         return selectedProviders;
     }
@@ -360,7 +368,8 @@ public class LiveMovieService {
             seatState.name().toLowerCase(),
             schedule.distanceKm() == null ? BigDecimal.ZERO : schedule.distanceKm().setScale(2, java.math.RoundingMode.HALF_UP),
             schedule.bookingUrl(),
-            schedule.updatedAt() == null ? OffsetDateTime.now(clock).toString() : schedule.updatedAt().atOffset(OffsetDateTime.now(clock).getOffset()).toString()
+            schedule.updatedAt() == null ? OffsetDateTime.now(clock).toString() : schedule.updatedAt().atOffset(OffsetDateTime.now(clock).getOffset()).toString(),
+            upgradePosterUrl(schedule.posterUrl())
         );
     }
 
@@ -404,7 +413,7 @@ public class LiveMovieService {
             return posterUrl;
         }
         return posterUrl
-            .replaceFirst("_(150|230)(\\.[A-Za-z0-9]+)$", "_420$2");
+            .replaceFirst("_(150|230|420|720)(\\.[A-Za-z0-9]+)$", "_1280$2");
     }
 
     private LiveMovieResponse nearbyResponse(
@@ -537,7 +546,8 @@ public class LiveMovieService {
         String seat_state,
         BigDecimal distance_km,
         String booking_url,
-        String updated_at
+        String updated_at,
+        String poster_url
     ) {
     }
 

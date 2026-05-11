@@ -41,7 +41,6 @@ function Resolve-GradleCommand {
 
 $providerCode = $Provider.Trim().ToUpperInvariant()
 switch ($providerCode) {
-    "CGV" { $providerCode = "CGV" }
     "LOTTE" { $providerCode = "LOTTE_CINEMA" }
     "LOTTE_CINEMA" { $providerCode = "LOTTE_CINEMA" }
     "MEGA" { $providerCode = "MEGABOX" }
@@ -61,27 +60,6 @@ New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 
 if (-not $BundlePath) {
     switch ($providerCode) {
-        "CGV" {
-            if (-not $SiteNo -or -not $MovieNo) {
-                throw "CGV collection requires -SiteNo and -MovieNo when -BundlePath is not provided."
-            }
-            $BundlePath = Join-Path $tmpDir ("cgv-bundle-{0}-{1}-{2}.json" -f $SiteNo, $MovieNo, (Get-Date -Format "yyyyMMddHHmmss"))
-            $collectScript = @"
-import json
-from pathlib import Path
-from collectors.cgv.collector import CgvCollector
-
-bundle = CgvCollector().collect_bundle(
-    site_no="$SiteNo",
-    mov_no="$MovieNo",
-    scn_ymd="$ScreeningDate" or None,
-    scns_no="$ScreenNo" or None,
-    scn_sseq="$ScreenSequence" or None,
-)
-Path(r"$BundlePath").write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
-print(r"$BundlePath")
-"@
-        }
         "LOTTE_CINEMA" {
             if (-not $PlayDate -or -not $CinemaSelector -or -not $RepresentationMovieCode) {
                 throw "LOTTE collection requires -PlayDate, -CinemaSelector, and -RepresentationMovieCode when -BundlePath is not provided."
