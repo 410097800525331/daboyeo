@@ -12,12 +12,10 @@ collectors/__pycache__/
 collectors/*/__pycache__/
 
 # Root Markdown is private by default. Shared docs belong in README.md or docs/**.
+# Workspace task boards and run logs stay local; main should only carry deployable source/config/docs.
 /*.md
 !/README.md
 !/AGENTS.md
-!/ERROR_LOG.md
-!/MULTI_AGENT_LOG.md
-!/STATE.md
 
 # Java / Spring
 .gradle/
