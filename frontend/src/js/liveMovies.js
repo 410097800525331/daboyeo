@@ -57,6 +57,22 @@ function isWithinSelectedTimeRange(itemTime) {
   return target >= start && target <= end;
 }
 
+function isPastTodayShowtime(itemTime, currentTime) {
+  const start = normalizeText(currentSearchConfig.timeStart, '06:00');
+  const end = normalizeText(currentSearchConfig.timeEnd, '23:59');
+  const target = normalizeText(itemTime);
+
+  if (!target) {
+    return false;
+  }
+
+  if (end < start && target <= end) {
+    return false;
+  }
+
+  return target < currentTime;
+}
+
 function cssToken(value) {
   return normalizeText(value, 'ALL').replace(/[^0-9A-Z]/gi, '').toUpperCase() || 'ALL';
 }
@@ -427,7 +443,7 @@ function applyFilters() {
       const currentH = now.getHours();
       const currentM = now.getMinutes();
       const currentTimeStr = `${String(currentH).padStart(2, '0')}:${String(currentM).padStart(2, '0')}`;
-      if (item.normalized.start_time < currentTimeStr) return false;
+      if (isPastTodayShowtime(item.normalized.start_time, currentTimeStr)) return false;
     }
     const norm = item.normalized;
     const matchProvider = providerFilters.includes('all') || providerFilters.includes(norm.provider);
